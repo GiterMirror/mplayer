@@ -53,6 +53,9 @@ int             i,pot = 0;
 
 void mplMainDraw( void )
 {
+ wItem    * item;
+ txSample * image = NULL;
+ int        i, type;
 
  if ( appMPlayer.mainWindow.State == wsWindowClosed ) exit_player( MSGTR_Exit_quit );
  
@@ -73,7 +76,7 @@ void mplMainDraw( void )
 // XFlush( wsDisplay );
 }
 
-extern void exit_player(const char* how);
+extern void exit_player(char* how);
 extern int vcd_track;
 static unsigned last_redraw_time = 0;
 

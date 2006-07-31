@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "config.h"
+#ifdef USE_REALCODECS
 
 #ifdef HAVE_LIBDL
 #include <dlfcn.h>
@@ -355,3 +356,5 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
 
 	return (result?NULL:mpi);
 }
+
+#endif

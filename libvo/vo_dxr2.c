@@ -18,7 +18,6 @@
 #include "mp_msg.h"
 #include "m_option.h"
 #include "sub.h"
-#include "libmpdemux/mpeg_packetizer.h"
 
 #ifdef X11_FULLSCREEN
 #include "x11_common.h"
@@ -27,7 +26,7 @@
 #include <dxr2ioctl.h>
 
 
-extern char *get_path(const char *filename);
+extern char *get_path(char *filename);
 
 extern float monitor_aspect;
 extern float movie_aspect;
@@ -36,6 +35,7 @@ int dxr2_fd = -1;
 
 static int movie_w,movie_h;
 static int playing = 0;
+static int last_freq_id = -1;
 
 // vo device used to blank the screen for the overlay init
 static  vo_functions_t* sub_vo = NULL;
@@ -154,16 +154,9 @@ static char *ucodesearchpath[] = {
 static unsigned char dxr2buf[BUF_SIZE];
 static unsigned int  dxr2bufpos = 0;
 
-int write_dxr2(unsigned char *data, int len)
+static void write_dxr2(void *data, int len)
 {
   int w = 0;
-
-  if (dxr2_fd < 0)
-  {
-    mp_msg (MSGT_VO, MSGL_ERR, "DXR2 fd is not valid\n");
-    return 0;
-  }
-  
   while (len>0) if ((dxr2bufpos+len) <= BUF_SIZE) {
     memcpy(dxr2buf+dxr2bufpos, data, len);
     dxr2bufpos+=len;
@@ -176,7 +169,7 @@ int write_dxr2(unsigned char *data, int len)
       data+=copylen;
       len-=copylen;
     }
-    w += write(dxr2_fd, dxr2buf, BUF_SIZE);
+    w = write(dxr2_fd, dxr2buf, BUF_SIZE);
     if(w < 0) {
       mp_msg(MSGT_VO,MSGL_WARN,"DXR2 : write failed : %s \n",strerror(errno));
       dxr2bufpos = 0;
@@ -186,8 +179,6 @@ int write_dxr2(unsigned char *data, int len)
     if(dxr2bufpos)
       memmove(dxr2buf,dxr2buf + w,dxr2bufpos);
   }
-
-  return w;
 }
 
 static void flush_dxr2()
@@ -208,13 +199,167 @@ static void flush_dxr2()
 
 static unsigned char pack[PACK_MAX_SIZE];
 
+static unsigned char mpg_header[]={
+  0x00, 0x00, 0x01, 0xba, 0x44, 0x00, 0x04, 0x00,
+  0x04, 0x01, 0x01, 0x86, 0xa3, 0xf8
+};
+
 static unsigned char mpg_eof[]={
   0x00, 0x00, 0x01, 0xb9
 };
 
+static void dxr2_send_header(void)
+{
+  write_dxr2(&mpg_header, sizeof(mpg_header));
+}
+
 static void dxr2_send_eof(void)
 {
-  write_dxr2(mpg_eof, sizeof(mpg_eof));
+  write_dxr2(&mpg_eof, sizeof(mpg_eof));
+}
+
+void dxr2_send_packet(unsigned char* data,int len,int id,int timestamp)
+{
+  int ptslen=5;
+
+  if(dxr2_fd < 0) {
+    mp_msg(MSGT_VO,MSGL_ERR,"DXR2 fd is not valid\n");
+    return;
+  }
+
+  mp_msg(MSGT_VO,MSGL_DBG2,"DXR2 packet : 0x%x => %d   \n",id,timestamp);
+  dxr2_send_header();
+
+  // startcode:
+  pack[0]=pack[1]=0;pack[2]=0x01;
+  // stream id
+  pack[3]=id;
+
+  while(len>0){
+    int payload_size=len;  // data + PTS
+    if(9+ptslen+payload_size>PACK_MAX_SIZE) payload_size=PACK_MAX_SIZE-(6+ptslen);
+
+    // construct PES header:  (code from ffmpeg's libav)
+    // packetsize:
+    pack[4]=(3+ptslen+payload_size)>>8;
+    pack[5]=(3+ptslen+payload_size)&255;
+
+    pack[6]=0x81;
+    if(ptslen){
+      int x;
+      pack[7]=0x80;
+      pack[8]=ptslen;
+      // presentation time stamp:
+      x=(0x02 << 4) | (((timestamp >> 30) & 0x07) << 1) | 1;
+      pack[9]=x;
+      x=((((timestamp >> 15) & 0x7fff) << 1) | 1);
+      pack[10]=x>>8; pack[11]=x&255;
+      x=((((timestamp) & 0x7fff) << 1) | 1);
+      pack[12]=x>>8; pack[13]=x&255;
+    } else {
+      pack[7]=0x00;
+      pack[8]=0x00;
+    }
+
+    write_dxr2(pack, 9+ptslen);
+    write_dxr2(data, payload_size);
+
+    len-=payload_size; data+=payload_size;
+    ptslen=0; // store PTS only once, at first packet!
+  }
+}
+
+void dxr2_send_lpcm_packet(unsigned char* data,int len,int id,unsigned int timestamp,int freq_id)
+{
+  int arg;
+  int ptslen=5;
+
+  if(dxr2_fd < 0) {
+    mp_msg(MSGT_VO,MSGL_ERR,"DXR2 fd is not valid\n");
+    return;
+  }    
+
+  if(last_freq_id != freq_id) {
+    ioctl(dxr2_fd, DXR2_IOC_SET_AUDIO_SAMPLE_FREQUENCY, &freq_id);
+    last_freq_id = freq_id;
+  }
+
+  if (((int) timestamp)<0)
+    timestamp=0;
+
+  mp_msg(MSGT_VO,MSGL_DBG2,"dxr2_send_lpcm_packet(timestamp=%d)\n", timestamp);
+  // startcode:
+  pack[0]=pack[1]=0;pack[2]=0x01;
+
+  // stream id
+  pack[3]=0xBD;
+
+  while(len>=4){
+    int payload_size;
+
+    payload_size=PACK_MAX_SIZE-6-3-ptslen-7; // max possible data len
+    if(payload_size>len) payload_size=len;
+    payload_size&=(~3); // align!
+
+    // packetsize:
+    pack[4]=(payload_size+3+ptslen+7)>>8;
+    pack[5]=(payload_size+3+ptslen+7)&255;
+
+    // stuffing:
+    pack[6]=0x81;
+    //		pack[7]=0x00; //0x80
+
+    // hdrlen:
+    pack[8]=ptslen;
+
+    if(ptslen){
+      int x;
+      pack[7]=0x80;
+      // presentation time stamp:
+      x=(0x02 << 4) | (((timestamp >> 30) & 0x07) << 1) | 1;
+      pack[9]=x;
+      x=((((timestamp >> 15) & 0x7fff) << 1) | 1);
+      pack[10]=x>>8; pack[11]=x&255;
+      x=((((timestamp) & 0x7fff) << 1) | 1);
+      pack[12]=x>>8; pack[13]=x&255;
+    } else {
+      pack[7]=0x00;
+    }
+
+    // ============ LPCM header: (7 bytes) =================
+    // Info by mocm@convergence.de
+
+    //	   ID:
+    pack[ptslen+9]=id;
+
+    //	   number of frames:
+    pack[ptslen+10]=0x07;
+
+    //	   first acces unit pointer, i.e. start of audio frame:
+    pack[ptslen+11]=0x00;
+    pack[ptslen+12]=0x04;
+
+    //	   audio emphasis on-off                                  1 bit
+    //	   audio mute on-off                                      1 bit
+    //	   reserved                                               1 bit
+    //	   audio frame number                                     5 bit
+    pack[ptslen+13]=0x0C;
+
+    //	   quantization word length                               2 bit
+    //	   audio sampling frequency (48khz = 0, 96khz = 1)        2 bit
+    //	   reserved                                               1 bit
+    //	   number of audio channels - 1 (e.g. stereo = 1)         3 bit
+    pack[ptslen+14]=1;
+
+    //	   dynamic range control (0x80 if off)
+    pack[ptslen+15]=0x80;
+
+    write_dxr2(pack, 6+3+ptslen+7);
+    write_dxr2(data, payload_size);
+
+    len-=payload_size; data+=payload_size;
+    timestamp+=90000/4*payload_size/48000;
+  }
 }
 
 void dxr2_send_sub_packet(unsigned char* data,int len,int id,unsigned int timestamp) {
@@ -519,6 +664,8 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t width, uint32_t 
     playing = 0;
   }
 
+  last_freq_id = -1;
+
   // Video stream setup
   arg3.arg1 = DXR2_STREAM_VIDEO;
   arg3.arg2 = 0;
@@ -735,10 +882,8 @@ static void draw_osd(void)
 static int draw_frame(uint8_t * src[])
 {
   vo_mpegpes_t *p=(vo_mpegpes_t *)src[0];
-
   if(p->id == 0x1E0) {// Video
-    send_mpeg_ps_packet (p->data, p->size, p->id,
-                         p->timestamp ? p->timestamp : vo_pts, 2, write_dxr2);
+    dxr2_send_packet(p->data, p->size, p->id, p->timestamp);
   } else if(p->id == 0x20) // Subtitles
     dxr2_send_sub_packet(p->data, p->size, p->id, p->timestamp);
   return 0;

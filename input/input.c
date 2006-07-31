@@ -631,7 +631,7 @@ mp_input_parse_cmd(char* str) {
 
   cmd_def = &mp_cmds[i];
 
-  cmd = calloc(1, sizeof(mp_cmd_t));
+  cmd = (mp_cmd_t*)calloc(1, sizeof(mp_cmd_t));
   cmd->id = cmd_def->id;
   cmd->name = strdup(cmd_def->name);
   cmd->pausing = pausing;
@@ -690,7 +690,7 @@ mp_input_parse_cmd(char* str) {
 	ptr2 = e + 1;
         l--;
       }
-      cmd->args[i].v.s = malloc(l+1);
+      cmd->args[i].v.s = (char*)malloc((l+1)*sizeof(char));
       strncpy(cmd->args[i].v.s,start,l);
       cmd->args[i].v.s[l] = '\0';
       if(term != ' ') ptr += l+2;
@@ -746,7 +746,7 @@ mp_input_read_cmd(mp_input_fd_t* mp_fd, char** ret) {
 
   // Allocate the buffer if it doesn't exist
   if(!mp_fd->buffer) {
-    mp_fd->buffer = malloc(MP_CMD_MAX_SIZE);
+    mp_fd->buffer = (char*)malloc(MP_CMD_MAX_SIZE*sizeof(char));
     mp_fd->pos = 0;
     mp_fd->size = MP_CMD_MAX_SIZE;
   } 
@@ -802,7 +802,7 @@ mp_input_read_cmd(mp_input_fd_t* mp_fd, char** ret) {
 
     // Not dropping : put the cmd in ret
     if( ! (mp_fd->flags & MP_FD_DROP)) {
-      (*ret) = malloc(l+1);
+      (*ret) = (char*)malloc((l+1)*sizeof(char));
       strncpy((*ret),mp_fd->buffer,l);
       (*ret)[l] = '\0';
     } else { // Remove the dropping flag
@@ -914,14 +914,11 @@ mp_input_read_key_code(int time) {
   fd_set fds;
   struct timeval tv,*time_val;
 #endif
-  int i,n=0,max_fd = 0, did_sleep = 0;
+  int i,n=0,max_fd = 0;
   static int last_loop = 0;
 
   if(num_key_fd == 0)
-  {
-    usec_sleep(time * 1000);
     return MP_INPUT_NOTHING;
-  }
 
 #ifndef HAVE_NO_POSIX_SELECT
   FD_ZERO(&fds);
@@ -943,6 +940,9 @@ mp_input_read_key_code(int time) {
     n++;
   }
 
+  if(num_key_fd == 0)
+    return MP_INPUT_NOTHING;
+
 #ifndef HAVE_NO_POSIX_SELECT
 // if we have fd's without MP_FD_NO_SELECT flag, call select():
 if(n>0){
@@ -962,7 +962,6 @@ if(n>0){
     }
     break;
   }
-  did_sleep = 1;
 
 }
 #endif
@@ -985,7 +984,6 @@ if(n>0){
       code = getch2(time);
       if(code < 0)
 	code = MP_INPUT_NOTHING;
-      did_sleep = 1;
     }
     else
       code = ((mp_key_func_t)key_fds[i].read_func)(key_fds[i].fd);
@@ -1000,8 +998,6 @@ if(n>0){
       key_fds[i].flags |= MP_FD_DEAD;
     }
   }
-  if (!did_sleep)
-    usec_sleep(time * 1000);
   return MP_INPUT_NOTHING;
 }
     
@@ -1275,7 +1271,7 @@ mp_cmd_clone(mp_cmd_t* cmd) {
   assert(cmd != NULL);
 #endif
 
-  ret = malloc(sizeof(mp_cmd_t));
+  ret = (mp_cmd_t*)malloc(sizeof(mp_cmd_t));
   memcpy(ret,cmd,sizeof(mp_cmd_t));
   if(cmd->name)
     ret->name = strdup(cmd->name);
@@ -1562,7 +1558,7 @@ mp_input_parse_config(char *file) {
   return 0;
 }
 
-extern char *get_path(const char *filename);
+extern char *get_path(char *filename);
 
 void
 mp_input_init(int use_gui) {
@@ -1671,7 +1667,7 @@ static int mp_input_print_key_list(m_option_t* cfg) {
 static int mp_input_print_cmd_list(m_option_t* cfg) {
   mp_cmd_t *cmd;
   int i,j;
-  const char* type;
+  char* type;
 
   for(i = 0; (cmd = &mp_cmds[i])->name != NULL ; i++) {
     printf("%-20.20s",cmd->name);

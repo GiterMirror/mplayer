@@ -2,7 +2,7 @@
 .\" Diese Man-Page wurde/wird von Moritz Bunkus, Sebastian Krämer,
 .\" Tobias Diedrich gepflegt.
 .\"
-.\" In sync with r19134
+.\" In sync with r18656
 .
 .\" --------------------------------------------------------------------------
 .\" Makrodefinitionen
@@ -314,8 +314,7 @@ Passt die Untertitel-Anzeige um +/- 0.1 Sekunde an.
 .IPs "r und t"
 Bewegt die Untertitel nach oben/unten.
 .IPs "i (nur im Modus \-edlout)"
-Setze Beginn oder Ende eines EDL-Sprungs und schreibe es in die angegebene
-Datei.
+Setze EDL-Markierung.
 .IPs "s (nur bei \-vf screenshot)"
 Mache einen Schnappschuss.
 .IPs "I"
@@ -758,11 +757,11 @@ mit --enable-crash-debug.
 .
 .TP
 .B \-edlout <Dateiname>
-Erstellt eine neue Datei und schreibt EDL (edit decision list) -Markierungen
-hinein.
-Während der Wiedergabe drückt der Benutzer 'i', um Beginn oder Ende eines
-Blocks, der übersprungen werden soll, zu markieren.
-Damit erhält  er eine Ausgangsbasis, die er an seine Bedürfnisse
+Erstellt eine neue EDL-Datei und schreibt EDL-Markierungen in diese Datei.
+Während der Wiedergabe kann der Benutzer 'i' drücken, und ein Eintrag,
+um an der aktuellen Position zwei Sekunden des Video zu überspringen, wird
+in die Datei geschrieben.
+Damit erhält der Benutzer eine Ausgangsbasis, die er an seine Bedürfnisse
 anpassen kann.
 Siehe DOCS/\:HTML/\:en/\:edl.html für Details.
 .
@@ -1256,8 +1255,8 @@ Standardeinstellung ist ~/\:.mplayer/\:channels.conf.{sat,ter,cbl,atsc} (je
 nach Kartentyp)
 oder ~/\:.mplayer/\:channels.conf als letzte Möglichkeit.
 .IPs timeout=<1\-30>
-Maximale Anzahl Sekunden, die benutzt werden, um eine Frequenz einzustellen,
-bevor aufgegeben wird (Standard: 30).
+Maximale Anzahl Sekunden, die benutzt werden, um einen Sender einzustellen,
+bevor aufgegeben wird (Standard: 3).
 .RE
 .PD 1
 .
@@ -1355,9 +1354,9 @@ Verfügbare Optionen sind folgende:
 .PD 0
 .RSs
 .IPs w=<Wert>
-Breite der Eingabedatei (Standard: automatische Erkennung)
+Ausgabebreite (Standard: automatische Erkennung)
 .IPs h=<Wert>
-Höhe der Eingabedatei (Standard: automatische Erkennung)
+Ausgabehöhe (Standard: automatische Erkennung)
 .IPs fps=<Wert>
 Frames pro Sekunde bei der Ausgabe (Standard: 25)
 .IPs type=<Wert>
@@ -1461,20 +1460,10 @@ Spielt ein raw-YUV-Beispielvideo.
 .PD 1
 .
 .TP
-.B \-rtsp-port
+.B \-rtsp-port (nur bei LIVE555)
 Wird bei 'rtsp://'-URLs benutzt, um die Portnummer des Clients zu erzwingen.
 Diese Option kann nützlich sein, wenn du hinter einem Router bist und den
 RTSP-Stream vom Server an einen bestimmten Client weiterleiten möchtest.
-.
-.TP
-.B \-rtsp-destination
-Wird zusammen mit 'rtsp://'-DLLs benutzt, um zu erzwingen, dass die 
-Ziel-IP-Adresse gebunden wird.
-Diese Option kann nützlich sein bei einem RTSP-Server, der RTP-Pakete nicht an
-die richtige Schnittstelle schickt.
-Wenn die Verbindung zu dem RTSP-Server fehlschlägt, benutze \-v, um zu sehen,
-welche IP-Adresse MPlayer zu binden versucht.
-Versuche, die Adresse zu erzwingen, die deinem Computer zugewiesen wurde.
 .
 .TP
 .B \-rtsp-stream-over-tcp (nur bei LIVE555)
@@ -1698,35 +1687,9 @@ Erzwingt Audioparameter für den VIVO-Demuxer (nur für Debugging-Zwecke).
 .
 .
 .
-.SH "OSD-/UNTERTITEL-OPTIONEN"
+.SH "OSD-/\:UNTERTITEL-OPTIONEN"
 .I ANMERKUNG:
 Siehe auch \-vf expand.
-.
-.TP
-.B \-ass (nur bei FreeType)
-Schaltet das Zeichnen von SSA/ASS-Untertiteln ein.
-Mit dieser Option wird libass für externe SSA/ASS-Untertitel und
-Matroska-Spuren verwendet.
-Du möchtest vielleicht auch \-embeddedfonts verwenden.
-.
-.TP
-.B \-ass-font-scale <Wert>
-Setze den Skalierungskoeffizienten, der für Schriften im
-SSA/ASS-Renderer verwendet werden soll.
-.
-.TP
-.B \-ass-line-spacing <Wert>
-Setzt den Wert für den Zeilenabstand für den SSA/ASS-Renderer.
-.
-.TP
-.B \-ass-bottom-margin <Wert>
-Fügt einen schwarzen Streifen unten ins Bild hinzu.
-Der SSA/ASS-Renderer wird Untertitel dorthin legen.
-.
-.TP
-.B \-ass-top-margin <Wert>
-Fügt einen schwarzen Streifen oben ins Bild hinzu.
-Der SSA/ASS-Renderer wird Obertitel dorthin legen.
 .
 .TP
 .B \-dumpjacosub (nur bei MPlayer)
@@ -1769,12 +1732,6 @@ um die Unix-Zeilenenden durch DOS/Windows-Zeilenenden zu ersetzen.
 .B \-dumpsub (nur bei MPlayer) (BETA CODE)
 Speichert den Untertitel-Substream eines VOB-Streams.
 Siehe auch die Optionen \-dump*sub und \-vobsubout*.
-.
-.TP
-.B \-embeddedfonts (nur bei FreeType)
-Aktiviert die Extraktion von in Matroska eingebetteten Schriften.
-Diese Schriften können für das Rendern von SSA/ASS-Untertiteln verwendet werden
-(Option \-ass).
 .
 .TP
 .B \-ffactor <Nummer> (nur bei OSD)
@@ -3278,40 +3235,30 @@ Diese Methode ist schnell aber ungenau.
 6: Benutze eine 3D-Textur für die Konvertierung via Nachschlagetabelle.
 Benötigt die GL_ARB_fragment_program-Erweiterung und mindestens vier
 Textureinheiten.
-Extrem langsam (Softwareemulation) auf manchen (allen?) ATI-Karten, da es eine
-Textur mit Randpixeln verwendet.
 Stellt Kontrolle über Helligkeit, Kontrast, Sättigung, Farbton und Gamma
 bereit.
 Gamma kann außerdem unabhängig für rot, grün und blau gesetzt werden.
 Die Geschwindigkeit hängt mehr von der Speicherbandbreite der GPU ab als
 andere Methoden.
 .RE
-.IPs lscale=<n>
-Wählt die zu benutzende Skalierungsmethode für Luminanzskalierung.
-Nur gültig für yuv-Modi 2, 3, 4 und 6.
+.IPs [l|c]scaler=<n>
+Wählt die zu benutzende Skalierungsmethode (unabhängig für Luminanz und
+Chrominanz).
+Nur gültig für yuv-Modi 2, 3 und 4.
 .RSss
 0: Benutze einfache lineare Filterung (Standard).
 .br
 1: Benutze bikubische Filterung (bessere Qualität).
-Benötigt eine zusätzliche Textureinheit.
 Ältere Karten werden dies für Chrominanz zumindest im Vollbildmodus nicht
 verarbeiten können.
+Benötigt außerdem eine zusätzliche Textureinheit.
 .RE
-.IPs cscale=<n>
-Wählt die zu benutzende Skalierungsmethode für Chrominanzskalierung.
-Für Details siehe lscale.
 .IPs customprog=<Dateiname>
 Lädt ein eigenes Fragmentprogramm aus <Dateiname>.
 Siehe TOOLS/\:edgedetect.fp als Beispiel.
 .IPs customtex=<Dateiname>
 Lädt eine eigene "gamma ramp"-Textur aus <Dateiname>.
 Kann zusammen mit yuv=4 oder mit der customprog-Option benutzt werden.
-.IPs (no)customtlin
-Wenn aktiviert (Standard), benutze für die customtex-Textur
-GL_LINEAR-Interpolation, benutze sonst GL_NEAREST.
-.IPs (no)customtrect
-Wenn aktiviert, benutze für die customtex-Textur texture_rectangle.
-Standardeinstellung ist deaktiviert.
 .REss
 .RE
 .PD 1
@@ -3762,10 +3709,8 @@ Erzwingt den l3codeca.acm-MP3-Codec.
 .IPs "\-ac mad,"
 Probiert zuerst libmad und dann andere Codecs.
 .IPs "\-ac hwac3,a52,"
-Probiere AC3-Passthrough, dann
+Zuerst wird versucht, AC3 unverändert durchzureichen, dann die
 Software-AC3-Decodierung, danach andere Codecs.
-.IPs "\-ac hwdts,"
-Probiere Hardware-DTS-Passthrough, danach anderes.
 .IPs "\-ac -ffmp3,"
 Überspringe den MP3-Decoder von FFmpeg.
 .RE
@@ -4072,6 +4017,14 @@ In vielen Fällen funktioniert dies nicht, benutze stattdessen \-vc null \-vo
 null.
 .
 .TP
+.B \-oldpp <Qualität> (nur bei OpenDivX) (VERALTET)
+Benutze den Postprocessing-Code von opendivx anstelle des internen.
+Ersetzt durch \-pp liefert das interne Postprocessing bessere Qualität und
+Performance.
+Der gültige Wertebereich für \-oldpp variiert je nach Codec, ist meistens
+aber 0\-6, wobei 0=deaktiviert und 6=langsamster/\:bester Modus bedeutet.
+.
+.TP
 .B \-pp <Qualität> (siehe auch \-vf pp)
 Setzt das Postprocessing-Level der DLL.
 Diese Option kann nicht mehr in Verbindung mit \-vf pp verwendet werden,
@@ -4185,6 +4138,9 @@ Mit \-vc help wird eine vollständige Liste der verfügbaren Codecs ausgegben.
 .RSs
 .IPs "\-vc divx"
 Erzwingt den Win32/\:VFW DivX-Codec; andere werden nicht ausprobiert.
+.IPs "\-vc divx4,"
+Probiet zuerst den divx4linux-Codec, danach andere, wenn dieser nicht
+funktioniert.
 .IPs "\-vc -divxds,-divx,"
 Überspringt die Win32-DivX-Codecs.
 .IPs "\-vc ffmpeg12,mpeg12,"
@@ -6216,32 +6172,41 @@ Generiert einen Frame voller Höhe bei halber Framerate.
 .PD 1
 .
 .TP
-.B tfields[=Modusi[:Feld_Dominanz]]
+.B tfields[=Modus]
 Temporäre Auftrennung der Felder \- trenne die Felder in ganze Frames auf;
 dies verdoppelt die Framerate.
 Genau wie beim Filter telecine wird tfields nur bei MEncoder korrekt arbeiten,
 und nur dann, wenn sowohl \-fps als auch \-ofps mit der gewünschten (doppelten)
 Framerate angegeben werden!
+Verfügbare Modi sind:
 .PD 0
 .RSs
-.IPs <Modus>
-0: Lasse die Felder unangetastet (wird zu Sprüngen/\:Flackern führen).
-.br
-1: Interpoliere fehlende Zeilen. (Der benutzte Algorithmus ist möglicherweise
-nicht allzu gut.)
-.br
-2: Wandle Felder mit linearer Interpolation zu 1/4 Pixel um (kein Sprung).
-.br
-4: Wandle Felder mit dem 4tap-Filter zu 1/4 Pixel um (höhere Qualität) (Standard).
-.IPs <Feld_Dominanz>
--1: automatisch (Standard)
+.IPs 0
+Lasse die Felder unangetastet.
+(Dies wird zu Sprüngen/\:Flackern führen.)
+.IPs 1
+Interpoliere fehlende Zeilen.
+(Der benutzte Algorithmus könnte nicht allzu gut sein.)
+.IPs 2
+Wandle Felder mit linearer Interpolation zu 1/4 Pixel um (kein Sprung).
+.IPs 4
+Wandle Felder mit dem 4tap-Filter zu 1/4 Pixel um (höhere Qualität) (Standard).
+.RE
+.PD 1
+.RS
+Verfügbare Feld-Dominanzen sind folgende:
+.RE
+.PD 0
+.RSs
+.IPs -1
+automatisch (Standard)
 Funktioniert nur, wenn der Decoder angemessene Informationen ausgibt und keine
 anderen Filter in der Filterkette vor tfields kommen, die diese Informationen
 verwefen; sonst fällt der Filter zurück auf 0 (obere Felder zuerst).
-.br
-0: obere Felder zuerst
-.br
-1: untere Felder zuerst
+.IPs 0
+obere Felder zuerst
+.IPs 1
+untere Felder zuerst
 .RE
 .PD 1
 .
@@ -6575,29 +6540,6 @@ akzeptiert beliebige Farbräume, es ist also ungefährlich ihn in die
 Konfigurationsdatei mit aufzunehmen.
 .RE
 .
-.TP
-.B ass\ \ \ \ 
-Verschiebt das Zeichnen der SSA/ASS-Untertitel an einen beliebigen Punkt in der
-Videofilterkette.
-Nur sinnvoll mit der Option \-ass.
-.RE
-.
-.TP
-.B blackframe[=Menge:Schwellenwert]
-Erkenne Frames, die (fast) komplett schwarz sind.
-Kann nützlich sein, um Kapitelübergänge oder Werbung zu erkennen.
-Ausgabezeilen bestehen aus der Framenummer des erkannten Frames, dem
-prozentualen Schwarzanteil, dem Frametyp und der Framenummer des zuletzt
-vorgekommenen Keyframes.
-.RSs
-.IPs <Menge>
-Prozentaler Anteil der Pixel, die unter dem Schwellenwert liegen müssen
-(Standard: 98).
-.IPs <Schwellenwert>
-Schwellenwert, unter dem ein Pixelwert als schwarz angenommen wird
-(Standard: 32).
-.RE
-.
 .
 .
 .SH "ALLGEMEINE ENCODING-OPTIONEN (NUR BEI MENCODER)"
@@ -6819,6 +6761,8 @@ Mit \-ovc help erhältst du eine Liste verfügbarer Codecs.
 .RSs
 .IPs "\-ovc copy"
 kein Encodieren, sondern nur eine Kopie des Videostreams
+.IPs "\-ovc divx4"
+Encodiere zu DivX4/\:DivX5.
 .IPs "\-ovc raw"
 Encodiere zu einem frei wählbaren Format (benutze '\-vf format', um dieses
 auszuwählen).
@@ -6863,8 +6807,88 @@ folgende Syntax benutzt:
 .B \-<Codec>opts <Option1[=Wert1],Option2,...>
 .
 .PP
-Wobei <Codec> einer der folgenden sein kann: lavc, xvidenc, lame,
+Wobei <Codec> einer der folgenden sein kann: lavc, xvidenc, divx4, lame,
 toolame, twolame, nuv, xvfw, faac, x264enc, mpeg und lavf.
+.
+.
+.SS divx4 (\-divx4opts)
+.
+DivX4 ist überholt und wird nur der Vollständigkeit halber unterstützt.
+Für Details zu den DivX4-Optionen musst du den Quellcode lesen, die meisten
+Optionen werden hier nicht vorgestellt.
+.
+.TP
+.B help\ \ \ 
+Gibt einen Hilfstext aus.
+.
+.TP
+.B br=<Wert>
+Gibt die Bitrate an.
+.RSs
+.IPs 4\-16000
+(in kbit)
+.IPs 16001\-24000000
+(in bit)
+.RE
+.
+.TP
+.B key=<Wert>
+maximale Anzahl der Bilder zwischen zwei Keyframes
+.
+.TP
+.B deinterlace
+Aktiviert Deinterlacing (vermeide dies, DivX4 ist fehleranfällig).
+.
+.TP
+.B q=<1\-5>
+Qualitätslevel (1 \- am schnellsten, 5 \- am besten)
+.
+.TP
+.B min_quant=<1\-31>
+minimaler Quantisierungsparameter
+.
+.TP
+.B max_quant=<1\-31>
+maximaler Quantisierungsparameter
+.
+.TP
+.B rc_period=<Wert>
+Bitratenkontrollzeitrahmen
+.
+.TP
+.B rc_reaction_period=<Wert>
+Reaktionszeitrahmen für die Bitratenkontrolle
+.
+.TP
+.B rc_reaction_ratio=<Wert>
+Reaktionsverhältnis für die Bitratenkontrolle
+.
+.TP
+.B crispness=<0\-100>
+Gibt Schärfe/\:Glätte an.
+.
+.TP
+.B pass=<1\-2>
+Mit dieser Option können DivX4-Dateien in zwei Durchläufen erstellt werden.
+Encodiere zuerst mit pass=1, mache dann einen zweiten Durchlauf mit denselben
+Parametern und pass=2.
+.
+.TP
+.B vbrpass=<0\-2>
+Überschreibt den pass-Parameter und benutzt die VBR-Bibliothek von XviD
+anstelle der von DivX4.
+Verfügbare Optionen sind:
+.PD 0
+.RSs
+.IPs 0
+Encodieren in einem Durchlauf (als ob pass überhaupt nicht verwendet würde)
+.IPs 1
+Analyse bzw. erster Durchlauf im Modus mit zwei Durchläufen.
+Das erstellte AVI kann nach /dev/\:null umgeleitet werden.
+.IPs 2
+Finaler (zweiter) Durchlauf im Modus mit zwei Durchläufen.
+.RE
+.PD 1
 .
 .
 .SS lame (\-lameopts)

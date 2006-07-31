@@ -100,10 +100,8 @@ extern vf_info_t vf_info_divtc;
 extern vf_info_t vf_info_harddup;
 extern vf_info_t vf_info_softskip;
 extern vf_info_t vf_info_screenshot;
-extern vf_info_t vf_info_ass;
 extern vf_info_t vf_info_mcdeint;
 extern vf_info_t vf_info_yadif;
-extern vf_info_t vf_info_blackframe;
 
 // list of available filters:
 static vf_info_t* filter_list[]={
@@ -196,11 +194,7 @@ static vf_info_t* filter_list[]={
 #ifdef HAVE_PNG
     &vf_info_screenshot,
 #endif
-#ifdef USE_ASS
-    &vf_info_ass,
-#endif
     &vf_info_yadif,
-    &vf_info_blackframe,
     NULL
 };
 
@@ -438,7 +432,7 @@ static int vf_default_query_format(struct vf_instance_s* vf, unsigned int fmt){
   return vf_next_query_format(vf,fmt);
 }
 
-vf_instance_t* vf_open_plugin(vf_info_t** filter_list, vf_instance_t* next, const char *name, char **args){
+vf_instance_t* vf_open_plugin(vf_info_t** filter_list, vf_instance_t* next, char *name, char **args){
     vf_instance_t* vf;
     int i;
     for(i=0;;i++){
@@ -477,7 +471,7 @@ vf_instance_t* vf_open_plugin(vf_info_t** filter_list, vf_instance_t* next, cons
     return NULL;
 }
 
-vf_instance_t* vf_open_filter(vf_instance_t* next, const char *name, char **args){
+vf_instance_t* vf_open_filter(vf_instance_t* next, char *name, char **args){
   if(args && strcmp(args[0],"_oldargs_")) {
     int i,l = 0;
     for(i = 0 ; args && args[2*i] ; i++)
@@ -564,38 +558,6 @@ void vf_clone_mpi_attributes(mp_image_t* dst, mp_image_t* src){
 	dst->qscale= src->qscale;
     }
 }
-
-void vf_queue_frame(vf_instance_t *vf, int (*func)(vf_instance_t *))
-{
-    vf->continue_buffered_image = func;
-}
-
-// Output the next buffered image (if any) from the filter chain.
-// The queue could be kept as a simple stack/list instead avoiding the
-// looping here, but there's currently no good context variable where
-// that could be stored so this was easier to implement.
-
-int vf_output_queued_frame(vf_instance_t *vf)
-{
-    while (1) {
-	int ret;
-	vf_instance_t *current;
-	vf_instance_t *last=NULL;
-	int (*tmp)(vf_instance_t *);
-	for (current = vf; current; current = current->next)
-	    if (current->continue_buffered_image)
-		last = current;
-	if (!last)
-	    return 0;
-	tmp = last->continue_buffered_image;
-	last->continue_buffered_image = NULL;
-	ret = tmp(last);
-	if (ret)
-	    return ret;
-    }
-}
-
-
 /**
  * \brief Video config() function wrapper
  *

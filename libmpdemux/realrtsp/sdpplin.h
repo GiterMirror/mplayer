@@ -30,7 +30,7 @@
 #define HAVE_SDPPLIN_H
 
 #include "rmff.h"
-#include "../librtsp/rtsp.h"
+#include "rtsp.h"
 
 typedef struct {
 

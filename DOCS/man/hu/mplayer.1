@@ -1,4 +1,4 @@
-.\" Synced with r19161
+.\" Synced with r18656
 .\" MPlayer (C) 2000-2006 MPlayer Team
 .\" Ezt a man oldalt Gabucino, Diego Biurrun és Jonas Jermann készíti/készítette
 .\" Karbantartó: Gabrov
@@ -32,7 +32,7 @@
 .\" Név
 .\" --------------------------------------------------------------------------
 .
-.TH MPlayer 1 "2006. 07. 15." "MPlayer Project" "A film lejátszó"
+.TH MPlayer 1 "2006. 05. 11." "MPlayer Project" "A film lejátszó"
 .
 .SH NÉV
 mplayer  \- film lejátszó
@@ -196,9 +196,9 @@ Van X11, Xv, DGA, OpenGL, SVGAlib, fbdev, AAlib, libcaca, DirectFB,
 Quartz, Mac OS X CoreVideo támogatás, de használhatod a GGI, SDL (és ennek összes
 vezérlõje), VESA (minden VESA-kompatibilis kártyán, még X11 nélkül is), néhány
 alacsony szintû, kártyaspecifikus vezérlõ (Matroxhoz, 3dfx-hez és ATI-hoz) és
-pár hardveeres MPEG dekódoló lap, mint pl. a Siemens DVB, Hauppauge PVR (IVTV),
-DXR2 és DXR3/\:Hollywood+ támogatását is. A legtöbbjük tudja a szoftveres és
-harderes nagyítást, így a filmjeidet teljes képernyõs módban élvezheted.
+pár hardveeres MPEG dekódoló lap, mint pl. a Siemens DVB, DXR2 és DXR3/\:Hollywood+
+támogatását is. A legtöbbjük tudja a szoftveres és harderes nagyítást, így a
+filmjeidet teljes képernyõs módban élvezheted.
 .PP
 Az MPlayernek van onscreen display (OSD) funkciója is a státuszinformációk
 és a szép, élsímított, árnyékolt feliratok megjelenítéséhez és a billentyûzetrõl
@@ -304,7 +304,7 @@ Felirat késleltetés állítása ± 0.1 másodperccel.
 .IPs "r és t"
 Felirat mozgatása fel/le.
 .IPs "i (csak \-edlout módban)"
-Egy EDL kihagyás kezdetének vagy végének bejelölése és a megadott fájlba írása.
+EDL jelzés beállítása.
 .IPs "s (csak \-vf screenshot mellett)"
 Képernyõmentés készítése.
 .IPs "I"
@@ -727,8 +727,8 @@ A támogatását be kell fordítani a configure --enable-crash-debug kapcsolójával.
 .TP
 .B \-edlout <fájlnév>
 Létrehoz egy új fájlt és az edit decision list (EDL) rekordokat beleírja.
-Lejátszás közben, a felhasználó az 'i' gomb megnyomásával jelölheti meg egy
-kihagyási rész elejét és végét.
+Lejátszás közben, ha a felhasználó megnyomja az 'i' gombot, egy, az utolsó
+két másodperc átugrását elõíró bejegyzést ír a fájlba.
 Ez egy kezdõpont a felhasználónak az EDL bejegyzések késõbbi finomhangolásához.
 Lásd DOCS/\:HTML/\:hu/\:edl.html fájlt a részletekért.
 .
@@ -1193,8 +1193,8 @@ olvassa. Az alapértelmezett a ~/.mplayer/\:channels.conf.{sat,ter,cbl,atsc}
 (a kártyád típusától függõen) vagy ~/.mplayer/\:channels.conf mint utolsó
 lehetõség.
 .IPs timeout=<1\-30>
-Frekvencia beállításának sikertelenné nyilvánítása elõtt a
-várakozással töltött másodpercek maximális száma. Alapértelmezett 30.
+Transponder beállításának sikertelenné nyilvánítása elõtt a
+várakozással töltött másodpercek maximális száma. Alapértelmezett 3.
 .RE
 .PD 1
 .
@@ -1286,9 +1286,9 @@ A rendelkezésre álló opciók:
 .PD 0
 .RSs
 .IPs w=<érték>
-a bemeneti fájl szélessége (alapértelmezett: automatikus felismerés)
+a kimenet szélessége (alapértelmezett: automatikus felismerés)
 .IPs h=<érték>
-a bemeneti fájl magassága (alapértelmezett: automatikus felismerés)
+a kimenet magassága (alapértelmezett: automatikus felismerés)
 .IPs fps=<érték>
 kimenet fps-e (alapértelmezett: 25)
 .IPs type=<érték>
@@ -1391,19 +1391,10 @@ Nyers YUV minta lejátszása.
 .PD 1
 .
 .TP
-.B \-rtsp-port
+.B \-rtsp-port (csak LIVE555)
 Az 'rtsp://' URL-ekkel használatos a kliens port számának kényszerítésére.
 Ez az opció hasznos, ha egy router mögött vagy és továbbítani akarod az
 RTSP folyamot a szerverrõl egy megadott kliensre.
-.
-.TP
-.B \-rtsp-destination
-'rtsp://' URL-ekkel használandó a cél IP címek kötéséhez.
-Ez az opció pár olyan RTSP szerver esetén hasznos, melyek nem a megfelelõ
-interfésznek küldik az RTP csomagokat.
-Ha az RTSP szerverhez sikertelen a kapcsolódás, használd a -v kapcsolót, hogy
-meglásd, melyik IP címhez próbál kapcsolódni az MPlayer és helyette próbálj
-ki inkább egy olyat, ami a számítógépedhez van rendelve.
 .
 .TP
 .B \-rtsp-stream-over-tcp (csak LIVE555)
@@ -1616,34 +1607,9 @@ A VIVO demuxer audió paramétereinek felülbírálata (hibakeresõ célokra).
 .
 .
 .
-.SH "OSD/FELIRAT OPCIÓK"
+.SH "OSD/SUB OPCIÓK"
 .I MEGJEGYZÉS:
 Lásd még a \-vf expand opciót.
-.
-.TP
-.B \-ass (csak FreeType)
-Bekapcsolja az SSA/ASS felirat renderelést.
-Ezzel az opcióval a libass lesz használva az SSA/ASS
-külsõ feliratokhoz és matroska sávokhoz.
-Ajánlott még a -embeddedfonts engedélyezése is.
-.
-.TP
-.B \-ass-font-scale <érték>
-Beállítja a betûtípusokhoz használt arány együtthatót az SSA/ASS renderelõben.
-.
-.TP
-.B \-ass-line-spacing <érték>
-Beállítja a sor kihagyás értékét az SSA/ASS renderelõben.
-.
-.TP
-.B \-ass-top-margin <érték>
-Egy fekete sávot ad a kocka tetejéhez.
-Az SSA/ASS renderelõ a felsõ feliratokat ide teszi.
-.
-.TP
-.B \-ass-bottom-margin <érték>
-Egy fekete sávot ad a kocka aljához.
-Az SSA/ASS renderelõ a feliratokat ide teszi.
 .
 .TP
 .B \-dumpjacosub (csak MPlayer)
@@ -1686,12 +1652,6 @@ sorvégzõdésekre cseréléséhez.
 .B \-dumpsub (csak MPlayer) (BÉTA KÓD)
 VOB stream-ekbõl a felirat stream kimentése.
 Lásd még a \-dump*sub és \-vobsubout* opciókat is.
-.
-.TP
-.B \-embeddedfonts (csak FreeType)
-Engedélyezi a matroska beágyazott betûinek kicsomagolását.
-Ezek a betûtípusok használhatóak az SSA/ASS feliratok
-rendereléséhez (-ass kapcsoló).
 .
 .TP
 .B \-ffactor <szám> (csak OSD)
@@ -3145,31 +3105,22 @@ beállítását teszi lehetõvé.
 A gamma külön állítható a vörös, zöld és kék színre.
 A sebessége jobban függ a GPU memória sávszélességétõl, mint a többi módszernél.
 .RE
-.IPs lscale=<n>
-Kiválasztja a használandó méretezõ függvényt a fényerõsséghez.
-Csak a 2-es, 3-as, 4-es és 6-os yuv módoknál helyes.
+.IPs [l|c]scaler=<n>
+Kiválasztja a használandó méretezõ függvényt (külön a fényerõsséghez és a telítettséghez).
+Csak a 2-es, 3-as és 4-es yuv módok a helyesek.
 .RSss
 0: Egyszerû lineáris szûrés használata (alapértelmezett)
 .br
 1: Bicubic szûrõ használata (jobb minõség).
-További egy textúra egység kell hozzá.
 A régi kártyák nem tudják használni ezt a telítettséget, legalábbis teljes képernyõnél.
+További egy textúra egység szükséges.
 .RE
-.IPs cscale=<n>
-Kiválasztja a használandó méretezõ függvényt a színességhez.
-A részletekért lásd a lscale-t.
 .IPs customprog=<fájlnév>
 Saját fragmentum programot tölt be a <fájlnév>-bõl.
 Lásd a TOOLS/edgedect.fp fájl példáért.
 .IPs customtex=<fájlnév>
 Egyéni "gamma ramp" textúrát tölt be a <fájlnév>-bõl.
 A yuv=4 vagy a customprog opcióval együtt használható.
-.IPs (no)customtlin
-Ha engedélyezett (alapértelmezett), GL_LINEAR interpoláció használata,
-különben GL_NEAREST a customtex textúrákhoz.
-.IPs (no)customtrect
-Ha engedélyezve van, texture_rectangle-t használ a customtex textúrákhoz.
-Alapértelmezésben le van tiltva.
 .REss
 .RE
 .PD 1
@@ -3395,21 +3346,6 @@ Megadja a használni kívánt eszköz számát, ha egynél több em8300 kártyád van.
 .PD 1
 .
 .TP
-.B ivtv (csak IVTV)
-Conexant CX23415 (iCompression iTVC15) vagy Conexant CX23416 (iCompression
-iTVC16) MPEG dekódoló chipekhez (Hauppauge WinTV PVR-150/250/350/500)
-specifikus videó vezérlõ a TV kimenethez.
-Lásd még a lavc videó szûrõt.
-.PD 0
-.RSs
-.IPs eszköz
-Explicit kiválasztja a használni kívánt MPEG dekódoló eszköz nevét (alapértelmezett: /dev/video16).
-.IPs kimenet
-Explicit kiválasztja a TV kimenet videó jelhez használt kimenetét.
-.RE
-.PD 1
-.
-.TP
 .B mpegpes (csak DVB)
 Kimeneti videó vezérlõ a DVB kártyákhoz, ami a kimenetet egy MPEG-PES fájlba
 írja, ha nincs DVB kártya telepítve.
@@ -3618,8 +3554,6 @@ l3codeca.acm MP3 codec kényszerítése.
 Elsõsorban libmad, aztán mások használata.
 .IPs "\-ac hwac3,a52,"
 Elõször hardveres AC3 áteresztés, majd szoftveres AC3 codec, végül egyéb használata.
-.IPs "\-ac hwdts,"
-Hardveres DTS áteresztés, majd visszalépés másra.
 .IPs "\-ac -ffmp3,"
 Az FFmpeg MP3 dekóderének letiltása.
 .RE
@@ -3908,6 +3842,14 @@ Nem játszik le/\:kódol videót.
 Sok esetben ez nem mûködik, használd a \-vc null \-vo null opciókat helyette.
 .
 .TP
+.B \-oldpp <minõség> (csak OpenDivX) (ELAVULT)
+Az OpenDivX utófeldolgozó kódját használja a beépített helyett.
+A \-pp az utódja, a beépített utófeldolgozó jobb minõséget és
+teljesítményt nyújt.
+Az \-oldpp értékek helyes tartománya codec-enként változik, legtöbbször
+0\-6, ahol 0=kikapcsolva, 6=leglassabb/\:legjobb.
+.
+.TP
 .B \-pp <minõség> (lásd még \-vf pp)
 A DLL utófeldolgozó szintjét állítja be.
 Ez az opció nem használható a \-vf pp kapcsolóval.
@@ -4017,6 +3959,8 @@ Lásd a \-vc help -et az elérhetõ codec-ek listájáért.
 .RSs
 .IPs "\-vc divx"
 Win32/\:VfW DivX codec kényszerítése, nincs visszalépés.
+.IPs "\-vc divx4,"
+Elõször divx4linux-ot próbál, majd visszalép másra.
 .IPs "\-vc -divxds,-divx,"
 Kihagyja a Win32 DivX codec-eket.
 .IPs "\-vc ffmpeg12,mpeg12,"
@@ -5251,7 +5195,7 @@ Egy vörös, zöld és kék csíkot kell látnod fentrõl lefelé.
 .
 .TP
 .B lavc[=minõség:fps]
-Gyors szoftveres YV12-MPEG-1 konverzió libavcodec-kel DVB/\:DXR3/IVTV-hez.
+Gyors szoftveres YV12-MPEG-1 konverzió libavcodec-kel DVB/\:DXR3-hoz.
 Gyorsabb és jobb minõséget ad, mint a \-vf fame.
 .RSs
 .IPs <minõség>
@@ -5267,7 +5211,7 @@ detektálás a magasság alapján)
 .
 .TP
 .B fame\ \ \ 
-Gyors szoftveres YV12-MPEG-1 konverzió libfame-mel DVB/\:DXR3/IVTV-hez.
+Gyors szoftveres YV12-MPEG-1 konverzió libfame-mel DVB/\:DXR3-hoz.
 .
 .TP
 .B dvbscale[=arány]
@@ -5949,25 +5893,33 @@ kimeneti framerátát.
 Csakúgy mint a telecine szûrõ, a tfields is csak a MEncoder-rel
 mûködik és csak ha az \-fps és \-ofps be van állítva a
 kívánt (dupla) framerátára!
+A használható módok:
 .PD 0
 .RSs
-.IPs <mód>
-0: Változatlanul hagyja a mezõket (ez ugrálni/\:villogni fog).
-.br
-1: Interpolálja a hiányzó sorokat. (A használt algoritmus nem túl jó.)
-.br
-2: Eltolja a mezõket 1/4 pixellel, lineáris interpolációval (nincs ugrás).
-.br
-4: Eltolja a mezõket 1/4 pixellel, 4tap szûrõvel (jobb minõségû) (alapértelmezett).
-.IPs <mezõ_dominancia>
--1: auto (alapértelmezett)
+.IPs 0
+Változatlanul hagyja a mezõket. (Ez ugrálni/\:villogni fog.)
+.IPs 1
+Interpolálja a hiányzó sorokat. (A használt algoritmus nem túl jó.)
+.IPs 2
+Eltolja a mezõket 1/4 pixellel, lineáris interpolációval (nincs ugrás).
+.IPs 4
+Eltolja a mezõket 1/4 pixellel, 4tap szûrõvel (jó minõség). (alapértelmezett)
+.RE
+.PD 1
+.RS
+A használható mezõ dominanciák:
+.RE
+.PD 0
+.RSs
+.IPs -1
+auto (alapértelmezett)
 Csak akkor mûködik, ha a dekódoló exportálja a megfelelõ információkat
 és nincs semmilyen más, ezen információkat eldobó szûrõ betöltve a
 tfields elõtt, különben visszalép 0-ra (felsõ mezõ elõször).
-.br
-0: felsõ elõször
-.br
-1: alsó elõször
+.IPs 0
+felsõ elõször
+.IPs 1
+alsó elõször
 .RE
 .PD 1
 .
@@ -6282,25 +6234,6 @@ A szûrõ nem jelent hátrányt, ha nem használod és elfogad minden
 színteret, így nyugodtan beleírható a konfigurációs fájlba.
 .RE
 .
-.TP
-.B ass\ \ \ \ 
-Az SSA/ASS felirat renderelõt a videó szûrõ lánc egy meghatározott pontjára teszi.
-Csak a \-ass kapcsolóval együtt hasznos.
-.RE
-.
-.TP
-.B blackframe[=mennyiség:küszöb]
-Megkeresi azok a képkockákat, melyek (majdnem) teljesen feketék.
-Fejezetváltások vagy reklámok megkeresésére használható.
-A kimeneti sorok a megtalált képkocka számából, a sötétség százalékos
-értékébõl, a kocka típusából és az utolsó kulcskocka számából állnak.
-.RSs
-.IPs <mennyiség>
-A pixelek százalékos aránya, melyeknek a küszöb alatt kell lenniük (alapértelmezett: 98).
-.IPs <küszöb>
-Határérték, mely alatt egy pixel feketének minõsül (alapértelmezett: 32).
-.RE
-.
 .
 .
 .SH "ÁLTALÁNOS KÓDOLÁSI OPCIÓK (CSAK MENCODER)"
@@ -6516,6 +6449,8 @@ A használható videó codec-ek listája a \-ovc help opcióval kérhetõ le.
 .RSs
 .IPs "\-ovc copy"
 nincs kódolás, csak a folyam másolás
+.IPs "\-ovc divx4"
+Kódolás DivX4/\:DivX5-be.
 .IPs "\-ovc raw"
 Kódolás sajátos, tömörítetlen formátumba ('\-vf format' segítségével választhatsz).
 .IPs "\-ovc lavc"
@@ -6557,8 +6492,86 @@ A codec specifikus kódolási paramétereket a következõ szintaxissal adhatod meg:
 .B \-<codec>opts <opció1[=érték],opció2,...>
 .
 .PP
-Ahol a <codec> lehet: lavc, xvidenc, lame, toolame, twolame,
+Ahol a <codec> lehet: lavc, xvidenc, divx4, lame, toolame, twolame,
 nuv, xvfw, faac, x264enc, mpeg, lavf.
+.
+.
+.SS divx4 (\-divx4opts)
+.
+A DivX4 idejétmúlt és csak a teljesség kedvéért támogatott.
+A DivX4 opcióinak részleteihez nézd meg a forrást, a legtöbb opció nincs itt leírva.
+.
+.TP
+.B help\ \ \ 
+segítség kiírása
+.
+.TP
+.B br=<érték>
+Bitráta megadása.
+.RSs
+.IPs 4\-16000
+(kbit-ben)
+.IPs 16001\-24000000
+(bit-ben)
+.RE
+.
+.TP
+.B key=<érték>
+maximális távolság a kulcs képkockák között (képkockában)
+.
+.TP
+.B deinterlace
+Deinterlace bekapcsolása (ne használd, a DivX4 bugos).
+.
+.TP
+.B q=<1\-5>
+minõség (1\-leggyorsabb, 5\-legjobb)
+.
+.TP
+.B min_quant=<1\-31>
+minimális kvantáló
+.
+.TP
+.B max_quant=<1\-31>
+maximális kvantáló
+.
+.TP
+.B rc_period=<érték>
+rate control periódus
+.
+.TP
+.B rc_reaction_period=<érték>
+rate control reakció periódus
+.
+.TP
+.B rc_reaction_ratio=<érték>
+rate control reakció arány
+.
+.TP
+.B crispness=<0\-100>
+Élesség/\:elmosás mértéke.
+.
+.TP
+.B pass=<1\-2>
+Ezzel tudsz két lépésben kódolni DivX4 fájlokat.
+Elõször kódolj a pass=1-gyel, majd végezz még egy kódolást ugyan azokkal
+a paraméterekkel és pass=2-vel.
+.
+.TP
+.B vbrpass=<0\-2>
+A pass opció felülbírálása és a DivX4 VBR-je helyett az XviD VBR használata.
+A rendelkezésre álló opciók:
+.PD 0
+.RSs
+.IPs 0
+egy menetes kódolás (egyenértékû az opció elhagyásával)
+.IPs 1
+Analizáló (elsõ) lépés két lépéses kódolásban.
+Az eredmény AVI fájl átirányítható a /dev/\:null-ra.
+.IPs 2
+Végsõ (második) lépés a két lépéses kódolásban.
+.RE
+.PD 1
 .
 .
 s.SS lame (\-lameopts)

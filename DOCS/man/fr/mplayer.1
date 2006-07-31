@@ -1,7 +1,8 @@
-.\" synced with r19233
+.\" synced with r18656
 .\" MPlayer (C) 2000-2006 MPlayer Team
 .\" The English man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .\" Traduction: Guillaume POIRIER < poirierg AT gmail.com >,
+.\"             Nicolas Le Gaillart < nicolas AT legaillart.com >
 .
 .\" --------------------------------------------------------------------------
 .\" Définition des macros
@@ -84,13 +85,6 @@ mencoder \- Encodeur vidéo
 .B mplayer
 'in +\n[.k]u
 .I tv://[canal]
-[options]
-.
-.br
-.in
-.B mplayer
-'in +\n[.k]u
-.I pvr://
 [options]
 .
 .br
@@ -205,7 +199,7 @@ DirectFB, Quartz, Mac OS X CoreVideo, mais vous pouvez aussi utiliser
 GGI, SDL (et de cette façon tous leurs drivers), VESA (sur n'importe 
 quelle carte compatible VESA, même sans X11), quelques drivers spécifiques à
 certaines cartes (pour Matrox, 3dfx et ATI) et certaines cartes de
-décompression MPEG, telles que les Siemens DVB, Hauppauge PVR (IVTV), DXR2 et DXR3/\:Hollywood+.
+décompression MPEG, telles que les Siemens DVB, DXR2 et DXR3/\:Hollywood+.
 La plupart d'entre eux gèrent le redimensionnement logiciel ou
 matériel, vous pouvez donc apprécier les films en plein-écran.
 .PP
@@ -767,10 +761,10 @@ configuration \--enable-crash-debug.
 .
 .TP
 .B \-edlout <nomfichier>
-Créé un nouveau fichier et y écrit les commandes d'édition de la liste
-de décision (EDL).
-Durant la lecture, la touche 'i' permet de marquer le début ou la fin d'un
-bloc à sauter.
+Créé un nouveau fichier et écrit les enregistrements d'édition de la liste
+de décision (EDL) dans ce fichier.
+Durant la lecture, quand l'utilisateur tape 'i', une entrée à sauter
+après les deux dernières secondes de la lecture est écrite dans ce fichier.
 Cela fournit un point de départ depuis lequel l'utilisateur peut régler
 plus finement les entrées EDL plus tard.
 Voir DOCS/\:HTML/\:fr/\:edl.html pour les détails.
@@ -1267,7 +1261,7 @@ Dit à MPlayer de lire les canaux depuis <nom_fichier>.
 type de carte) ou ~/.mplayer/\:channels.conf en dernier recours.
 .IPs timeout=<1\-30>
 Nombre maximal de secondes à attendre lors des tentatives de synthonisation
-à la bonne fréquence avant d'abandonner (par défaut\ : 30).
+du transpondeur avant d'abandonner (par défaut\ : 3).
 .RE
 .PD 1
 .
@@ -1361,9 +1355,9 @@ Les options disponibles sont:
 .PD 0
 .RSs
 .IPs w=<valeur>
-largeur de l'entrée (par défaut\ : autodétection)
+largeur de la sortie (par défaut\ : autodétection)
 .IPs h=<valeur>
-hauteur de l'entrée (par défaut autodétection)
+hauteur de la sortie (par défaut autodétection)
 .IPs fps=<valeur>
 fps de la sortie (par défaut\ : 25)
 .IPs type=<valeur>
@@ -1408,75 +1402,6 @@ Se rabat automatiquement sur IPv6.
 .B \-prefer-ipv6 (réseau IPv6 uniquement)
 Utilise IPv4 pour les connections réseau.
 Se rabat automatiquement sur IPv4.
-.
-.TP
-.B \-pvr <option1:option2:...> (carte PVR uniquement)
-Cette option permet le réglage de différentes propriétés d'enregistrement du
-module de capture des cartes PVR (ou IVTV, telles que les
-Hauppauge WinTV PVR\-150/250/350/500).
-Pour procéder à la capture matérielle au format MPEG ainsi qu'à sa
-visualisation via MPlayer/MEncoder, utilisez 'pvr://' comme URL de film.
-.sp 1
-Les options disponibles sont :
-.RSs
-.IPs aspect=<1\-4>
-Spécifie un format visuel pour l'entrée vidéo (la valeur par défaut est 4:3) :
-.RSss
-1: 1:1
-.br
-2: 4:3
-.br
-3: 16:9
-.br
-4: 2.21:1
-.REss
-.IPs arate=<32000\-48000>
-Spécifie le taux d'échantillonnage de l'encodeur audio (la valeur par défaut
-est de 48000 Hz, et sont disponibles 32000, 44100 et 48000 Hz).
-.IPs alayer=<1\-2>
-Spécifie le niveau d'encodage MPEG audio (par défaut la couche 2).
-.IPs abitrate=<32\-448>
-Spécifie le taux binaire d'encodage audio en kbps (par défaut 384 kbps).
-.IPs amode=<value>
-Spécifie le mode d'encodage audio.
-Les différentes valeurs disponibles sont 'stereo', 'joint_stereo', 'dual'
-et 'mono'.
-La valeur par défaut est le Stéréo.
-.IPs vbitrate=<value>
-Spécifie le taux binaire moyen d'encodage vidéo.
-La valeur par défaut est de 6 Mbps. 
-.IPs vmode=<0\-1>
-Spécifie le mode d'encodage vidéo (par défaut en VBR) :
-.RSss
-0: VBR
-.br
-1: CBR
-.REss
-.IPs vpeak=<value>
-Spécifie le taux binaire maximum d'encodage vidéo (utile uniquement dans le
-cas du mode VBR).
-La valeur par défaut est de 9.6 Mbps. 
-.IPs fmt=<value>
-Détermine le format MPEG utilisé pour l'encodage (MPEG PS par défaut):
-.RSss
-ps:    MPEG PS
-.br
-ts:    MPEG TS (expérimental, peut échouer)
-.br
-mpeg1: MPEG 1
-.br
-vcd:   Video CD
-.br
-svcd:  Super Video CD
-.br
-dvd:   DVD
-.br
-dvds1: DVD Région 1 (NTSC)
-.br
-dvds2: DVD Région 2 (PAL)
-.REss
-.RE
-.PD 1
 .
 .TP
 .B \-rawaudio <option1:option2:...>
@@ -1540,21 +1465,11 @@ Joue un morceau de vidéo YUV.
 .PD 1
 .
 .TP
-.B \-rtsp-port
+.B \-rtsp-port (LIVE555 uniquement)
 Utilisé avec 'rtsp://', URLs pour forcer l'utilisation d'un port particulier
 au niveau du client.
 Cette option peut être utile si vous êtes derrière un routeur et souhaitez
 redistribuer le flux RTSP du serveur vers un client spécifique.
-.
-.TP
-.B \-rtsp-destination
-Utilisé avec les URLs de type 'rtsp://', permet de forcer l'addresse IP de
-destination qui doit être utilisée.
-Cette option peut s'avérer utile lorsque le serveur RTSP n'envoit pas les
-paquets RTP vers la bonne interface.
-Si la connection au serveur RTSP échoue, utilisez l'option \-v pour connaître
-l'adresse IP auto-détectée par MPlayer et tentez de la remplacer par celle
-d'une de vos interfaces par le biais de cette option.
 .
 .TP
 .B \-rtsp-stream-over-tcp (LIVE555 uniquement)
@@ -1626,7 +1541,7 @@ présent) vous voulez lire.
 Peut être utilisé avec \-vid et \-aid.
 .
 .TP
-.B \-tv <option1:option2:...> (TV/PVR uniquement)
+.B \-tv <option1:option2:...> (TV uniquement)
 Cette option active les facultés de capture TV de MPlayer.
 Pour regarder la TV avec MPlayer, utilisez 'tv://' ou 'tv://<numéro_canal>'
 ou même 'tv://<nom_canal>' (voir l'option channels pour numéro_canal
@@ -1792,35 +1707,9 @@ Pour lire un flux MPEG-TS, MPlayer/\:MEncoder utilisera le premier programme
 Force les paramètres audio du démultiplexeur VIVO (pour débogage).
 .
 .
-.SH "OPTIONS OSD/SOUS-TITRES"
+.SH "OPTIONS OSD/SUB"
 .I NOTE:
 Voir également \-vf expand.
-.
-.TP
-.B \-ass (FreeType uniquement)
-Active le rendu des sous-titres SSA/ASS.
-Avec cette option, libass sera utilisé pour les fichiers de
-sous-titres et ceux contenus dans les pistes Matroska.
-Fonctionne avec \-embeddedfonts.
-.
-.TP
-.B \-ass-font-scale <valeur>
-Définit le coefficient de mise à l'échelle lors du rendu des polices
-pour les sous-titres SSA/ASS.
-.
-.TP
-.B \-ass-line-spacing <value>
-Définit la tailles des espaces pour le rendu SSA/ASS.
-.
-.TP
-.B \-ass-top-margin <value>
-Ajoute une bande noire en haut de la trame.
-Les titres y seront affichés lors du rendu SSA/ASS.
-.
-.TP
-.B \-ass-bottom-margin <value>
-Adds a black band at the bottom of the frame.
-The SSA/ASS renderer will place subtitles there.
 .
 .TP
 .B \-dumpjacosub (MPlayer uniquement)
@@ -1857,17 +1746,12 @@ sous-titres SRT dont les fins de ligne sont Unix.
 Si vous avez la malchance de posséder un tel matériel, transformez votre
 sous-titre avec unix2dos ou un programme similaire pour remplacer les fins
 de lignes avec des fins de ligne DOS/Windows.
+
 .
 .TP
 .B \-dumpsub (MPlayer uniquement) (CODE BÉTA)
 Extrait les sous-titres d'un flux VOB.
 Voir également les options \-dump*sub et \-vobsubout*.
-.
-.TP
-.B \-embeddedfonts (FreeType uniquement)
-Active l'extraction des polices embarquées dans les fichiers Matroska.
-Ces polices peuvent être utilisées pour l'affichage des sous-titres
-SSA/ASS (option \-ass).
 .
 .TP
 .B \-ffactor <nombre>
@@ -2497,22 +2381,8 @@ disponibles.
 pilote de sortie de la Créative DXR2
 .
 .TP
-.B ivtv (IVTV uniquement)
-pilote de sortie MPEG audio des cartes IVTV.
-Ne fonctionne qu'avec l'option \-ac hwmpa.
-.
-.TP
 .B mpegpes (DVB uniquement)
-Pilote de sortie pour cartes DVB qui re-diriche sa sortie dans un
-fichier MPEG-PES si aucune carte DVB n'est installée.
-.PD 0
-.RSs
-.IPs card=<1\-4>
-Carte DVB à utiliser si plus qu'une carte est présente.
-.IPs file=<filename>
-fichier de sortie
-.RE
-.PD 1
+Pilote de sortie spécifique à DVB.
 .
 .TP
 .B null\ \ \ 
@@ -3408,40 +3278,30 @@ Cette méthode est rapide mais inexacte.
 table de lookup.
 Nécessite l'extension GL_ARB_fragment_program et au moins 4 unités de
 texture.
-Extrèmement lent (émulation logicielle) avec certaines (toutes?) cartes
-ATI puisque cela utilise des textures pour les pixels en bordure.
 Permet le contrôle de la luminosité, du contraste, de la saturation, de
 la teinte et du gamma.
 Le gamma du rouge, vert et bleu peut aussi être ajusté indépendement.
 La vitesse de ce type de conversion dépend plus de la bande passante
 de la carte vidéo que les autres méthodes.
 .RE
-.IPs lscale=<n>
-Sélection de la fonction de mise à l'échelle à utiliser pour la luminance.
-Valide uniquement pour les modes yuv 2, 3, 4 et 6.
+.IPs [l|c]scaler=<n>
+Sélection de la fonction de mise à l'échelle à utiliser (pour le luma
+et le chroma séparément).
+Valide uniquement pour les modes yuv 2, 3 et 4.
 .RSss
 0: Utilise un simple fitrage linéraire (par défaut)
 .br
 1: Utilise un fitrage bicubique (meilleure qualité).
-Nécessite une unité de texture supplémentaire.
 Les cartes plus anciennes ne pourront pas gérer le chroma, tout du moins
 pas en mode plein écran.
+Nécessite une unité de texture supplémentaire.
 .RE
-.IPs cscale=<n>
-Sélection de la fonction de mise à l'échelle à utiliser pour la chrominance.
-Pour plus de détails, voir lscale.
-.
 .IPs customprog=<nom_fichier>
 Charge un programme fragment personnalisé depuis <nom_fichier>.
 Voir l'exemple TOOLS/edgedect.fp.
 .IPs customtex=<nom_fichier>
 Charge une texture "gamma ramp" personnalisée depuis <nom_fichier>.
 Peut être utilisé en même temps que yuv=4 ou avec l'option customprog.
-.IPs (no)customtlin
-Utilise l'interpolation GL_LINEAR (par défaut), sinon utilise
-GL_NEAREST comme texture customtex.
-.IPs (no)customtrect
-Utilise texture_rectangle comme texture customtex.
 .REss
 .RE
 .PD 1
@@ -3687,24 +3547,6 @@ em8300.
 .PD 1
 .
 .TP
-.B ivtv (IVTV uniquement)
-Pilote de sortie vidéo spécifique pour les chipsets de décodage MPEG
-Conexant CX23415 (iCompression  iTVC15) et Conexant CX23416
-(iCompression  iTVC16) présents sur les cartes
-Hauppauge WinTV PVR-150/250/350/500.
-Voir aussi le filtre vidéo lavc.
-.PD 0
-.RSs
-.IPs device
-Choisit explicitement le périphérique de décodage MPEG à utiliser
-(par défaut\ : /dev/\:video16).
-.IPs output
-Choisit explicitement le type de connecteur signal vidéo à utiliser
-pour la sortie TV.
-.RE
-.PD 1
-.
-.TP
 .B mpegpes (DVB uniquement)
 Pilote de sortie vidéo pour cartes DVB permettant l'écriture au format
 MPEG-PES dans un fichier si aucune carte DVB n'est installée.
@@ -3714,7 +3556,7 @@ MPEG-PES dans un fichier si aucune carte DVB n'est installée.
 Défini le numéro de périphérique à utiliser si vous avez plus d'une carte
 DVB (API V3 uniquement, comme la série de pilotes 1.x.y).
 .IPs <nom_fichier>
-nom du fichier de sortie (par défaut\ : ./grab.mpg)
+Définit le nom du fichier de sortie (par défaut\ : ./grab.mpg).
 .RE
 .PD 1
 .
@@ -3922,8 +3764,6 @@ Essaie d'abord libmad, puis se rabat sur les autres.
 .IPs "\-ac hwac3,a52,"
 Essaie le transfert matériel AC3 (vers un décodeur externe par ex.\&),
 le codec logiciel AC3, puis les autres.
-.IPs "\-ac hwdts,"
-Essaye le transfert matériel DTS, puis se rabat sur les autres.
 .IPs "\-ac -ffmp3,"
 Essaie tous les codecs excepté le décodeur MP3 de FFmpeg.
 .RE
@@ -4225,6 +4065,14 @@ Dans bien des cas, cela ne fonctionnera pas, utilisez à la place \-vc null
 \-vo null.
 .
 .TP
+.B \-oldpp <qualité> (OpenDivX uniquement) (OBSOLÈTE)
+Utilise le code de post-traitement d'OpenDivX au lieu de l'interne.
+À ne plus utiliser au profit de \-pp, car le postprocessing interne offre
+une meilleure qualité visuelle et de meilleures performances.
+L'intervalle valide des valeurs de \-oldpp varie suivant le codec, il est
+la plupart du temps 0\-6, où 0=désactive 6=plus lent/\:meilleur.
+.
+.TP
 .B \-pp <qualité> (voir aussi \-vf pp)
 Initialise le niveau de post-traitement de la DLL.
 Cette option n'est plus utilisable avec \-vf pp.
@@ -4339,6 +4187,8 @@ Voir \-vc help pour une liste complète des codecs disponibles.
 .RSs
 .IPs "\-vc divx"
 Force le codec DivX Win32/\:VfW, sans rabattement.
+.IPs "\-vc divx4,"
+Essaie d'abord le codec divx4linux, puis se rabat sur les autres.
 .IPs "\-vc -divxds,-divx,"
 Essaie les autres codecs excepté les codecs DivX Win32.
 .IPs "\-vc ffmpeg12,mpeg12,"
@@ -4723,7 +4573,7 @@ trop haut.
 .PD 1
 .
 .TP
-.B pan=n[:L01:L02:...L10:L11:L12:...Ln0:Ln1:Ln2:...]
+.B pan=n[:l01:l02:...l10:l11:l12:...ln0:ln1:ln2:...]
 Mixe les canaux arbitrairement.
 Il s'agit d'une combinaison du filtre volume et channels pouvant être
 utilisé pour mixer plusieurs canaux dans seulement quelques-uns, par
@@ -4738,7 +4588,7 @@ Un exemple de mixage de six canaux vers deux à l'aide de ce filtre peut
 .RSs
 .IPs <n>\ \ 
 nombre de canaux de sortie (1\-6)
-.IPs <Lij>
+.IPs <lij>
 Combien du canal i est mixé dans le canal de sortie j (0\-1).
 En principe, vous avez un nombre spécifiant ce que faire avec le premier
 canal d'entrée, et un nombre agissant sur le canal d'entrée, etc.
@@ -5170,7 +5020,7 @@ Retourne de 90 degrés dans le sens anti-horaire et retourne.
 .RE
 .
 .TP
-.B scale[=w:h[:interlaced[:chr_drop[:param[:param2[:presize[:noup[:arnd]]]]]]]]
+.B scale[=w:h[:entrelacé[:chr_drop[:param[:param2[:presize[:noup]]]]]]]
 Redimensionne l'image avec le zoom logiciel (lent) et applique une conversion
 de palette YUV<\->RGB (voir également l'option \-sws).
 .RSs
@@ -5258,14 +5108,6 @@ Interdit le redimensionnement plus grand que les dimensions originales.
 grande que celle d'origine.
 .br
 2: Interdit le redimensionnement plus grand si les deux dimensions deviennent plus grandes que celles d'origine.
-.REss
-.IPs <arnd>
-Arrondi précis pour la mise à l'échelle de l'axe vertical, peut
-être plus rapide ou plus lent que l'arrondi par défaut.
-.RSss
-0: Désactive l'arrondi précis (par défaut).
-.br
-1: Active l'arrondi précis.
 .REss
 .RE
 .
@@ -5636,7 +5478,7 @@ Vous devriez voir une frise rouge, verte et bleue du haut vers le bas.
 .TP
 .B lavc[=qualité:fps]
 Conversion logicielle rapide YV12 vers MPEG-1 avec libavcodec pour utilisation
-avec DVB/\:DXR3/IVTV.
+avec DVB/\:DXR3.
 Plus rapide et de meilleure qualité que \-vf fame.
 .RSs
 .IPs <qualité>
@@ -5653,7 +5495,7 @@ force le nombre de trames par seconde en sortie (nombre flottant)
 .TP
 .B fame\ \ \ 
 Conversion logicielle rapide YV12 vers MPEG-1 avec libfame pour utilisation avec
-DVB/\:DXR3/IVTV.
+DVB/\:DXR3.
 .
 .TP
 .B dvbscale[=aspect]
@@ -6369,30 +6211,37 @@ Séparation temporelle des champs \- sépare les champs en trames, doublant le
 débit de sortie.
 Comme le filtre telecine, "tfields" ne fonctionnera correctement qu'avec
 MEncoder, et seulement si \-fps et \-ofps sont définis au débit (double) désiré!
+Les modes disponibles sont:
 .PD 0
 .RSs
-.IPs <mode>
-0: Laisse les champs inchangés. (Cela va sauter/\:scintiller.)
-.br
-1: Interpole les lignes manquantes. (L'algorithme utilisé peut ne pas être si
+.IPs 0
+Laisse les champs inchangés. (Cela va sauter/\:scintiller.)
+.IPs 1
+Interpole les lignes manquantes. (L'algorithme utilisé peut ne pas être si
 bon.)
-.br
-2: Fait une translation de champs de 1/\:4 pixel avec interpolation linéaire
+.IPs 2
+Fait une translation de champs de 1/\:4 pixel avec interpolation linéaire
 (pas de saut).
-.br
-4: Fait une translation de champs de 1/\:4 pixel avec le filtre 4tap (meilleure
+.IPs 4
+Fait une translation de champs de 1/\:4 pixel avec le filtre 4tap (meilleure
 qualité) (par défaut).
-.
-.IPs <dominances de champs>
--1: auto (par défaut)
+.RE
+.PD 1
+.RS
+Les dominances de champs disponibles sont\ :
+.RE
+.PD 0
+.RSs
+.IPs -1
+auto (par défaut)
 Ne fonctionne que si le décodeur exporte les informations nécessaires
 et que les filtres de la chaîne de filtres appliqués avant tfields
 ne supriment pas cette information, sinon on commence par défaut
 par le champ du haut.
-.br
-0: champ du haut d'abord
-.br
-1: champ du bas d'abord
+.IPs 0
+champ du haut d'abord
+.IPs 1
+champ du bas d'abord
 .RE
 .PD 1
 .
@@ -6722,27 +6571,6 @@ tous les espaces de couleur, donc ça ne pose pas de problème de l'ajouter par
 défaut dans votre fichier de configuration.
 .RE
 .
-.TP
-.B ass\ \ \ \ 
-Déplace le rendu des sous-titres SSA/ASS à une position arbitraire dans
-la chaîne de filtrage.
-Utile uniquement pour l'option \-ass.
-.RE
-.
-.TP
-.B blackframe[=quantité:seuil]
-Détecte les trames qui sont (presque) complètement noires.
-Peut être utilise pour détecter les fins de chapitres ou les pubs.
-Le format de sortie consiste en le numéro de la trame détectée,
-le pourcentage de noir, le type de trame, et le numéro de trame de
-la dernière trame-clée rencontrée.
-.RSs
-.IPs <quantité>
-Pourcentage de pixels qui doivent être sous le seuil (par défaut: 98).
-.IPs <seuil>
-Seuil en dessous duquel un pixel est considéré comme noir (par défaut: 32)
-.RE
-.
 .
 .SH "OPTIONS D'ENCODAGE GÉNÉRALES (MENCODER UNIQUEMENT)"
 .
@@ -6974,6 +6802,8 @@ Pour obtenir la liste complète des codecs disponibles, voir \-ovc help.
 .RSs
 .IPs "\-ovc copy"
 pas d'encodage, juste une copie du flux
+.IPs "\-ovc divx4"
+Encode en DivX4/\:DivX5.
 .IPs "\-ovc raw"
 Encode dans un format non-compressé arbitraire (que vous sélectionnez
 avec '\-vf format').
@@ -7018,8 +6848,87 @@ la syntaxe ci-dessous\ :
 .B \-<codec>opts <option1[=valeur],option2,...>
 .
 .PP
-Où <codec> peut être: lavc, xvidenc, lame, toolame, twolame,
+Où <codec> peut être: lavc, xvidenc, divx4, lame, toolame, twolame,
 nuv, xvfw, faac, x264enc, mpeg, lavf.
+.
+.
+.SS divx4 (\-divx4opts)
+.
+DivX4 est obsolète et n'est géré que par soucis d'exhaustivité.
+Pour avoir des détails sur les options DivX4, lisez les sources, la plupart
+des options ne sont pas documentées ici.
+.
+.TP
+.B help\ \ \ 
+obtenir l'aide
+.
+.TP
+.B br=<valeur>
+Définit le débit binaire (bitrate)
+.IPs 4\-16000
+(en kbits)
+.IPs 16001\-24000000
+(en bits)
+.RE
+.
+.TP
+.B key=<valeur>
+intervalle maximal entre deux trames-clé (en trames)
+.
+.TP
+.B deinterlace
+Active le désentrelacement (à éviter, DivX4 est boggué).
+.
+.TP
+.B q=<1\-5>
+qualité (1 \- plus rapide, 5 \- meilleur)
+.
+.TP
+.B min_quant=<1\-31>
+quantum minimal
+.
+.TP
+.B max_quant=<1\-31>
+quantum maximal
+.
+.TP
+.B rc_period=<valeur>
+période de contrôle du débit
+.
+.TP
+.B rc_reaction_period=<valeur>
+période de réaction de contrôle du débit
+.
+.TP
+.B rc_reaction_ratio=<valeur>
+rapport de réaction de contrôle du débit
+.
+.TP
+.B crispness=<0\-100>
+Définit la dureté/\:douceur.
+.
+.TP
+.B pass=<1\-2>
+Permet d'encoder des fichiers DivX4 en 2 passes.
+Encodez d'abord avec pass=1, puis encodez avec les mêmes paramètres et pass=2.
+.
+.TP
+.B vbrpass=<0\-2>
+Outrepasse l'argument \-pass et utilise la librairie VBR XviD au lieu
+du VBR DivX4.
+Les options disponibles sont\ :
+.PD 0
+.
+.RSs
+.IPs 0
+encodage une passe (comme en ne mettant pas \-pass en ligne de commande)
+.IPs 1
+(Première) passe d'analyse de l'encodage deux passes.
+Le fichier AVI de destination peut être redirigé vers /dev/\:null.
+.IPs 2
+(Seconde) passe finale de l'encodage deux passes.
+.RE
+.PD 1
 .
 .
 .SS lame (\-lameopts)

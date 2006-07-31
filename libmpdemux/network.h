@@ -26,7 +26,7 @@
 #define BUFFER_SIZE		2048
 
 typedef struct {
-	const char *mime_type;
+	char *mime_type;
 	int demuxer_type;
 } mime_struct_t;
 

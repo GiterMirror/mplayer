@@ -13,7 +13,7 @@ struct m_option;
 /// Struct definition
 typedef struct m_struct_st {
   /// For error messages and debugging
-  const char* name;
+  char* name;
   /// size of the whole struct
   unsigned int size;
   /// Pointer to a struct filled with the default settings
@@ -78,7 +78,7 @@ m_struct_set(m_struct_t* st, void* obj, char* field, char* param);
  *  \param field Name of the field to reset, if NULL all fields are reseted.
  */
 void
-m_struct_reset(m_struct_t* st, void* obj, const char* field);
+m_struct_reset(m_struct_t* st, void* obj, char* field);
 
 /// Create a copy of an existing struct.
 /** \param st Struct definiton.
@@ -101,7 +101,7 @@ m_struct_free(m_struct_t* st, void* obj);
  *  \return The \ref m_option struct describing the field or NULL if not found.
  */
 struct m_option*
-m_struct_get_field(m_struct_t* st,const char* f);
+m_struct_get_field(m_struct_t* st,char* f);
 
 ///@}
 

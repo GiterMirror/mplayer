@@ -1,13 +1,13 @@
 /*
  * mm_accel.h
- * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2001 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
  * See http://liba52.sourceforge.net/ for updates.
  *
  * Modified for use with MPlayer, changes contained in liba52_changes.diff.
- * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
+ * detailed CVS changelog at http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  *
  * a52dec is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #define MM_ACCEL_H
 
 /* generic accelerations */
-#define MM_ACCEL_DJBFFT		0x00000001
+#define MM_ACCEL_MLIB		0x00000001
 
 /* x86 accelerations */
 #define MM_ACCEL_X86_MMX	0x80000000

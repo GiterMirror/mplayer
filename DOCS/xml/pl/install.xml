@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- synced with r19087 -->
-<!-- Opiekun: brak (poprzednio Paszczi) -->
-<chapter id="install">
+<!-- synced with 1.58 -->
+<sect1 id="install">
 <title>Instalacja</title>
 
 <para>
@@ -23,7 +22,8 @@ Zajmie to trochę czasu, ale z pewnością JEST tego warte.
 Potrzebujesz dość nowego sprzętu. Jeśli używasz Linuksa, zalecane są jądra z serii 2.4.x.
 </para>
 
-<sect1 id="softreq">
+
+<sect2 id="softreq">
 <title>Wymagania sprzętowe</title>
 
 <itemizedlist>
@@ -98,7 +98,7 @@ Potrzebujesz dość nowego sprzętu. Jeśli używasz Linuksa, zalecane są jądra z ser
   dźwięku OGG Vorbis.
   </para></listitem>
 <listitem><para>
-<emphasis role="bold"><ulink url="http://www.live555.com/mplayer/">LIVE.COM Streaming Media</ulink></emphasis>
+  <emphasis role="bold"><ulink url="http://www.live.com/mplayer/">LIVE.COM Streaming Media</ulink></emphasis>
   - opcjonalna, wymagana do odtwarzania strumieni RTSP/RTP.
   </para></listitem>
 <listitem><para>
@@ -135,10 +135,10 @@ Potrzebujesz dość nowego sprzętu. Jeśli używasz Linuksa, zalecane są jądra z ser
   skryptu <filename>./configure</filename>.
   </para></listitem>
 </itemizedlist>
-</sect1>
+</sect2>
 
 
-<sect1 id="installation_codecs">
+<sect2>
 <title>Kodeki</title>
 
 <itemizedlist>
@@ -197,7 +197,28 @@ Potrzebujesz dość nowego sprzętu. Jeśli używasz Linuksa, zalecane są jądra z ser
   <emphasis role="bold">Kodeki QuickTime</emphasis>: na platformach x86 te kodeki
   mogą być użyte do dekodowania RPZA, innych sekwencji video QuickTime i
   strumieni audio QDesign. Instrukcję instalacji możesz znaleźć w rozdziale
-  <link linkend="sorenson">kodeki video Sorenson</link>.
+  <link linkend="sorenson">kodek video Sorenson</link>.
+  </para></listitem>
+<listitem><para>
+  <emphasis role="bold">DivX4/DivX5</emphasis>: informacje o tym kodeku są dostępne
+  w rozdziale <link linkend="divx4-5">DivX4/DivX5</link>. Prawdopodobnie, nie chcesz
+  tego kodeka jako, że <emphasis role="bold"><systemitem class="library">libavcodec</systemitem></emphasis>
+  (zobacz powyżej) jest o wiele szybszy i ma lepszą jakość, zarówno dla dekodowania i
+  kodowania. Cechy:
+  <itemizedlist>
+  <listitem><simpara>
+    1 lub 2 przebiegowe kodowanie przy pomocy <link linkend="mencoder">
+    <application>MEncodera</application></link>
+    </simpara></listitem>
+  <listitem><simpara>
+    może odtwarzać stare filmy <emphasis role="bold">DivX3</emphasis> znacznie szybciej
+    niż biblioteki Win32 DLL, ale wolniej niż
+    <emphasis role="bold"><systemitem class="library">libavcodec</systemitem></emphasis>!
+    </simpara></listitem>
+  <listitem><simpara>
+    ma zamknięte źródło i dostępna jest tylko wersja na x86.
+    </simpara></listitem>
+  </itemizedlist>
   </para></listitem>
 <listitem><para>
   <emphasis role="bold">XviD</emphasis>: Alternatywa do kodowania dla DivX4Linux
@@ -238,10 +259,10 @@ Potrzebujesz dość nowego sprzętu. Jeśli używasz Linuksa, zalecane są jądra z ser
   znajdziesz tam instrukcje i kilka informacji.
   </para></listitem>
 </itemizedlist>
-</sect1>
+</sect2>
 
 
-<sect1 id="video-cards">
+<sect2 id="video-cards">
 <title>Karty graficzne</title>
 
 <para>
@@ -251,7 +272,7 @@ te drugie nie.
 </para>
 
 
-<sect2 id="yuv-cards">
+<sect3 id="yuv-cards">
 <title>Karty YUV</title>
 
 <para>
@@ -333,10 +354,10 @@ zoomie), dlatego też tryb pełnego ekranu jest miły i bardzo szybki.
   </para></listitem>
 </itemizedlist>
 </para>
-</sect2>
+</sect3>
 
 
-<sect2 id="non-yuv-cards" xreflabel="Karty nieobsługujące YUV">
+<sect3 id="non-yuv-cards" xreflabel="Karty nieobsługujące YUV">
 <title>Karty nieobsługujące YUV</title>
 
 <para>
@@ -363,10 +384,10 @@ działa ona z następującymi sterownikami:
   </simpara></listitem>
 </itemizedlist>
 </para>
-</sect2>
+</sect3>
 
 <!-- FIXME: find a more logical organization for this section -->
-<sect2 id="cirrus-logic-cards" xreflabel="Cirrus-Logic cards">
+<sect3 id="cirrus-logic-cards" xreflabel="Cirrus-Logic cards">
 <title>Karty Cirrus-Logic</title>
 <itemizedlist>
 <listitem><para>
@@ -398,11 +419,11 @@ działa ona z następującymi sterownikami:
 </itemizedlist>
 </para></listitem>
 </itemizedlist>
+</sect3>
 </sect2>
-</sect1>
 
 
-<sect1 id="sound-cards">
+<sect2 id="sound-cards">
 <title>Karty dźwiękowe</title>
 
 <itemizedlist>
@@ -424,9 +445,10 @@ działa ona z następującymi sterownikami:
   sekcję <link linkend="audio">karty dźwiękowe</link>!</emphasis>
   </simpara></listitem>
 </itemizedlist>
-</sect1>
+</sect2>
 
-<sect1 id="features">
+
+<sect2>
 <title>Możliwości</title>
 
 <itemizedlist>
@@ -511,7 +533,7 @@ rozdział <link linkend="subosd">Napisy i OSD</link> dla uzyskania bardziej
 szczegółowych informacji.
 </para>
 
-
+</sect2>
 </sect1>
 
 <!-- ********** -->
@@ -520,7 +542,7 @@ szczegółowych informacji.
 <title>A co z GUI?</title>
 
 <para>
-GUI wymaga biblioteki GTK 1.2.x lub GTK 2.0 (nie jest w pełni w GTK, ale jego panele są).
+GUI wymaga biblioteki GTK 1.2.x (nie jest w pełni w GTK, ale jego panele są).
 Skórki przechowywane są w formacie PNG, tak więc GTK, <systemitem class="library">libpng</systemitem>
 (i ich pakiety rozwojowe, zazwyczaj nazwane <systemitem class="library">gtk-dev</systemitem>
 i <systemitem class="library">libpng-dev</systemitem>) muszą być zainstalowane.
@@ -959,4 +981,3 @@ Istnieje możliwość przejęcia praw superużytkownika.
 </para></note>
 </para>
 </sect1>
-</chapter>

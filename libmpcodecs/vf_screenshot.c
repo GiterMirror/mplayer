@@ -1,4 +1,5 @@
 #include "config.h"
+#ifdef HAVE_PNG
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +23,8 @@
 #include "vf_scale.h"
 
 #include "libvo/fastmemcpy.h"
-#include "libswscale/swscale.h"
+#include "postproc/swscale.h"
+#include "postproc/rgb2rgb.h"
 
 struct vf_priv_s {
     int frameno;
@@ -87,7 +89,7 @@ static void write_png(char *fname, unsigned char *buffer, int width, int height,
         
     png_set_bgr(png_ptr);
 
-    row_pointers = malloc(height*sizeof(png_byte*));
+    row_pointers = (png_byte**)malloc(height*sizeof(png_byte*));
     for (k = 0; k < height; k++) {
 	unsigned char* s=buffer + stride*k;
 	row_pointers[k] = s;
@@ -298,3 +300,5 @@ vf_info_t vf_info_screenshot = {
 };
 
 //===========================================================================//
+
+#endif /* HAVE_PNG */

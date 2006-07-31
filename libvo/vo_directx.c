@@ -35,10 +35,6 @@
 #include "aspect.h"
 #include "geometry.h"
 
-#ifdef HAVE_NEW_GUI
-#include "Gui/interface.h"
-#endif
-
 #ifndef WM_XBUTTONDOWN
 # define WM_XBUTTONDOWN    0x020B
 # define WM_XBUTTONUP      0x020C
@@ -1124,7 +1120,11 @@ static int draw_slice(uint8_t *src[], int stride[], int w,int h,int x,int y )
 	// copy Y
     d=image+dstride*y+x;                
     s=src[0];                           
-    mem2agpcpy_pic(d,s,w,h,dstride,stride[0]);
+    for(i=0;i<h;i++){
+        memcpy(d,s,w);                  
+        s+=stride[0];                  
+        d+=dstride;
+    }
     
 	w/=2;h/=2;x/=2;y/=2;
 	
@@ -1132,13 +1132,21 @@ static int draw_slice(uint8_t *src[], int stride[], int w,int h,int x,int y )
     d=image+dstride*image_height + uvstride*y+x;
     if(image_format == IMGFMT_YV12)s=src[2];
 	else s=src[1];
-    mem2agpcpy_pic(d,s,w,h,uvstride,stride[1]);
+    for(i=0;i<h;i++){
+        memcpy(d,s,w);
+        s+=stride[1];
+        d+=uvstride;
+    }
 	
 	// copy V
     d=image+dstride*image_height +uvstride*(image_height/2) + uvstride*y+x;
     if(image_format == IMGFMT_YV12)s=src[1];
 	else s=src[2];
-    mem2agpcpy_pic(d,s,w,h,uvstride,stride[2]);
+    for(i=0;i<h;i++){
+        memcpy(d,s,w);
+        s+=stride[2];
+        d+=uvstride;
+    }
     return 0;
 }
 
@@ -1247,16 +1255,28 @@ static uint32_t put_image(mp_image_t *mpi){
 			// copy Y
             d=image+dstride*y+x;
             s=mpi->planes[0];
-            mem2agpcpy_pic(d,s,w,h,dstride,mpi->stride[0]);
+            for(i=0;i<h;i++){
+			  memcpy(d,s,w);
+              s+=mpi->stride[0];
+              d+=dstride;
+			}
             w/=4;h/=4;x/=4;y/=4;
     	    // copy V
             d=image+dstride*image_height + dstride*y/4+x;
 	        s=mpi->planes[2];
-            mem2agpcpy_pic(d,s,w,h,dstride/4,mpi->stride[1]);
+		    for(i=0;i<h;i++){
+			  memcpy(d,s,w);
+              s+=mpi->stride[1];
+              d+=dstride/4;
+			}
   	        // copy U
             d=image+dstride*image_height + dstride*image_height/16 + dstride/4*y+x;
 		    s=mpi->planes[1];
-            mem2agpcpy_pic(d,s,w,h,dstride/4,mpi->stride[2]);
+            for(i=0;i<h;i++){
+			  memcpy(d,s,w);
+              s+=mpi->stride[2];
+              d+=dstride/4;
+			}
 		}
 	}
 	else //packed
@@ -1291,13 +1311,6 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
     vo_dx = 0;
     vo_dy = 0;   
 
-#ifdef HAVE_NEW_GUI
-    if(use_gui){
-        vo_dwidth = d_image_width;
-        vo_dheight = d_image_height;
-        guiGetEvent(guiSetShVideo, 0);
-    }
-#endif
     /*release all directx objects*/
     if (g_cc != NULL)g_cc->lpVtbl->Release(g_cc);
     g_cc=NULL;

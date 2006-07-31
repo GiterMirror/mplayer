@@ -1,6 +1,7 @@
 
 #include "config.h"
 
+#ifdef HAVE_VCD
 #include "mp_msg.h"
 #include "stream.h"
 #include "help_mp.h"
@@ -150,3 +151,5 @@ stream_info_t stream_info_vcd = {
   &stream_opts,
   1 // Urls are an option string
 };
+
+#endif

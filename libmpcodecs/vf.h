@@ -43,8 +43,6 @@ typedef struct vf_instance_s {
     void (*draw_slice)(struct vf_instance_s* vf,
         unsigned char** src, int* stride, int w,int h, int x, int y);
     void (*uninit)(struct vf_instance_s* vf);
-
-    void (*continue_buffered_image)(struct vf_instance_s* vf);
     // caps:
     unsigned int default_caps; // used by default query_format()
     unsigned int default_reqs; // used by default config()
@@ -77,7 +75,6 @@ typedef struct vf_seteq_s
 #define VFCTRL_SKIP_NEXT_FRAME 12 /* For encoding - drop the next frame that passes thru */
 #define VFCTRL_FLUSH_FRAMES    13 /* For encoding - flush delayed frames */
 #define VFCTRL_SCREENSHOT      14 /* Make a screenshot */
-#define VFCTRL_EOSD            15 /* Select EOSD renderer */
 
 #include "vfcap.h"
 
@@ -89,15 +86,13 @@ typedef struct vf_seteq_s
 void vf_mpi_clear(mp_image_t* mpi,int x0,int y0,int w,int h);
 mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype, int mp_imgflag, int w, int h);
 
-vf_instance_t* vf_open_plugin(vf_info_t** filter_list, vf_instance_t* next, const char *name, char **args);
-vf_instance_t* vf_open_filter(vf_instance_t* next, const char *name, char **args);
+vf_instance_t* vf_open_plugin(vf_info_t** filter_list, vf_instance_t* next, char *name, char **args);
+vf_instance_t* vf_open_filter(vf_instance_t* next, char *name, char **args);
 vf_instance_t* vf_add_before_vo(vf_instance_t **vf, char *name, char **args);
-vf_instance_t* vf_open_encoder(vf_instance_t* next, const char *name, char *args);
+vf_instance_t* vf_open_encoder(vf_instance_t* next, char *name, char *args);
 
 unsigned int vf_match_csp(vf_instance_t** vfp,unsigned int* list,unsigned int preferred);
 void vf_clone_mpi_attributes(mp_image_t* dst, mp_image_t* src);
-void vf_queue_frame(vf_instance_t *vf, int (*)(vf_instance_t *));
-int vf_output_queued_frame(vf_instance_t *vf);
 
 // default wrappers:
 int vf_next_config(struct vf_instance_s* vf,

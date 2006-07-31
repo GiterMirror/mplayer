@@ -9,6 +9,8 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+#ifdef HAVE_LIBDV095
+
 #include "img_format.h"
 
 #include <libdv/dv.h>
@@ -109,3 +111,6 @@ static int decode_audio(sh_audio_t *audio, unsigned char *buf, int minlen, int m
    }
    return len*2;
 }
+
+#endif
+

@@ -224,7 +224,7 @@ static void uninit(int immed) {
 }
 
 // stop playing and empty buffers (for seeking/pause)
-static void reset(void) {
+static void reset() {
   
   mp_msg(MSGT_AO, MSGL_INFO, MSGTR_AO_SGI_Reset);
   
@@ -232,21 +232,21 @@ static void reset(void) {
 }
 
 // stop playing, keep buffers (for pause)
-static void audio_pause(void) {
+static void audio_pause() {
     
   mp_msg(MSGT_AO, MSGL_INFO, MSGTR_AO_SGI_PauseInfo);
     
 }
 
 // resume playing, after audio_pause()
-static void audio_resume(void) {
+static void audio_resume() {
 
   mp_msg(MSGT_AO, MSGL_INFO, MSGTR_AO_SGI_ResumeInfo);
 
 }
 
 // return: how many bytes can be played without blocking
-static int get_space(void) {
+static int get_space() {
   
   // printf("ao_sgi, get_space: (ao_outburst %d)\n", ao_data.outburst);
   // printf("ao_sgi, get_space: alGetFillable [%d] \n", alGetFillable(ao_port));
@@ -283,7 +283,7 @@ static int play(void* data, int len, int flags) {
 }
 
 // return: delay in seconds between first and last sample in buffer
-static float get_delay(void){
+static float get_delay(){
   
   // printf("ao_sgi, get_delay: (ao_buffersize %d)\n", ao_buffersize);
   

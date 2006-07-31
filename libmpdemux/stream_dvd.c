@@ -25,8 +25,6 @@
 #include "m_option.h"
 #include "m_struct.h"
 
-#include "stream_dvd.h"
-
 /// We keep these 2 for the gui atm, but they will be removed.
 extern int dvd_title;
 extern int dvd_chapter;
@@ -34,6 +32,7 @@ extern int dvd_last_chapter;
 extern char* dvd_device;
 int dvd_angle=1;
 
+#ifdef HAVE_DVD
 #ifdef USE_DVDREAD
 #define	LIBDVDREAD_VERSION(maj,min,micro)	((maj)*10000 + (min)*100 + (micro))
 /*
@@ -52,7 +51,7 @@ int dvd_angle=1;
 
 char * dvd_audio_stream_types[8] = { "ac3","unknown","mpeg1","mpeg2ext","lpcm","unknown","dts" };
 char * dvd_audio_stream_channels[6] = { "mono", "stereo", "unknown", "unknown", "5.1/6.1", "5.1" };
-#endif /* #ifdef USE_DVDREAD */
+#endif
 
 
 static struct stream_priv_s {
@@ -386,7 +385,7 @@ void dvd_close(dvd_priv_t *d) {
   dvd_last_chapter = 0;
 }
 
-#endif /* #ifdef USE_DVDREAD */
+#endif
 
 static int fill_buffer(stream_t *s, char *but, int len)
 {
@@ -832,7 +831,7 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
     stream->priv = (void*)d;
     return STREAM_OK;
   }
-#endif /* #ifdef USE_DVDREAD */
+#endif
   mp_msg(MSGT_DVD,MSGL_ERR,MSGTR_NoDVDSupport);
   m_struct_free(&stream_opts,opts);
   return STREAM_UNSUPORTED;
@@ -849,3 +848,4 @@ stream_info_t stream_info_dvd = {
   &stream_opts,
   1 // Urls are an option string
 };
+#endif

@@ -142,7 +142,7 @@ extern guiInterface_t guiIntfStruct;
 #define guiFilenames	4
 #define guiALL		0xffffffff
 
-extern char *get_path(const char *filename); 
+extern char *get_path(char *filename); 
 
 extern void guiInit( void );
 extern void guiDone( void );
@@ -208,10 +208,10 @@ extern float gtkEquChannels[6][10];
 extern void * gtkSet( int cmd,float param, void * vparam );
 
 extern char * gconvert_uri_to_filename( char * str );
-extern char * gstrdup( const char * str );
-extern int    gstrcmp( const char * a,const char * b );
+extern char * gstrdup( char * str );
+extern int    gstrcmp( char * a,char * b );
 extern void   gfree( void ** p );
-extern void   gaddlist( char *** list,const char * entry );
+extern void   gaddlist( char *** list,char * entry );
 extern char * gstrchr( char * str,int c );
 
 #define guiSetFilename( s,n ) { gfree( (void **)&s ); s=gstrdup( n ); }

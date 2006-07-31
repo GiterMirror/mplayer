@@ -64,8 +64,6 @@ typedef struct {
   // timing (mostly for mpeg):
   double pts;     // predicted/interpolated PTS of the current frame
   double i_pts;   // PTS for the _next_ I/P frame
-  double buffered_pts[20];
-  int num_buffered_pts;
   // output format: (set by demuxer)
   float fps;              // frames per second (set only if constant fps)
   float frametime;        // 1/fps
@@ -91,7 +89,7 @@ typedef struct {
 // demuxer.c:
 sh_audio_t* new_sh_audio(demuxer_t *demuxer,int id);
 sh_video_t* new_sh_video(demuxer_t *demuxer,int id);
-void free_sh_audio(demuxer_t *demuxer, int id);
+void free_sh_audio(sh_audio_t *sh);
 void free_sh_video(sh_video_t *sh);
 
 // video.c:

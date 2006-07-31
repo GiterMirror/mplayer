@@ -8,6 +8,8 @@
 #include "config.h"
 #include "ad_internal.h"
 
+#ifdef HAVE_OGGVORBIS
+
 static ad_info_t info = 
 {
 	"Ogg/Vorbis audio decoder",
@@ -38,7 +40,7 @@ typedef struct ov_struct_st {
 #endif
 } ov_struct_t;
 
-static int read_vorbis_comment( char* ptr, const char* comment, const char* format, ... ) {
+static int read_vorbis_comment( char* ptr, char* comment, char* format, ... ) {
   va_list va;
   int clen, ret;
 
@@ -72,7 +74,7 @@ static int init(sh_audio_t *sh)
   }
 
   /// Init the decoder with the 3 header packets
-  ov = malloc(sizeof(struct ov_struct_st));
+  ov = (struct ov_struct_st*)malloc(sizeof(struct ov_struct_st));
   vorbis_info_init(&ov->vi);
   vorbis_comment_init(&vc);
 
@@ -320,3 +322,6 @@ static int decode_audio(sh_audio_t *sh,unsigned char *buf,int minlen,int maxlen)
 
   return len;
 }
+
+#endif /* !HAVE_OGGVORBIS */
+

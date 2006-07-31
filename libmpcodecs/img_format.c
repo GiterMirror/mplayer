@@ -1,7 +1,7 @@
 #include "config.h"
 #include "img_format.h"
 
-const char *vo_format_name(int format)
+char *vo_format_name(int format)
 {
     switch(format)
     {

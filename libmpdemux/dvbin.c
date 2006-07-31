@@ -5,8 +5,8 @@ dvbstream
 
 The latest version can be found at http://www.linuxstb.org/dvbstream
 
-Modified for use with MPlayer, for details see the changelog at
-http://svn.mplayerhq.hu/mplayer/trunk/
+Modified for use with MPlayer, for details see the CVS changelog at
+http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
 $Id$
 
 Copyright notice:
@@ -69,7 +69,7 @@ static struct stream_priv_s
 }
 stream_defaults =
 {
-	"", 1, "", 0, 0, 30, NULL
+	"", 1, "", 0, 0, 3, NULL
 };
 
 #define ST_OFF(f) M_ST_OFF(struct stream_priv_s, f)
@@ -601,7 +601,21 @@ int dvb_step_channel(dvb_priv_t *priv, int dir)
 		return 0;
 	}
 
-	new_current = (list->NUM_CHANNELS + list->current + (dir == DVB_CHANNEL_HIGHER ? 1 : -1)) % list->NUM_CHANNELS;
+
+	if(dir == DVB_CHANNEL_HIGHER)
+	{
+		if(list->current == list->NUM_CHANNELS-1)
+			new_current=0;
+		else
+			new_current = list->current + 1;
+	}
+	else
+	{
+		if(list->current == 0)
+			new_current=list->NUM_CHANNELS-1;
+		else
+			new_current = list->current - 1;
+	}
 
 	return dvb_set_channel(priv, priv->card, new_current);
 }
@@ -609,7 +623,7 @@ int dvb_step_channel(dvb_priv_t *priv, int dir)
 
 
 
-extern char *get_path(const char *);
+extern char *get_path(char *);
 
 static void dvbin_close(stream_t *stream)
 {
@@ -640,29 +654,33 @@ static int dvb_streaming_start(dvb_priv_t *priv, struct stream_priv_s *opts, int
 	dvb_channel_t *channel = NULL;
 	stream_t *stream  = (stream_t*) priv->stream;
 
-	mp_msg(MSGT_DEMUX, MSGL_V, "\r\ndvb_streaming_start(PROG: %s, CARD: %d, VID: %d, AID: %d, TYPE: %s, FILE: %s)\r\n",
+
+	mp_msg(MSGT_DEMUX, MSGL_INFO, "code taken from dvbstream for mplayer v0.4pre1 - (C) Dave Chapman 2001\n");
+	mp_msg(MSGT_DEMUX, MSGL_INFO, "Released under the GPL.\n");
+	mp_msg(MSGT_DEMUX, MSGL_INFO, "Latest version available from http://www.linuxstb.org/\n");
+	mp_msg(MSGT_DEMUX, MSGL_V, 	  "PROG: %s, CARD: %d, VID: %d, AID: %d, TYPE: %s, FILE: %s\n",
 	    opts->prog, opts->card, opts->vid, opts->aid,  opts->type, opts->file);
 
 	priv->is_on = 0;
 
-	i = 0;
-	while((channel == NULL) && i < priv->list->NUM_CHANNELS)
-	{
-		if(! strcmp(priv->list->channels[i].name, progname))
-			channel = &(priv->list->channels[i]);
+			i = 0;
+			while((channel == NULL) && i < priv->list->NUM_CHANNELS)
+			{
+				if(! strcmp(priv->list->channels[i].name, progname))
+					channel = &(priv->list->channels[i]);
 
-		i++;
-	}
+				i++;
+			}
 
-	if(channel != NULL)
-	{
-		priv->list->current = i-1;
-		mp_msg(MSGT_DEMUX, MSGL_V, "PROGRAM NUMBER %d: name=%s, freq=%u\n", i-1, channel->name, channel->freq);
-	}
-	else
-	{
-		mp_msg(MSGT_DEMUX, MSGL_ERR, "\n\nDVBIN: no such channel \"%s\"\n\n", progname);
-		return 0;
+			if(channel != NULL)
+			{
+				priv->list->current = i-1;
+				mp_msg(MSGT_DEMUX, MSGL_V, "PROGRAM NUMBER %d: name=%s, freq=%u\n", i-1, channel->name, channel->freq);
+			}
+		else
+		{
+				mp_msg(MSGT_DEMUX, MSGL_ERR, "\n\nDVBIN: no such channel \"%s\"\n\n", progname);
+	  return 0;
 	}
 
 
@@ -754,10 +772,8 @@ static int dvb_open(stream_t *stream, int mode, void *opts, int *file_format)
 	stream->fill_buffer = dvb_streaming_read;
 	stream->close = dvbin_close;
 	m_struct_free(&stream_opts, opts);
-	
-	*file_format = DEMUXER_TYPE_MPEG_TS;
 
-	return STREAM_OK;
+    return STREAM_OK;
 }
 
 #define MAX_CARDS 4
@@ -798,20 +814,20 @@ dvb_config_t *dvb_get_config(void)
 		}
 		
 		switch(type)
-		{
-			case TUNER_TER:
-			conf_file = get_path("channels.conf.ter");
-				break;
-			case TUNER_CBL:
-			conf_file = get_path("channels.conf.cbl");
-				break;
-			case TUNER_SAT:
-			conf_file = get_path("channels.conf.sat");
-				break;
-			case TUNER_ATSC:
-			conf_file = get_path("channels.conf.atsc");
-				break;
-		}
+			{
+				case TUNER_TER:
+				conf_file = get_path("channels.conf.ter");
+					break;
+				case TUNER_CBL:
+				conf_file = get_path("channels.conf.cbl");
+					break;
+				case TUNER_SAT:
+				conf_file = get_path("channels.conf.sat");
+					break;
+				case TUNER_ATSC:
+				conf_file = get_path("channels.conf.atsc");
+					break;
+			}
 		
 		if((access(conf_file, F_OK | R_OK) != 0))
 			conf_file = get_path("channels.conf");
@@ -824,18 +840,18 @@ dvb_config_t *dvb_get_config(void)
 		tmp = realloc(conf->cards, size);
 
 		if(tmp == NULL)
-		{
+	{
 			fprintf(stderr, "DVB_CONFIG, can't realloc %d bytes, skipping\n", size);
 			continue;
-		}
+	}
 		cards = tmp;
 
 		name = (char*) malloc(20);
 		if(name==NULL)
-		{
+	{
 			fprintf(stderr, "DVB_CONFIG, can't realloc 20 bytes, skipping\n");
 			continue;
-		}
+	}
 
 		conf->cards = cards;
 		conf->cards[conf->count].devno = i;
@@ -868,3 +884,7 @@ stream_info_t stream_info_dvb = {
 	&stream_opts,
 	1 				// Urls are an option string
 };
+
+
+
+

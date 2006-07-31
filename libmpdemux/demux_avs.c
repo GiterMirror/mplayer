@@ -29,7 +29,6 @@
 #include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
-#include "libvo/fastmemcpy.h"
 
 #include "wine/windef.h"
 
@@ -50,7 +49,6 @@ typedef WINAPI AVS_ScriptEnvironment* (*imp_avs_create_script_environment)(int v
 typedef WINAPI AVS_Value (*imp_avs_invoke)(AVS_ScriptEnvironment *, const char * name, AVS_Value args, const char** arg_names);
 typedef WINAPI const AVS_VideoInfo *(*imp_avs_get_video_info)(AVS_Clip *);
 typedef WINAPI AVS_Clip* (*imp_avs_take_clip)(AVS_Value, AVS_ScriptEnvironment *);
-typedef WINAPI void (*imp_avs_release_clip)(AVS_Clip *);
 typedef WINAPI AVS_VideoFrame* (*imp_avs_get_frame)(AVS_Clip *, int n);
 typedef WINAPI void (*imp_avs_release_video_frame)(AVS_VideoFrame *);
 #ifdef ENABLE_AUDIO
@@ -80,7 +78,6 @@ typedef struct tagAVS
     imp_avs_invoke avs_invoke;
     imp_avs_get_video_info avs_get_video_info;
     imp_avs_take_clip avs_take_clip;
-    imp_avs_release_clip avs_release_clip;
     imp_avs_get_frame avs_get_frame;
     imp_avs_release_video_frame avs_release_video_frame;
 #ifdef ENABLE_AUDIO
@@ -112,7 +109,6 @@ AVS_T *initAVS(const char *filename)
     IMPORT_FUNC(avs_invoke);
     IMPORT_FUNC(avs_get_video_info);
     IMPORT_FUNC(avs_take_clip);
-    IMPORT_FUNC(avs_release_clip);
     IMPORT_FUNC(avs_get_frame);
     IMPORT_FUNC(avs_release_video_frame);
 #ifdef ENABLE_AUDIO
@@ -175,47 +171,37 @@ static int demux_avs_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
     demux_stream_t *d_video=demuxer->video;
     sh_video_t *sh_video=d_video->sh;
 
+#ifdef ENABLE_AUDIO
+    demux_stream_t *d_audio=demuxer->audio;
+    sh_audio_t *sh_audio=d_audio->sh;
+#endif
+    
+    if (AVS->video_info->num_frames < AVS->frameno) return 0; // EOF
+    
+    curr_frame = AVS->avs_get_frame(AVS->clip, AVS->frameno);
+    if (!curr_frame)
+    {
+        mp_msg(MSGT_DEMUX, MSGL_V, "AVS: error getting frame -- EOF??\n");
+        return 0;
+    }
+
     if (avs_has_video(AVS->video_info))
     {
-        char *dst;
-        int w, h;
-        if (AVS->video_info->num_frames < AVS->frameno) return 0; // EOF
+        dp = new_demux_packet(curr_frame->vfb->data_size);
+        sh_video->num_frames_decoded++;
+        sh_video->num_frames++;
 
-        curr_frame = AVS->avs_get_frame(AVS->clip, AVS->frameno);
-        if (!curr_frame)
-        {
-            mp_msg(MSGT_DEMUX, MSGL_V, "AVS: error getting frame -- EOF??\n");
-            return 0;
-        }
-        w = curr_frame->row_size;
-        h = curr_frame->height;
+        d_video->pts=AVS->frameno / sh_video->fps; // OSD
 
-        dp = new_demux_packet(w * h + 2 * (w / 2) * (h / 2));
-
-        dp->pts=AVS->frameno / sh_video->fps;
-
-        dst = dp->buffer;
-        memcpy_pic(dst, curr_frame->vfb->data + curr_frame->offset,
-                   w, h, w, curr_frame->pitch);
-        dst += w * h;
-        w /= 2; h /= 2;
-        memcpy_pic(dst, curr_frame->vfb->data + curr_frame->offsetV,
-                   w, h, w, curr_frame->pitchUV);
-        dst += w * h;
-        memcpy_pic(dst, curr_frame->vfb->data + curr_frame->offsetU,
-                   w, h, w, curr_frame->pitchUV);
+        memcpy(dp->buffer, curr_frame->vfb->data + curr_frame->offset, curr_frame->vfb->data_size);
         ds_add_packet(demuxer->video, dp);
 
-        AVS->frameno++;
-        AVS->avs_release_video_frame(curr_frame);
     }
     
 #ifdef ENABLE_AUDIO
     /* Audio */
     if (avs_has_audio(AVS->video_info))
     {
-        demux_stream_t *d_audio=demuxer->audio;
-        sh_audio_t *sh_audio=d_audio->sh;
         int l = sh_audio->wf->nAvgBytesPerSec;
         dp = new_demux_packet(l);
         
@@ -228,11 +214,17 @@ static int demux_avs_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
     }
 #endif
     
+    AVS->frameno++;
+    AVS->avs_release_video_frame(curr_frame);
     return 1;
 }
 
 static demuxer_t* demux_open_avs(demuxer_t* demuxer)
 {
+    sh_video_t *sh_video = NULL;
+#ifdef ENABLE_AUDIO
+    sh_audio_t *sh_audio = NULL;
+#endif
     int found = 0;
     AVS_T *AVS = (AVS_T *) demuxer->priv;
     AVS->frameno = 0;
@@ -284,8 +276,8 @@ static demuxer_t* demux_open_avs(demuxer_t* demuxer)
     /* Video */  
     if (avs_has_video(AVS->video_info))
     {
-        sh_video_t *sh_video = new_sh_video(demuxer, 0);
         found = 1;
+        sh_video = new_sh_video(demuxer, 0);
         
         demuxer->video->sh = sh_video;
         sh_video->ds = demuxer->video;
@@ -313,10 +305,10 @@ static demuxer_t* demux_open_avs(demuxer_t* demuxer)
     /* Audio */
     if (avs_has_audio(AVS->video_info))
     {
-        sh_audio_t *sh_audio = new_sh_audio(demuxer, 0);
         found = 1;
         mp_msg(MSGT_DEMUX, MSGL_V, "AVS: Clip has audio -> Channels = %d - Freq = %d\n", AVS->video_info->nchannels, AVS->video_info->audio_samples_per_second);
 
+        sh_audio = new_sh_audio(demuxer, 0);
         demuxer->audio->sh = sh_audio;
         sh_audio->ds = demuxer->audio;
         
@@ -368,13 +360,11 @@ static int demux_avs_control(demuxer_t *demuxer, int cmd, void *arg)
 static void demux_close_avs(demuxer_t* demuxer)
 {
     AVS_T *AVS = (AVS_T *) demuxer->priv;
-
+    // TODO release_clip?
     if (AVS)
     {
         if (AVS->dll)
         {
-            if (AVS->clip)
-                AVS->avs_release_clip(AVS->clip);
             mp_msg(MSGT_DEMUX, MSGL_V, "AVS: Unloading avisynth.dll\n");
             FreeLibrary(AVS->dll);
         }

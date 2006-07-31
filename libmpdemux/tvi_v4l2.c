@@ -25,6 +25,8 @@ known issues:
 
 #include "config.h"
 
+#if defined(USE_TV) && defined(HAVE_TV_V4L2)
+
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -213,7 +215,7 @@ static int fcc_vl2mp(int fcc)
 ** Translate a video4linux2 fourcc aka pixel format
 ** to a human readable string.
 */
-static const char *pixfmt2name(int pixfmt)
+static char *pixfmt2name(int pixfmt)
 {
     static char unknown[24];
 
@@ -1167,18 +1169,18 @@ static int start(priv_t *priv)
     
     if (!tv_param_noaudio) {
 	setup_audio_buffer_sizes(priv);
-	priv->audio_skew_buffer = calloc(priv->aud_skew_cnt, sizeof(long long));
+	priv->audio_skew_buffer = (long long*)calloc(priv->aud_skew_cnt, sizeof(long long));
 	if (!priv->audio_skew_buffer) {
 	    mp_msg(MSGT_TV, MSGL_ERR, "cannot allocate skew buffer: %s\n", strerror(errno));
 	    return 0;
 	}
-	priv->audio_skew_delta_buffer = calloc(priv->aud_skew_cnt, sizeof(long long));
+	priv->audio_skew_delta_buffer = (long long*)calloc(priv->aud_skew_cnt, sizeof(long long));
 	if (!priv->audio_skew_delta_buffer) {
 	    mp_msg(MSGT_TV, MSGL_ERR, "cannot allocate skew buffer: %s\n", strerror(errno));
 	    return 0;
 	}
 
-	priv->audio_ringbuffer = calloc(priv->audio_in.blocksize, priv->audio_buffer_size);
+	priv->audio_ringbuffer = (unsigned char*)calloc(priv->audio_in.blocksize, priv->audio_buffer_size);
 	if (!priv->audio_ringbuffer) {
 	    mp_msg(MSGT_TV, MSGL_ERR, "cannot allocate audio buffer: %s\n", strerror(errno));
 	    return 0;
@@ -1224,14 +1226,14 @@ static int start(priv_t *priv)
 	       priv->video_buffer_size_max*priv->format.fmt.pix.height*bytesperline/(1024*1024));
     }
 
-    priv->video_ringbuffer = calloc(priv->video_buffer_size_max, sizeof(unsigned char*));
+    priv->video_ringbuffer = (unsigned char**)calloc(priv->video_buffer_size_max, sizeof(unsigned char*));
     if (!priv->video_ringbuffer) {
 	mp_msg(MSGT_TV, MSGL_ERR, "cannot allocate video buffer: %s\n", strerror(errno));
 	return 0;
     }
     for (i = 0; i < priv->video_buffer_size_max; i++)
 	priv->video_ringbuffer[i] = NULL;
-    priv->video_timebuffer = calloc(priv->video_buffer_size_max, sizeof(long long));
+    priv->video_timebuffer = (long long*)calloc(priv->video_buffer_size_max, sizeof(long long));
     if (!priv->video_timebuffer) {
 	mp_msg(MSGT_TV, MSGL_ERR, "cannot allocate time buffer: %s\n", strerror(errno));
 	return 0;
@@ -1336,6 +1338,7 @@ static void *video_grabber(void *data)
     priv_t *priv = (priv_t*)data;
     long long skew, prev_skew, xskew, interval, prev_interval, delta;
     int i;
+    int err_count = 0;
     int framesize = priv->format.fmt.pix.height*priv->format.fmt.pix.width*
 	pixfmt2depth(priv->format.fmt.pix.pixelformat)/8;
     fd_set rdset;
@@ -1468,7 +1471,7 @@ static void *video_grabber(void *data)
 	pthread_mutex_lock(&priv->video_buffer_mutex);
 	if (priv->video_buffer_size_current < priv->video_buffer_size_max) {
 	    if (priv->video_cnt == priv->video_buffer_size_current) {
-		unsigned char *newbuf = malloc(framesize);
+		unsigned char *newbuf = (unsigned char*)malloc(framesize);
 		if (newbuf) {
 		    memmove(priv->video_ringbuffer+priv->video_tail+1, priv->video_ringbuffer+priv->video_tail,
 			    (priv->video_buffer_size_current-priv->video_tail)*sizeof(unsigned char *));
@@ -1558,7 +1561,7 @@ static int get_video_framesize(priv_t *priv)
 // for testing purposes only
 static void read_doublespeed(priv_t *priv)
 {
-    char *bufx = calloc(priv->audio_in.blocksize, 2);
+    char *bufx = (char*)calloc(priv->audio_in.blocksize, 2);
     short *s;
     short *d;
     int i;
@@ -1744,3 +1747,5 @@ static int get_audio_framesize(priv_t *priv)
 {
     return(priv->audio_in.blocksize);
 }
+
+#endif /* USE_TV && HAVE_TV_V4L2 */

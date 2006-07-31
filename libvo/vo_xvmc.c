@@ -701,7 +701,6 @@ found_subpic:
          XSetStandardProperties(mDisplay, vo_window, hello, hello, None, NULL, 0, &hint);
          XSetWMNormalHints( mDisplay,vo_window,&hint );
 	 XMapWindow(mDisplay, vo_window);
-	 vo_x11_nofs_sizepos(hint.x, hint.y, hint.width, hint.height);
 	 if ( flags&VOFLAG_FULLSCREEN ) vo_x11_fullscreen();
 	 else {
 	    vo_x11_sizehint( hint.x, hint.y, hint.width, hint.height,0 );
@@ -709,7 +708,7 @@ found_subpic:
       } else {
 	// vo_fs set means we were already at fullscreen
 	 vo_x11_sizehint( hint.x, hint.y, hint.width, hint.height,0 );
-	 vo_x11_nofs_sizepos(hint.x, hint.y, hint.width, hint.height);
+	 if ( !vo_fs ) XMoveResizeWindow( mDisplay,vo_window,hint.x,hint.y,hint.width,hint.height );
 	 if ( flags&VOFLAG_FULLSCREEN && !vo_fs ) vo_x11_fullscreen(); // handle -fs on non-first file
       }
 
@@ -779,7 +778,7 @@ static void init_osd_yuv_pal(){
 
       snum = subpicture.num_palette_entries;
       seb = subpicture.entry_bytes;
-      palette = malloc(snum*seb);//check fail
+      palette = (char*)malloc(snum*seb);//check fail
       if(palette == NULL) return;
       for(i=0; i<snum; i++){
          // 0-black max-white the other are gradients

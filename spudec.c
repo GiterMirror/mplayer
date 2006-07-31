@@ -23,7 +23,7 @@
 #include <math.h>
 #include "libvo/video_out.h"
 #include "spudec.h"
-#include "libswscale/swscale.h"
+#include "postproc/swscale.h"
 
 #define MIN(a, b)	((a)<(b)?(a):(b))
 

@@ -77,7 +77,7 @@ void print_asf_string(const char* name, char* string, int length) {
   mp_msg(MSGT_HEADER,MSGL_V,"%s%s\n", name, string);
 }
 
-static const char* asf_chunk_type(unsigned char* guid) {
+static char* asf_chunk_type(unsigned char* guid) {
   static char tmp[60];
   char *p;
   int i;
@@ -230,7 +230,7 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
     goto err_out;
   }
 
-  if ((pos = find_asf_guid(hdr, asf_ext_stream_audio, 0, hdr_len)) >= 0)
+  if ((pos = find_asf_guid(hdr, asf_ext_stream_audio, pos, hdr_len)) >= 0)
   {
     // Special case: found GUID for dvr-ms audio.
     // Now skip back to associated stream header.
@@ -410,7 +410,7 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
         ptr += sizeof(uint16_t);
         if (ptr > &hdr[hdr_len]) goto len_err_out;
         if(stream_count > 0)
-              streams = malloc(2*stream_count*sizeof(uint32_t));
+              streams = (uint32_t*)malloc(2*stream_count*sizeof(uint32_t));
         mp_msg(MSGT_HEADER,MSGL_V," stream count=[0x%x][%u]\n", stream_count, stream_count );
         for( i=0 ; i<stream_count ; i++ ) {
           stream_id = le2me_16(*(uint16_t*)ptr);
@@ -433,8 +433,6 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
   stream_read(demuxer->stream, guid_buffer, 16);
   if (memcmp(guid_buffer, asf_data_chunk_guid, 16) != 0) {
     mp_msg(MSGT_HEADER, MSGL_FATAL, MSGTR_MPDEMUX_ASFHDR_NoDataChunkAfterHeader);
-    free(streams);
-    streams = NULL;
     return 0;
   }
   // read length of chunk

@@ -27,7 +27,8 @@
  */
  
 #include "config.h"
-#include "../librtsp/rtsp.h"
+#include "rmff.h"
+#include "rtsp.h"
 #include "sdpplin.h"
 #include "xbuffer.h"
 #include "mp_msg.h"
@@ -130,7 +131,6 @@ static sdpplin_stream_t *sdpplin_parse_stream(char **data) {
   char      *buf=xbuffer_init(32);
   char      *decoded=xbuffer_init(32);
   int       handled;
-  int       got_mimetype;
     
   if (filter(*data, "m=", &buf)) {
     desc->id = strdup(buf);
@@ -143,17 +143,7 @@ static sdpplin_stream_t *sdpplin_parse_stream(char **data) {
   }
   *data=nl(*data);
 
-  got_mimetype = 0;
-
   while (*data && **data && *data[0]!='m') {
-#ifdef LOG
-    {
-      int len=strchr(*data,'\n')-(*data);
-      buf = xbuffer_copyin(buf, 0, *data, len+1);
-      buf[len]=0;
-      printf("libreal: sdpplin_stream: '%s'\n", buf);
-    }
-#endif
 
     handled=0;
     
@@ -208,13 +198,12 @@ static sdpplin_stream_t *sdpplin_parse_stream(char **data) {
       desc->mime_type=strdup(buf);
       desc->mime_type_size=strlen(desc->mime_type);
       handled=1;
-      got_mimetype = 1;
       *data=nl(*data);
     }
 
     if(filter(*data,"a=OpaqueData:buffer;",&buf)) {
       decoded = b64_decode(buf, decoded, &(desc->mlti_data_size));
-      desc->mlti_data=malloc(desc->mlti_data_size);
+      desc->mlti_data=malloc(sizeof(char)*desc->mlti_data_size);
       memcpy(desc->mlti_data, decoded, desc->mlti_data_size);
       handled=1;
       *data=nl(*data);
@@ -234,18 +223,10 @@ static sdpplin_stream_t *sdpplin_parse_stream(char **data) {
       int len=strchr(*data,'\n')-(*data);
       buf = xbuffer_copyin(buf, 0, *data, len+1);
       buf[len]=0;
-      printf("libreal: sdpplin_stream: not handled: '%s'\n", buf);
+      printf("libreal: sdpplin: not handled: '%s'\n", buf);
 #endif
       *data=nl(*data);
     }
-  }
-
-  if (!got_mimetype) {
-    mp_msg(MSGT_OPEN, MSGL_V, "libreal: sdpplin_stream: no mimetype\n");
-    desc->mime_type = strdup("audio/x-pn-realaudio");
-    desc->mime_type_size = strlen(desc->mime_type);
-    if (desc->stream_id)
-      mp_msg(MSGT_OPEN, MSGL_WARN, "libreal: sdpplin_stream: implicit mimetype for stream_id != 0, weird.\n");
   }
 
   xbuffer_free(buf);
@@ -263,14 +244,6 @@ sdpplin_t *sdpplin_parse(char *data) {
   int              len;
 
   while (data && *data) {
-#ifdef LOG
-    {
-      int len=strchr(data,'\n')-(data);
-      buf = xbuffer_copyin(buf, 0, data, len+1);
-      buf[len]=0;
-      printf("libreal: sdpplin: '%s'\n", buf);
-    }
-#endif
 
     handled=0;
     
@@ -281,21 +254,10 @@ sdpplin_t *sdpplin_parse(char *data) {
 #endif
       if (desc->stream && (stream->stream_id >= 0) && (stream->stream_id < desc->stream_count))
       desc->stream[stream->stream_id]=stream;
-      else if (desc->stream)
+      else
       {
-      mp_msg(MSGT_OPEN, MSGL_ERR, "sdpplin: bad stream_id %d (must be >= 0, < %d). Broken sdp?\n",
-        stream->stream_id, desc->stream_count);
+      mp_msg(MSGT_OPEN, MSGL_ERR, "sdpplin: got 'm=', but 'a=StreamCount' is still unknown. Broken sdp?\n");
       free(stream);
-      } else {
-        mp_msg(MSGT_OPEN, MSGL_V, "sdpplin: got 'm=', but 'a=StreamCount' is still unknown.\n");
-        if (stream->stream_id == 0) {
-          desc->stream_count=1;
-          desc->stream=malloc(sizeof(sdpplin_stream_t*));
-          desc->stream[0]=stream;
-        } else {
-          mp_msg(MSGT_OPEN, MSGL_ERR, "sdpplin: got 'm=', but 'a=StreamCount' is still unknown and stream_id != 0. Broken sdp?\n");
-          free(stream);
-        }
       }
       continue;
     }

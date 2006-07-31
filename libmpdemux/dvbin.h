@@ -1,18 +1,15 @@
 /* Imported from the dvbstream project
  *
- * Modified for use with MPlayer, for details see the changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, for details see the CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  */
 
 #ifndef DVBIN_H
 #define DVBIN_H
 
+#include "dvb_defaults.h"
 #include "stream.h"
-
-#define SLOF (11700*1000UL)
-#define LOF1 (9750*1000UL)
-#define LOF2 (10600*1000UL)
 
 #ifdef HAVE_DVB_HEAD
 	#include <linux/dvb/dmx.h>

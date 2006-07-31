@@ -12,8 +12,7 @@
 
 //===========================================================================//
 
-struct priv_t {double pts; vo_functions_t *vo;};
-#define video_out (((struct priv_t *)(vf->priv))->vo)
+#define video_out ((vo_functions_t*)(vf->priv))
 
 static int query_format(struct vf_instance_s* vf, unsigned int fmt); /* forward declaration */
 
@@ -103,8 +102,6 @@ static void get_image(struct vf_instance_s* vf,
 static int put_image(struct vf_instance_s* vf,
         mp_image_t *mpi, double pts){
   if(!vo_config_count) return 0; // vo not configured?
-  // record pts (potentially modified by filters) for main loop
-  ((struct priv_t *)vf->priv)->pts = pts;
   // first check, maybe the vo/vf plugin implements draw_image using mpi:
   if(video_out->control(VOCTRL_DRAW_IMAGE,mpi)==VO_TRUE) return 1; // done.
   // nope, fallback to old draw_frame/draw_slice:

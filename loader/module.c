@@ -3,8 +3,8 @@
  *
  * Copyright 1995 Alexandre Julliard
  *
- * Modified for use with MPlayer, detailed changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, detailed CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  *
  */
@@ -242,7 +242,7 @@ static WIN_BOOL MODULE_DllProcessAttach( WINE_MODREF *wm, LPVOID lpReserved )
     }
     else
     {
-	local_wm = malloc(sizeof(modref_list));
+	local_wm = (modref_list*)malloc(sizeof(modref_list));
 	local_wm->next=local_wm->prev=NULL;
 	local_wm->wm=wm;
     }

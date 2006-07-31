@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- synced with r19104 -->
+<!-- synced with r17707 -->
 <chapter id="ports" xreflabel="Ports">
 <title>Portok</title>
 
@@ -46,7 +46,7 @@ Rendszergazdaként a szokásos módszerrel telepíthető a <filename>.deb</filename> 
 Christian Marillat már régóta készít nem-hivatalos Debian csomagokat
 az <application>MPlayerből</application>, <application>MEncoderből</application> és
 a betűtípusokból, melyek akár az apt-get segítségével is telepíthetők
-<ulink url="http://www.debian-multimedia.org/">a weboldaláról</ulink>.
+<ulink url="http://hpisi.nerim.net/">a weboldaláról</ulink>.
 </para>
 </sect2>
 
@@ -175,23 +175,6 @@ Szükséged lesz egy felinstallált
 is.
 </para>
 
-<para><emphasis role="bold">Figyelmeztetés:</emphasis></para>
-<itemizedlist>
-<listitem><para>A <emphasis role="bold">mediaLib</emphasis>
-<emphasis role="bold">jelenleg le van tiltva</emphasis> alapértelmezésben
-az <application>MPlayer</application>ben, mivel hibás. A SPARC felhasználók,
-akik az MPlayert mediaLib támogatással forgatták, egy vastag, zöld
-csíkról számoltak be a libavcodec-kal kódolt és dekódolt videók esetén.
-Ha mégis akarod, engedélyezheted:
-<screen>
-$ ./configure --enable-mlib
-</screen>
-Azonban ezt a saját felelősségedre tedd. Az x86 felhasználóknak
-<emphasis role="bold">soha</emphasis> sem ajánlott mediaLib-et használni,
-mivel nagyon lerontja az MPlayer teljesítményét.
-</para></listitem>
-</itemizedlist>
-
 <para>
 A fordításhoz GNU <application>make</application>-re lesz szükséged
 (<filename>gmake</filename>, <filename>/opt/sfw/gmake</filename>), natív
@@ -217,16 +200,12 @@ assemblere (<filename>/usr/ccs/bin/as</filename>) nem támogat.
 <para>
 A <filename>configure</filename> script megpróbálja megkereseni, hogy a
 &quot;gcc&quot; parancsod melyik assemblert indítja (ha nem sikerül neki,
-használd a <option>--as=<replaceable>/ahova/installalva/lett/a/gnu-as</replaceable></option>
-kapcsolót, hogy megadd a <filename>configure</filename>nak az "as" helyét
-a rendszeredben).
+használd a &quot;<option>--as=<replaceable>/ahova/installalva/lett/a/gnu-as</replaceable></option>&quot;
+kapcsolót, hogy megadd a <filename>configure</filename>nak az "as" helyét a rendszeredben).
 </para>
 
-<para>Megoldások a gyakori problémákra:</para>
-<itemizedlist>
-<listitem><para>
-Hibaüzenet a <filename>configure</filename>-tól egy Solaris x86-os rendszeren
-GNU assembler nélküli GCC használata esetén:
+<para>
+Hibaüzenet GNU assembler nélküli GCC használata esetén:
 <screen>
    % configure
    ...
@@ -249,33 +228,9 @@ Tipikus hiba, ha a GNU C fordító nem GNU assemblert (GNU as) használ:
    ... további "Illegal mnemonic" és "Syntax error" hibák ...
 </screen>
 </para>
-</listitem>
 
-<listitem><para>Az <application>MPlayer</application> segfault-olhat ha win32codec-eket
-használó videót akarsz kódolni vagy dekódolni:
-<screen>
-...
-Trying to force audio codec driver family acm...
-Opening audio decoder: [acm] Win32/ACM decoders
-sysi86(SI86DSCR): Invalid argument
-Couldn't install fs segment, expect segfault
-
-
-MPlayer interrupted by signal 11 in module: init_audio_codec
-...
-</screen>
-Ez a Solaris 10-ben és a pre-Solaris Nevada b31-ben a sysi86() egyik
-változtatása miatt van. Javítva lett a Solaris Nevada b32-ben; bár a
-Sun-nak még vissza kell vezetnie a javítást a Solaris 10-be. Az MPlayer
-Project felhívta a Sun figyelmét a problémára, a javítás készülőben van
-a Solaris 10-hez. Ettől a hibáról további információt itt találhatsz:
-<ulink
-url="http://bugs.opensolaris.org/bugdatabase/view_bug.do?bug_id=6308413"/>.
-</para>
-</listitem>
-
-<listitem><para>
-A Solaris 8 hibái miatt nem biztos, hogy le tudsz játszani 4 GB-nál nagyobb DVD lemezt:
+<para>
+Pár hiba miatt nem tudsz megbízhatóan 4 GB-nál nagyobb DVD-t lejátszani Solaris 8-on:
 </para>
 
 <itemizedlist>
@@ -295,8 +250,6 @@ modulo 4GB-vel lesz elérve
 Ez a hiba a 109764-04 (sparc) / 109765-04 (x86) jelzésű patch-ek telepítése
 után megszűnik.
 </para></listitem>
-</itemizedlist>
-</listitem>
 </itemizedlist>
 </sect2>
 
@@ -475,7 +428,6 @@ A következő architektúrákat teszteltük:
 
 <itemizedlist>
 <listitem><para>604e</para></listitem>
-<listitem><para>POWER3</para></listitem>
 <listitem><para>POWER4</para></listitem>
 </itemizedlist>
 
@@ -485,6 +437,7 @@ A következő architektúrák nem lettek tesztelve, de működhetnek:
 <itemizedlist>
 <listitem><para>POWER</para></listitem>
 <listitem><para>POWER2</para></listitem>
+<listitem><para>POWER3</para></listitem>
 <listitem><para>POWER5</para></listitem>
 </itemizedlist>
 
@@ -492,37 +445,10 @@ A következő architektúrák nem lettek tesztelve, de működhetnek:
 Az Ultimedia Services-en keresztüli hang nem támogatott, mert az Ultimedia-t
 dobták az AIX 5.1-ben; ezért az egyetlen lehetőség az AIX Open
 Sound System (OSS) vezérlők használata a 4Front Technologies-től <ulink
-url="http://www.opensound.com/aix.html">http://www.opensound.com/aix.html
-</ulink>.
-A 4Front Technologies szabadon biztosítja az OSS vezérlőket az AIX 5.1-hez
-nem-üzleti felhasználásra; azonban jelenleg nincs hang kimeneti vezérlő
-AIX 5.2 és 5.3 alá. Ez azt jelenti, hogy az <emphasis role="bold">AIX 5.2
-és 5.3 alatt jelenleg az MPlayer nem képes audió kimenetre.</emphasis>
+url="http://www.opensound.com/aix.html">http://www.opensound.com/aix.html</ulink>.
+A 4Front Technologies szabadon biztosítja az OSS vezérlőket személyes és
+nem-üzleti felhasználásra.
 </para>
-
-<para>Megoldás a gyakori problémákra:</para>
-
-<itemizedlist>
-<listitem>
-<para>
-Ha ezt a hibaüzenetet kapod a <filename>configure</filename>-tól:
-<screen>
-$ ./configure
-...
-Checking for iconv program ... no
-No working iconv program found, use
---charset=US-ASCII to continue anyway.
-Messages in the GTK-2 interface will be broken then.
-</screen>
-Ez azért van, mert az AIX nem-szabványos kódlap neveket használ; ezért
-az MPlayer kimenetének másik kódlapra konvertálása jelenleg nem
-támogatott. A megoldás:
-<screen>
-$ ./configure --charset=noconv
-</screen>
-</para>
-</listitem>
-</itemizedlist>
 
 </sect2>
 </sect1>
@@ -694,58 +620,12 @@ $ ./configure --charset=noconv
 
 <sect1 id="macos">
 <title>Mac OS</title>
-
 <para>
 Az <application>MPlayer</application> nem működik a 10-esnél régebbi Mac OS-eken,
 de könnyedén lefordítható Mac OS X 10.2 és későbbi verziók alatt.
-A javasolt fordító a GCC 3.x vagy későbbi Apple féle változata.
-Az alap fordítási környezetet az Apple
-<ulink url="http://developer.apple.com/tools/download/">Xcode</ulink>
-telepítésével kapod meg.
-Ha Mac OS X 10.3.9 vagy régebbi verziód és QuickTime 7-esed van,
-használhatod a <option>macosx</option> videó kimeneti vezérlőt is.
-</para>
-
-<para>
-Sajnos az alap környezet nem teszi lehetővé az <application>MPlayer</application>
-összes képességének kihasználását.
-Például ha befordított OSD támogatást szeretnél, telepített
-<systemitem class="library">fontconfig</systemitem> és a
-<systemitem class="library">freetype</systemitem> függvénykönyvtárakra
-lesz szükséged. Más Unix-okkal ellentétben, mint amilyen a legtöbb
-Linux és BSD variáns, az OS X nem rendelkezik alapértelmezett csomag
-kezelővel, ami az operációs rendszerhez tartozna.
-</para>
-
-<para>
-Két független közül választhatsz:
-<ulink url="http://fink.sourceforge.net/">Fink</ulink> és
-<ulink url="http://darwinports.opendarwin.org/">DarwinPorts</ulink>.
-Mindkettő nagyjából ugyan azt a szolgáltatást nyújtja (pl. rengeteg választható
-csomag, függőségek kezelése, csomagok egyszerű telepítése/frissítése/eltávolítása,
-stb...).
-A Fink biztosít előfordított bináris csomagokat, de forrásból is lefordítható
-bármi, míg a DarwinPorts csak forrásból történő fordítást tesz lehetővé.
-Ezen leírás szerzője a DarwinPorts-ot választotta, azon egyszerű okból kifolyólag,
-hogy a beállítása sokkal egyszerűbb.
-A későbbi példák mind DarwinPorts-on alapszanak.
-</para>
-
-<para>
-Például az <application>MPlayer</application> lefordítása OSD támogatással:
-<screen>sudo port install pkgconfig</screen>
-Ez telepíti a <application>pkg-config</application>-ot, ami a függvénykönyvtárak
-fordítási/szerkesztési flag-jeinek kezelését végző rendszer.
-Az <application>MPlayer</application> <systemitem>configure</systemitem> script-je
-is ezt használja a függvénykönyvtárak megfelelő detektálásához.
-Ezután hasonló módon telepítheted a <application>fontconfig</application>-ot:
-<screen>sudo port install fontconfig</screen>
-Ezek után indíthatod az <application>MPlayer</application>
-<systemitem>configure</systemitem> script-jét (figyelj a
-<systemitem>PKG_CONFIG_PATH</systemitem> és <systemitem>PATH</systemitem>
-környezeti változók beállítására, hogy a <systemitem>configure</systemitem> megtalálja
-a DarwinPorts-szal telepített függvénykönyvtárakat):
-<screen>PKG_CONFIG_PATH=/opt/local/lib/pkgconfig/ PATH=$PATH:/opt/local/bin/ ./configure</screen>
+A javasolt fordító a GCC 3.x vagy későbbi Apple féle
+változata. Ha Mac OS X 10.3.9 vagy régebbi verziód és QuickTime 7-esed van,
+használhatod a macosx videó kimeneti vezérlőt is.
 </para>
 
 <sect2 id="osx_gui">
@@ -778,11 +658,12 @@ nélkül.
 </para>
 
 <para>
-Az SVN modulok letöltéséhez használt az alábbi parancsokat:
+A CVS modulok letöltéséhez használt az alábbi parancsokat:
 
 <screen>
-svn checkout svn://svn.mplayerhq.hu/mplayerosx/trunk/ mplayerosx
-svn checkout svn://svn.mplayerhq.hu/mplayer/trunk/ main
+cvs -d:pserver:anonymous@mplayerhq.hu:/cvsroot/mplayer login
+cvs -z3 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/mplayer co -P mplayerosx
+cvs -z3 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/mplayer co -P main
 </screen>
 </para>
 
@@ -793,11 +674,11 @@ csinálnod:
 <screen>
 MPlayer_forras_konyvtar
    |
-   |--->main           (MPlayer Subversion forrás)
+   |--->main           (MPlayer CVS forrás)
    |
-   |--->main_noaltivec (MPlayer Subversion forrás --disable-altivec -kel konfigurálva)
+   |--->main_noaltivec (MPlayer CVS forrás --disable-altivec -kel konfigurálva)
    |
-   |--->mplayerosx     (MPlayer OS X Subversion forrás)
+   |--->mplayerosx     (MPlayer OS X CVS forrás)
 </screen>
 
 Először a main és main_noaltivec-et kell lefordítanod.

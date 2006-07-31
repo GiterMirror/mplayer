@@ -70,7 +70,7 @@ void ActivateMenuItem( int Item )
  mplEventHandling( Item & 0x0000ffff,Item >> 16 );
 }
 
-static GtkWidget * AddMenuCheckItem(GtkWidget *window1, const char * immagine_xpm, GtkWidget* Menu,const char* label, gboolean state, int Number)
+GtkWidget * AddMenuCheckItem(GtkWidget *window1, const char * immagine_xpm, GtkWidget* Menu,char* label, gboolean state, int Number)
 {
  GtkWidget * Label = NULL;
  GtkWidget * Pixmap = NULL;
@@ -103,7 +103,7 @@ static GtkWidget * AddMenuCheckItem(GtkWidget *window1, const char * immagine_xp
    
  return Item;
 }
-GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm,  GtkWidget * SubMenu,const char * label,int Number )
+GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm,  GtkWidget * SubMenu,char * label,int Number )
 {
  GtkWidget * Label = NULL;
  GtkWidget * Pixmap = NULL;
@@ -136,7 +136,7 @@ GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm,  GtkWidg
 }
 
 
-GtkWidget * AddSubMenu( GtkWidget *window1, const char * immagine_xpm, GtkWidget * Menu,const char * label )
+GtkWidget * AddSubMenu( GtkWidget *window1, const char * immagine_xpm, GtkWidget * Menu,char * label )
 {
  GtkWidget * Label = NULL;
  GtkWidget * Pixmap = NULL;
@@ -182,7 +182,7 @@ GtkWidget * AddSeparator( GtkWidget * Menu )
 typedef struct
 {
  int id;
- const char * name;
+ char * name;
 } Languages_t;
 
 #define lng( a,b ) ( (int)(a) * 256 + b )
@@ -369,7 +369,7 @@ static char * ChannelNumbers[] =
 	{ "","Stereo","","","","5.1" };
 #endif
 
-const char * GetLanguage( int language )
+char * GetLanguage( int language )
 {
  unsigned int i;
  for ( i=0;i<sizeof( Languages ) / sizeof( Languages_t );i++ )

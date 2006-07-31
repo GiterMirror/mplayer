@@ -14,6 +14,7 @@
 #include "libmpdemux/mp3_hdr.h"
 
 //based on ad_hwac3.c and ad_libmad.c
+static int isdts = -1;
 
 static ad_info_t info = 
 {
@@ -35,6 +36,8 @@ static int mpa_sync(sh_audio_t *sh, int no_frames, int *n, int *chans, int *srat
 	{
 		while(cnt + 4 < sh->a_in_buffer_len)
 		{
+			if(((sh->a_in_buffer[cnt] << 8) | sh->a_in_buffer[cnt+1]) & 0xffe0 != 0xffe0)
+				continue;
 			x = mp_get_mp3_header(&(sh->a_in_buffer[cnt]), chans, srate, spf, mpa_layer, br);
 			if(x > 0)
 			{
@@ -57,7 +60,7 @@ static int mpa_sync(sh_audio_t *sh, int no_frames, int *n, int *chans, int *srat
 
 static int preinit(sh_audio_t *sh)
 {
-	sh->audio_out_minsize = 4608;//check
+	sh->audio_out_minsize = 48;//check
 	sh->audio_in_minsize = 4608;//check
 	sh->sample_format = AF_FORMAT_MPEG2;
 	return 1;
@@ -81,45 +84,32 @@ static int init(sh_audio_t *sh)
 
 static int decode_audio(sh_audio_t *sh,unsigned char *buf,int minlen,int maxlen)
 {
-	int len, start, tot;
+	int len, start, cnt2, tot;
 	int chans, srate, spf, mpa_layer, br;
-	int tot2;
 
-	tot = tot2 = 0;
-
-	while(tot2 < maxlen)
+	tot = cnt2 = 0;
+	while(tot < minlen && tot+4608<=maxlen)
 	{
 		start = mpa_sync(sh, 1, &len, &chans, &srate, &spf, &mpa_layer, &br);
-		if(start < 0 || tot2 + spf * 2 * chans > maxlen)
+		if(start < 0)
 			break;
 
-		if(start + len > sh->a_in_buffer_len)
-		{
-			int l;
-			l = min(sh->a_in_buffer_size - sh->a_in_buffer_len, start + len);
-			l = demux_read_data(sh->ds,&sh->a_in_buffer[sh->a_in_buffer_len], l);
-			if(! l)
-				break;
-			sh->a_in_buffer_len += l;
-			continue;
-		}
-
-		memcpy(&buf[tot], &(sh->a_in_buffer[start]), len);
-		tot += len;
-
+		if(start + len < sh->a_in_buffer_len && start + len >= maxlen)
+			break;
+		memcpy(&buf[cnt2], &(sh->a_in_buffer[start]), len);
+		cnt2 += len;
 		sh->a_in_buffer_len -= start + len;
 		memmove(sh->a_in_buffer, &(sh->a_in_buffer[start + len]), sh->a_in_buffer_len);
-		tot2 += spf * 2 * chans;
+		tot += start + len;
 	}
 
-	memset(&buf[tot], 0, tot2-tot);
-	return tot2;
+	return tot;
 }
 
 
 static int control(sh_audio_t *sh,int cmd,void* arg, ...)
 {
-	int start, len;
+	int start, len, n;
 
 	switch(cmd)
 	{

@@ -146,12 +146,13 @@ int fntTextHeight( int id,char * str )
  return max;
 }
 
-txSample * fntRender( wItem * item,int px,const char * fmt,... )
+txSample * fntRender( wItem * item,int px,char * fmt,... )
 {
+ txSample      * tmp = NULL;
  va_list         ap;
  unsigned char   p[512];
  unsigned int    c;
- int 	         i, dx = 0, tw, fbw, iw, id, ofs;
+ int 	         i, dx = 0, s, tw, fbw, iw, id, ofs;
  int 		 x,y,fh,fw,fyc,yc;
  uint32_t      * ibuf;
  uint32_t      * obuf;

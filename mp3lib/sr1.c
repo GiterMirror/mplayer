@@ -66,8 +66,8 @@ LOCAL int mp3_read(char *buf,int size){
 extern int mp3_read(char *buf,int size);
 #endif
 /*
- * Modified for use with MPlayer, for details see the changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, for details see the CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  */
 
@@ -392,7 +392,6 @@ static int _has_mmx = 0;  // used by layer2.c, layer3.c to pre-scale coeffs
 extern void dct64_MMX(real *, real *, real *);
 extern void dct64_MMX_3dnow(real *, real *, real *);
 extern void dct64_MMX_3dnowex(real *, real *, real *);
-extern void dct64_sse(real *, real *, real *);
 void (*dct64_MMX_func)(real *, real *, real *);
 
 #include "cpudetect.h"
@@ -413,7 +412,6 @@ void MP3_Init(){
 
 #ifdef CAN_COMPILE_X86_ASM
 
-#ifdef HAVE_MMX
     if (gCpuCaps.hasMMX)
     {
 	_has_mmx = 1;
@@ -421,9 +419,7 @@ void MP3_Init(){
 	mp_msg(MSGT_DECAUDIO,MSGL_V,"mp3lib: made decode tables with MMX optimization\n");
 	synth_func = synth_1to1_MMX;
     }
-#endif
 
-#ifdef HAVE_3DNOWEX
     if (gCpuCaps.has3DNowExt)
     {
 	dct36_func=dct36_3dnowex;
@@ -431,8 +427,6 @@ void MP3_Init(){
 	mp_msg(MSGT_DECAUDIO,MSGL_V,"mp3lib: using 3DNow!Ex optimized decore!\n");
     }
     else
-#endif
-#ifdef HAVE_3DNOW
     if (gCpuCaps.has3DNow)
     {
 	dct36_func = dct36_3dnow;
@@ -440,23 +434,12 @@ void MP3_Init(){
 	mp_msg(MSGT_DECAUDIO,MSGL_V,"mp3lib: using 3DNow! optimized decore!\n");
     }
     else
-#endif
-#ifdef HAVE_SSE
-    if (gCpuCaps.hasSSE)
-    {
-	dct64_MMX_func = dct64_sse;
-	mp_msg(MSGT_DECAUDIO,MSGL_V,"mp3lib: using SSE optimized decore!\n");
-    }
-    else
-#endif
-#ifdef HAVE_MMX
     if (gCpuCaps.hasMMX)
     {
 	dct64_MMX_func = dct64_MMX;
 	mp_msg(MSGT_DECAUDIO,MSGL_V,"mp3lib: using MMX optimized decore!\n");
     }
     else
-#endif
     if (gCpuCaps.cpuType >= CPUTYPE_I586)
     {
 	synth_func = synth_1to1_pent;

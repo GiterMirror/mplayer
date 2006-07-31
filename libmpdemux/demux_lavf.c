@@ -37,8 +37,6 @@
 
 #define PROBE_BUF_SIZE 2048
 
-extern char *audio_lang;
-
 typedef struct lavf_priv_t{
     AVInputFormat *avif;
     AVFormatContext *avfc;
@@ -46,7 +44,6 @@ typedef struct lavf_priv_t{
     int audio_streams;
     int video_streams;
     int64_t last_pts;
-    int astreams[MAX_A_STREAMS];
 }lavf_priv_t;
 
 extern void print_wave_header(WAVEFORMATEX *h, int verbose_level);
@@ -178,18 +175,16 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
 
     for(i=0; i<avfc->nb_streams; i++){
         AVStream *st= avfc->streams[i];
+#if LIBAVFORMAT_BUILD >= 4629
         AVCodecContext *codec= st->codec;
-
+#else
+        AVCodecContext *codec= &st->codec;
+#endif
+        
         switch(codec->codec_type){
         case CODEC_TYPE_AUDIO:{
             WAVEFORMATEX *wf= calloc(sizeof(WAVEFORMATEX) + codec->extradata_size, 1);
-            sh_audio_t* sh_audio;
-            if(priv->audio_streams >= MAX_A_STREAMS)
-                break;
-            sh_audio=new_sh_audio(demuxer, i);
-            if(!sh_audio)
-                break;
-            priv->astreams[priv->audio_streams] = i;
+            sh_audio_t* sh_audio=new_sh_audio(demuxer, i);
             priv->audio_streams++;
             if(!codec->codec_tag)
                 codec->codec_tag= codec_get_wav_tag(codec->codec_id);
@@ -243,14 +238,12 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
                 break;
             }
             if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_wave_header(sh_audio->wf, MSGL_V);
-	    if((audio_lang && st->language[0] && !strncmp(audio_lang, st->language, 3))
-	        || (demuxer->audio->id == i || demuxer->audio->id == -1)
-	    ) {
-	        demuxer->audio->id = i;
-                demuxer->audio->sh= demuxer->a_streams[i];
-	    }
-            else
+            if(demuxer->audio->id != i && demuxer->audio->id != -1)
                 st->discard= AVDISCARD_ALL;
+            else{
+                demuxer->audio->id = i;
+                demuxer->audio->sh= demuxer->a_streams[i];
+            }
             break;}
         case CODEC_TYPE_VIDEO:{
             BITMAPINFOHEADER *bih=calloc(sizeof(BITMAPINFOHEADER) + codec->extradata_size,1);
@@ -272,8 +265,13 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
                 sh_video->video.dwRate= st->time_base.den;
                 sh_video->video.dwScale= st->time_base.num;
             } else {
+#if LIBAVFORMAT_BUILD >= 4624
             sh_video->video.dwRate= codec->time_base.den;
             sh_video->video.dwScale= codec->time_base.num;
+#else
+            sh_video->video.dwRate= codec->frame_rate;
+            sh_video->video.dwScale= codec->frame_rate_base;
+#endif
             }
             sh_video->fps=av_q2d(st->r_frame_rate);
             sh_video->frametime=1/av_q2d(st->r_frame_rate);
@@ -331,6 +329,11 @@ static int demux_lavf_fill_buffer(demuxer_t *demux, demux_stream_t *dsds){
 
     demux->filepos=stream_tell(demux->stream);
 
+    if(stream_eof(demux->stream)){
+//        demuxre->stream->eof=1;
+        return 0;
+    }
+
     if(av_read_frame(priv->avfc, &pkt) < 0)
         return 0;
         
@@ -357,7 +360,7 @@ static int demux_lavf_fill_buffer(demuxer_t *demux, demux_stream_t *dsds){
         
     if(0/*pkt.destruct == av_destruct_packet*/){
         //ok kids, dont try this at home :)
-        dp=malloc(sizeof(demux_packet_t));
+        dp=(demux_packet_t*)malloc(sizeof(demux_packet_t));
         dp->len=pkt.size;
         dp->next=NULL;
         dp->refcount=1;
@@ -371,8 +374,13 @@ static int demux_lavf_fill_buffer(demuxer_t *demux, demux_stream_t *dsds){
     }
 
     if(pkt.pts != AV_NOPTS_VALUE){
+#if LIBAVFORMAT_BUILD >= 4624
         dp->pts=pkt.pts * av_q2d(priv->avfc->streams[id]->time_base);
         priv->last_pts= dp->pts * AV_TIME_BASE;
+#else
+        priv->last_pts= pkt.pts;
+        dp->pts=pkt.pts / (float)AV_TIME_BASE;
+#endif
     }
     dp->pos=demux->filepos;
     dp->flags= !!(pkt.flags&PKT_FLAG_KEY);
@@ -384,8 +392,12 @@ static int demux_lavf_fill_buffer(demuxer_t *demux, demux_stream_t *dsds){
 static void demux_seek_lavf(demuxer_t *demuxer, float rel_seek_secs, float audio_delay, int flags){
     lavf_priv_t *priv = demuxer->priv;
     mp_msg(MSGT_DEMUX,MSGL_DBG2,"demux_seek_lavf(%p, %f, %f, %d)\n", demuxer, rel_seek_secs, audio_delay, flags);
-
+    
+#if LIBAVFORMAT_BUILD < 4619
+    av_seek_frame(priv->avfc, -1, priv->last_pts + rel_seek_secs*AV_TIME_BASE);
+#else
     av_seek_frame(priv->avfc, -1, priv->last_pts + rel_seek_secs*AV_TIME_BASE, rel_seek_secs < 0 ? AVSEEK_FLAG_BACKWARD : 0);
+#endif
 }
 
 static int demux_lavf_control(demuxer_t *demuxer, int cmd, void *arg)
@@ -394,62 +406,19 @@ static int demux_lavf_control(demuxer_t *demuxer, int cmd, void *arg)
     
     switch (cmd) {
         case DEMUXER_CTRL_GET_TIME_LENGTH:
-	    if (priv->avfc->duration == 0 || priv->avfc->duration == AV_NOPTS_VALUE)
+	    if (priv->avfc->duration == 0)
 	        return DEMUXER_CTRL_DONTKNOW;
 	    
 	    *((double *)arg) = (double)priv->avfc->duration / AV_TIME_BASE;
 	    return DEMUXER_CTRL_OK;
 
 	case DEMUXER_CTRL_GET_PERCENT_POS:
-	    if (priv->avfc->duration == 0 || priv->avfc->duration == AV_NOPTS_VALUE)
+	    if (priv->avfc->duration == 0)
 	        return DEMUXER_CTRL_DONTKNOW;
 	    
-	    *((int *)arg) = (int)((priv->last_pts - priv->avfc->start_time)*100 / priv->avfc->duration);
+	    *((int *)arg) = (int)(priv->last_pts*100 / priv->avfc->duration);
 	    return DEMUXER_CTRL_OK;
-	case DEMUXER_CTRL_SWITCH_AUDIO:
-	{
-	    int id = *((int*)arg);
-	    int newid = -2;
-	    int i, curridx = -2;
-
-	    if(demuxer->audio->id == -2)
-	        return DEMUXER_CTRL_NOTIMPL;
-	    for(i = 0; i < priv->audio_streams; i++)
-	    {
-	        if(priv->astreams[i] == demuxer->audio->id) //current stream id
-	        {
-	            curridx = i;
-	            break;
-	        }
-	    }
-
-	    if(id < 0)
-	    {
-	        i = (curridx + 1) % priv->audio_streams;
-	        newid = priv->astreams[i];
-	    }
-	    else
-	    {
-	        for(i = 0; i < priv->audio_streams; i++)
-	        {
-		    if(priv->astreams[i] == id)
-		    {
-		        newid = id;
-		        break;
-		    }
-	        }
-	    }
-	    if(newid == -2 || i == curridx)
-	        return DEMUXER_CTRL_NOTIMPL;
-	    else
-	    {
-	        ds_free_packs(demuxer->audio);
-	        priv->avfc->streams[demuxer->audio->id]->discard = AVDISCARD_ALL;
-	        *((int*)arg) = demuxer->audio->id = newid;
-	        priv->avfc->streams[newid]->discard = AVDISCARD_NONE;
-	        return DEMUXER_CTRL_OK;
-	    }
-        }
+	
 	default:
 	    return DEMUXER_CTRL_NOTIMPL;
     }

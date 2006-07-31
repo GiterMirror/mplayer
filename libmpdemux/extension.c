@@ -12,7 +12,7 @@
  * An autodetection based on the extension is not a good idea, but we don't care ;-)
  */
 static struct {
-        const char *extension;
+        char *extension;
         int demuxer_type;
 } extensions_table[] = {
 //        { "mpeg", DEMUXER_TYPE_MPEG_PS },
@@ -20,7 +20,7 @@ static struct {
 //        { "mpe", DEMUXER_TYPE_MPEG_PS },
         { "vob", DEMUXER_TYPE_MPEG_PS },
         { "m2v", DEMUXER_TYPE_MPEG_PS },
-        { "gxf", DEMUXER_TYPE_LAVF },
+        { "gxf", DEMUXER_TYPE_MPEG_GXF },
         { "avi", DEMUXER_TYPE_AVI },
         { "mp4", DEMUXER_TYPE_MOV },
         { "mov", DEMUXER_TYPE_MOV },

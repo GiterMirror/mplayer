@@ -42,20 +42,19 @@ man pages:
     * Hungarian: Gabor Mizda
     * Italian: Daniele Forghieri
     * Polish: Waclaw Schiller
-    * Spanish: Reynaldo H. Verdejo Pinochet (outdated)
-    * Chinese: unmaintained, outdated
-    * Swedish: unmaintained, outdated, incomplete
+    * Spanish: Juan Martin, Reynaldo H. Verdejo Pinochet (outdated)
+    * Swedish: Carl Fürstenberg (incomplete)
 
 Documentation translations:
+    * Chinese (simplified): Lu Ran (outdated)
     * Czech: Jiri Heryan
-    * French: Guillaume Poirier
-    * German: Sebastian Krämer
-    * Hungarian: Gabor Mizda
+    * French: Nicolas Le Gaillart, Guillaume Poirier
+    * German: outdated
+    * Hungarian: Gabor Mizdad
+    * Italian: outdated
     * Polish: Waclaw Schiller
-    * Spanish: Reynaldo H. Verdejo Pinochet (outdated)
-    * Chinese (simplified): unmaintained, outdated, still HTML
-    * Italian: unmaintained, outdated, still HTML
-    * Russian: unmaintained, outdated, incomplete
+    * Russian: Dmitry Baryshkov (incomplete)
+    * Spanish: Juan Martin, Reynaldo H. Verdejo Pinochet (outdated)
 
 Platforms/ports:
     * Debian packaging: None
@@ -94,9 +93,6 @@ Imported libs/projects:
     * libmpdvdkit2: None
     * libfaad2: Alex Beregszaszi
     * realrtsp: Roberto Togni
-    * librtsp: Benjamin Zores
-    * freesdp: Benjamin Zores
-    * libass: Evgeniy Stepanov
 
 demuxers:
     * demux_fli.c - Roberto Togni
@@ -113,9 +109,6 @@ demuxers:
 muxers:
     * muxer_lavf.c - Michael Niedermayer
 
-inputs:
-    * stream_pvr.c - Benjamin Zores
-
 codec support:
     * FFmpeg: Michael Niedermayer
     * XviD: Ivan Kalvachev
@@ -125,7 +118,6 @@ codec support:
 video filters:
     * general: Richard Felker, Michael Niedermayer
     * vf_filmdint.c - Zoltan Hidvegi
-    * vf_blackframe.c - Ivo van Poorten
 
 audio filters:
     * general: Alex Beregszaszi
@@ -151,7 +143,6 @@ libvo drivers:
     * vo_gif89a.c - Joey Parrish
     * vo_gl.c - Reimar Döffinger
     * vo_gl2.c - Reimar Döffinger
-    * vo_ivtv.c - Benjamin Zores
     * vo_jpeg.c - Ivo van Poorten
     * vo_macosx.m - Nicolas Plourde
     * vo_md5sum.c - Ivo van Poorten
@@ -194,7 +185,6 @@ libao2 drivers:
     * ao_dsound.c - None
     * ao_dxr2.c - None
     * ao_esd.c - None
-    * ao_ivtv.c - Benjamin Zores
     * ao_jack.c - Reimar Döffinger
     * ao_mpegpes.c - None
     * ao_nas.c - Tobias Diedrich

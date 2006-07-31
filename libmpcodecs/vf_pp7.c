@@ -38,7 +38,6 @@
 #include "libvo/fastmemcpy.h"
 
 #define XMIN(a,b) ((a) < (b) ? (a) : (b))
-#define XMAX(a,b) ((a) > (b) ? (a) : (b))
 
 typedef short DCTELEM;
 
@@ -219,7 +218,7 @@ static void init_thres2(void){
 
     for(qp=0; qp<99; qp++){
         for(i=0; i<16; i++){
-            thres2[qp][i]= ((i&1)?SN2:SN0) * ((i&4)?SN2:SN0) * XMAX(1,qp) * (1<<2) - 1 - bias;
+            thres2[qp][i]= ((i&1)?SN2:SN0) * ((i&4)?SN2:SN0) * qp * (1<<2) - 1 - bias;
         }
     }
 }

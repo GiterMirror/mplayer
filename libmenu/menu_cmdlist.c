@@ -35,20 +35,15 @@ struct list_entry_s {
 
 struct menu_priv_s {
   menu_list_priv_t p;
-  int auto_close;
 };
 
-#define ST_OFF(m) M_ST_OFF(struct menu_priv_s, m)
-
 static struct menu_priv_s cfg_dflt = {
-  MENU_LIST_PRIV_DFLT,
-  0,
+  MENU_LIST_PRIV_DFLT
 };
 
 static m_option_t cfg_fields[] = {
   MENU_LIST_PRIV_FIELDS,
   { "title",M_ST_OFF(struct menu_priv_s,p.title), CONF_TYPE_STRING, 0, 0, 0, NULL },
-  { "auto-close", ST_OFF(auto_close), CONF_TYPE_FLAG, 0, 0, 1, NULL },
   { NULL, NULL, NULL, 0,0,0,NULL }
 };
 
@@ -66,11 +61,7 @@ static void read_cmd(menu_t* menu,int cmd) {
     if(mpriv->p.current->ok) {
       mp_cmd_t* c = mp_input_parse_cmd(mpriv->p.current->ok);
       if(c)
-        {
-          if (mpriv->auto_close)
-              mp_input_queue_cmd (mp_input_parse_cmd ("menu hide"));
 	mp_input_queue_cmd(c);
-        }
     }
    } break;
   case MENU_CMD_LEFT:
@@ -104,7 +95,7 @@ static void free_entry(list_entry_t* entry) {
   free(entry);
 }
 
-static void close_menu(menu_t* menu) {
+static void close(menu_t* menu) {
   menu_list_uninit(menu,free_entry);
 }
 
@@ -153,7 +144,7 @@ static int open(menu_t* menu, char* args) {
   menu->draw = menu_list_draw;
   menu->read_cmd = read_cmd;
   menu->read_key = read_key;
-  menu->close = close_menu;
+  menu->close = close;
 
   if(!args) {
     mp_msg(MSGT_GLOBAL,MSGL_WARN,MSGTR_LIBMENU_ListMenuNeedsAnArgument);

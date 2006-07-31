@@ -1,5 +1,7 @@
 #include "config.h"
 
+#ifdef HAVE_CDDA
+
 #include "stream.h"
 #include "m_option.h"
 #include "m_struct.h"
@@ -185,7 +187,7 @@ static int open_cdda(stream_t *st,int m, void* opts, int* file_format) {
   cd_info->sec  = (unsigned int)((audiolen/75)%60);
   cd_info->msec = (unsigned int)(audiolen%75);
 
-  priv = malloc(sizeof(cdda_priv));
+  priv = (cdda_priv*)malloc(sizeof(cdda_priv));
   memset(priv, 0, sizeof(cdda_priv));
   priv->cd = cdd;
   priv->cd_info = cd_info;
@@ -389,3 +391,5 @@ stream_info_t stream_info_cdda = {
   &stream_opts,
   1 // Urls are an option string
 };
+
+#endif

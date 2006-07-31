@@ -1,7 +1,8 @@
 
 #include "fastmemcpy.h"
 #include "cpudetect.h"
-#include "libswscale/swscale.h"
+#include "postproc/swscale.h"
+#include "postproc/rgb2rgb.h"
 #include "libmpcodecs/vf_scale.h"
 #include "mp_msg.h"
 #include "help_mp.h"
@@ -370,12 +371,6 @@ static int mga_init(int width,int height,unsigned int format){
             mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_MGA_InvalidOutputFormat,format);
             return (-1);
         }
-
-	if(width>1023 || height >1023)
-	{
-		mp_msg(MSGT_VO,MSGL_ERR, MGSTR_LIBVO_MGA_ResolutionTooHigh);
-		return (-1);
-	}
 
 	mga_vid_config.src_width = width;
 	mga_vid_config.src_height= height;

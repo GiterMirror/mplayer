@@ -18,12 +18,12 @@
 static void demux_seek_mf(demuxer_t *demuxer,float rel_seek_secs,float audio_delay,int flags){
   mf_t * mf = (mf_t *)demuxer->priv;
   sh_video_t   * sh_video = demuxer->video->sh;
-  int newpos = (flags & 1)?0:mf->curr_frame - 1;
+  int newpos = (flags & 1)?0:mf->curr_frame;
   
-  if ( flags & 2 ) newpos+=rel_seek_secs*(mf->nr_of_files - 1);
+  if ( flags & 2 ) newpos+=rel_seek_secs*mf->nr_of_files;
    else newpos+=rel_seek_secs * sh_video->fps;
   if ( newpos < 0 ) newpos=0;
-  if( newpos >= mf->nr_of_files) newpos=mf->nr_of_files - 1;
+  if( newpos > mf->nr_of_files) newpos=mf->nr_of_files;
   mf->curr_frame=newpos;
 }
 
@@ -140,23 +140,6 @@ static void demux_close_mf(demuxer_t* demuxer) {
   free(mf);  
 }
 
-static int demux_control_mf(demuxer_t *demuxer, int cmd, void *arg) {
-  mf_t *mf = (mf_t *)demuxer->priv;
-  sh_video_t *sh_video = demuxer->video->sh;
-
-  switch(cmd) {
-    case DEMUXER_CTRL_GET_TIME_LENGTH:
-      *((double *)arg) = (double)mf->nr_of_files / sh_video->fps;
-      return DEMUXER_CTRL_OK;
-
-    case DEMUXER_CTRL_GET_PERCENT_POS:
-      *((int *)arg) = 100 * mf->curr_frame / (mf->nr_of_files - 1);
-      return DEMUXER_CTRL_OK;
-
-    default:
-      return DEMUXER_CTRL_NOTIMPL;
-  }
-}
 
 demuxer_desc_t demuxer_desc_mf = {
   "mf demuxer",
@@ -171,5 +154,5 @@ demuxer_desc_t demuxer_desc_mf = {
   demux_open_mf,
   demux_close_mf,
   demux_seek_mf,
-  demux_control_mf
+  NULL
 };

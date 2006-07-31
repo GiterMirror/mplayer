@@ -199,7 +199,7 @@ int init_audio(sh_audio_t *sh_audio,char* codecname,char* afm,int status){
     return 0;
 }
 
-extern char *get_path(const char *filename);
+extern char *get_path(char *filename);
 
 int init_best_audio_codec(sh_audio_t *sh_audio,char** audio_codec_list,char** audio_fm_list){
 char* ac_l_default[2]={"",(char*)NULL};
@@ -290,7 +290,7 @@ int init_audio_filters(sh_audio_t *sh_audio,
 	int out_minsize, int out_maxsize){
   af_stream_t* afs=sh_audio->afilter;
   if(!afs){
-    afs = malloc(sizeof(af_stream_t));
+    afs = (af_stream_t*)malloc(sizeof(af_stream_t));
     memset(afs,0,sizeof(af_stream_t));
   }
 

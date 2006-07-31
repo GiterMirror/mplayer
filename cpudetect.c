@@ -147,9 +147,9 @@ void GetCpuCaps( CpuCaps *caps)
 		if(cl_size) caps->cl_size = cl_size;
 
 		ptmpstr=tmpstr=GetCpuFriendlyName(regs, regs2);
-		while(*ptmpstr == ' ')        // strip leading spaces
+		while(*ptmpstr == ' ')
 		    ptmpstr++;
-		mp_msg(MSGT_CPUDETECT,MSGL_INFO,"CPU: %s ", ptmpstr);
+		mp_msg(MSGT_CPUDETECT,MSGL_INFO,"CPU: %s ",tmpstr);
 		free(tmpstr);
 		mp_msg(MSGT_CPUDETECT,MSGL_INFO,"(Family: %d, Model: %d, Stepping: %d)\n",
 		    caps->cpuType, caps->cpuModel, caps->cpuStepping);
@@ -235,7 +235,7 @@ char *GetCpuFriendlyName(unsigned int regs[], unsigned int regs2[]){
 	char *retname;
 	int i;
 
-	if (NULL==(retname=malloc(256))) {
+	if (NULL==(retname=(char*)malloc(256))) {
 		mp_msg(MSGT_CPUDETECT,MSGL_FATAL,"Error: GetCpuFriendlyName() not enough memory\n");
 		exit(1);
 	}

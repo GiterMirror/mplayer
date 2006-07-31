@@ -3,8 +3,6 @@
  * Discrete Cosine Tansform (DCT) for Altivec
  * Copyright (c) 2004 Romain Dolbeau <romain@dolbeau.org>
  * based upon code from "mp3lib/dct64.c"
- * This file is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
  */
 
 #define real float

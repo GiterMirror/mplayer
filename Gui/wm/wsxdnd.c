@@ -29,7 +29,7 @@ Atom _XA_XdndTypeList;
 
 Atom atom_support;
 
-void wsXDNDInitialize(void)
+void wsXDNDInitialize()
 {
 
     _XA_XdndAware = XInternAtom(wsDisplay, "XdndAware", False);

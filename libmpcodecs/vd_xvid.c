@@ -4,6 +4,8 @@
 #include "config.h"
 #include "mp_msg.h"
 
+#ifdef HAVE_XVID3
+
 #include "vd_internal.h"
 #include "m_option.h"
 
@@ -152,7 +154,7 @@ static int init(sh_video_t *sh){
     return 0;
   }
 
-  p = malloc(sizeof(priv_t));
+  p = (priv_t*)malloc(sizeof(priv_t));
   p->cs = cs;
   p->hdl = dec_p.handle;
   sh->context = p;
@@ -245,3 +247,4 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
 
   return mpi;
 }
+#endif  //have_xvid

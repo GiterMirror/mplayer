@@ -35,6 +35,8 @@
 
 #include "config.h"
 
+#ifdef HAVE_VSTREAM
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -178,3 +180,5 @@ stream_info_t stream_info_vstream = {
   &stream_opts,
   1 // Url is an option string
 };
+
+#endif

@@ -10,14 +10,9 @@ LIBS+=$(LIBNAME2)
 endif
 
 AUDIO_SRCS_LIB=ad_hwac3.c \
+               ad_liba52.c \
+               ad_mp3lib.c \
                ad_hwmpa.c \
-
-ifeq ($(LIBA52),yes)
-AUDIO_SRCS_LIB+=ad_liba52.c
-endif
-ifeq ($(MP3LIB),yes)
-AUDIO_SRCS_LIB+=ad_mp3lib.c
-endif
 
 AUDIO_SRCS_NAT=ad_alaw.c \
                ad_dk3adpcm.c \
@@ -27,46 +22,33 @@ AUDIO_SRCS_NAT=ad_alaw.c \
                ad_msgsm.c \
                ad_pcm.c \
 
+AUDIO_SRCS_OPT=ad_acm.c \
+               ad_dmo.c \
+               ad_dshow.c \
+               ad_faad.c \
+               ad_libdv.c \
+               ad_libmad.c \
+               ad_libvorbis.c \
+               ad_qtaudio.c \
+               ad_realaud.c \
+               ad_twin.c \
+
+ifeq ($(CONFIG_LIBAVCODEC),yes)
+AUDIO_SRCS_OPT+=ad_ffmpeg.c
+endif
+ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
+AUDIO_SRCS_OPT+=ad_ffmpeg.c
+endif
+
 AUDIO_SRCS=dec_audio.c \
            ad.c \
            $(AUDIO_SRCS_LIB) \
            $(AUDIO_SRCS_NAT) \
+           $(AUDIO_SRCS_OPT) \
 
-ifeq ($(CONFIG_LIBAVCODEC),yes)
-AUDIO_SRCS+=ad_ffmpeg.c
-endif
-ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
-AUDIO_SRCS+=ad_ffmpeg.c
-endif
-ifeq ($(WIN32DLL),yes)
-AUDIO_SRCS+=ad_acm.c ad_dmo.c ad_dshow.c ad_twin.c
-endif
-ifeq ($(QTX_CODECS),yes)
-AUDIO_SRCS+=ad_qtaudio.c
-endif
-ifeq ($(REAL_CODECS),yes)
-AUDIO_SRCS+=ad_realaud.c
-endif
-ifeq ($(FAAD),yes)
-AUDIO_SRCS += ad_faad.c
-endif
-ifeq ($(LIBDV),yes)
-AUDIO_SRCS+=ad_libdv.c
-endif
-ifeq ($(LIBMAD),yes)
-AUDIO_SRCS+=ad_libmad.c
-endif
-ifeq ($(LIBVORBIS),yes)
-AUDIO_SRCS+=ad_libvorbis.c
-endif
-
-
-VIDEO_SRCS_LIB=vd_lzo.c \
+VIDEO_SRCS_LIB=vd_libmpeg2.c \
+               vd_lzo.c \
                vd_nuv.c \
-
-ifeq ($(LIBMPEG2),yes)
-VIDEO_SRCS_LIB+=vd_libmpeg2.c
-endif
 
 VIDEO_SRCS_NAT=vd_hmblck.c \
                vd_mpegpes.c \
@@ -75,52 +57,38 @@ VIDEO_SRCS_NAT=vd_hmblck.c \
                vd_raw.c \
                vd_sgi.c \
 
+VIDEO_SRCS_OPT=vd_divx4.c \
+               vd_dmo.c \
+               vd_dshow.c \
+               vd_libdv.c \
+               vd_odivx.c \
+               vd_qtvideo.c \
+               vd_realvid.c \
+               vd_theora.c \
+               vd_vfw.c \
+               vd_vfwex.c \
+               vd_xanim.c \
+               vd_xvid4.c \
+               vd_xvid.c \
+               vd_zrmjpeg.c \
+
+ifeq ($(CONFIG_LIBAVCODEC),yes)
+VIDEO_SRCS_OPT+=vd_ffmpeg.c
+endif
+ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
+VIDEO_SRCS_OPT+=vd_ffmpeg.c
+endif
+
 VIDEO_SRCS=dec_video.c \
            vd.c \
            $(VIDEO_SRCS_NAT) \
            $(VIDEO_SRCS_LIB) \
-
-ifeq ($(CONFIG_LIBAVCODEC),yes)
-VIDEO_SRCS+=vd_ffmpeg.c
-endif
-ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
-VIDEO_SRCS+=vd_ffmpeg.c
-endif
-ifeq ($(WIN32DLL),yes)
-VIDEO_SRCS+=vd_dmo.c vd_dshow.c vd_vfw.c vd_vfwex.c
-endif
-ifeq ($(QTX_CODECS),yes)
-VIDEO_SRCS+=vd_qtvideo.c
-endif
-ifeq ($(REAL_CODECS),yes)
-VIDEO_SRCS+=vd_realvid.c
-endif
-ifeq ($(XANIM_CODECS),yes)
-VIDEO_SRCS+=vd_xanim.c
-endif
-ifeq ($(LIBDV),yes)
-VIDEO_SRCS+=vd_libdv.c
-endif
-ifeq ($(LIBTHEORA),yes)
-VIDEO_SRCS+=vd_theora.c
-endif
-ifeq ($(XVID4),yes)
-VIDEO_SRCS+=vd_xvid4.c
-else
-  ifeq ($(XVID),yes)
-  VIDEO_SRCS+=vd_xvid.c
-  endif
-endif
-ifeq ($(ZORAN),yes)
-VIDEO_SRCS+=vd_zrmjpeg.c
-endif
-
+           $(VIDEO_SRCS_OPT) \
 
 VFILTER_SRCS=vf.c \
              pullup.c \
              vf_1bpp.c \
              vf_2xsai.c \
-             vf_blackframe.c \
              vf_bmovl.c \
              vf_boxblur.c \
              vf_crop.c \
@@ -180,6 +148,7 @@ VFILTER_SRCS=vf.c \
              vf_yuvcsp.c \
              vf_yuy2.c \
              vf_yvu9.c \
+             vf_screenshot.c \
              vf_yadif.c \
 
 VFILTER_LAVC_SRCS += vf_lavc.c \
@@ -206,16 +175,17 @@ ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
 VFILTER_SRCS += $(VFILTER_LAVC_SRCS)
 endif
 
-ifeq ($(PNG),yes)
-VFILTER_SRCS += vf_screenshot.c
-endif
-
-
 ENCODER_SRCS=ae.c \
              ae_pcm.c \
              ve.c \
+             ve_divx4.c \
+             ve_libdv.c \
              ve_nuv.c \
+             ve_qtvideo.c \
              ve_raw.c \
+             ve_vfw.c \
+             ve_xvid4.c \
+             ve_xvid.c \
 
 ifeq ($(CONFIG_LIBAVCODEC),yes)
 ENCODER_SRCS+=ve_lavc.c
@@ -223,26 +193,10 @@ endif
 ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
 ENCODER_SRCS+=ve_lavc.c
 endif
-ifeq ($(WIN32DLL),yes)
-ENCODER_SRCS+=ve_vfw.c
-endif
-ifeq ($(QTX_CODECS),yes)
-ENCODER_SRCS+=ve_qtvideo.c
-endif
-ifeq ($(LIBDV),yes)
-ENCODER_SRCS+=ve_libdv.c
-endif
-ifeq ($(XVID4),yes)
-ENCODER_SRCS+=ve_xvid4.c
-else
-  ifeq ($(XVID),yes)
-  ENCODER_SRCS+=ve_xvid.c
-  endif
-endif
+
 ifeq ($(X264),yes)
 ENCODER_SRCS+=ve_x264.c
 endif
-
 
 NATIVE_SRCS=native/minilzo.c \
             native/nuppelvideo.c \
@@ -302,10 +256,6 @@ ifeq ($(FAAC),yes)
 ENCODER_SRCS += ae_faac.c
 endif
 
-ifeq ($(CONFIG_ASS),yes)
-VFILTER_SRCS += vf_ass.c
-endif
-
 SRCS=$(AUDIO_SRCS) \
      $(VIDEO_SRCS) \
      $(VFILTER_SRCS) \
@@ -323,6 +273,9 @@ CFLAGS  = $(OPTFLAGS) \
           -I../libmpdemux \
           -I../loader \
           $(LIBAV_INC) \
+          $(EXTRA_INC) \
+          $(X264_INC) \
+          $(XVID_INC) \
           -D_GNU_SOURCE \
 
 .SUFFIXES: .c .o

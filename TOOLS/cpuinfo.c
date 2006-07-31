@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION <= 3) && (__MINGW32_MINOR_VERSION < 10)
+#ifdef __MINGW32__
 #include <sys/timeb.h>
 void gettimeofday(struct timeval* t,void* timezone) {
   struct timeb timebuffer;
@@ -16,8 +16,6 @@ void gettimeofday(struct timeval* t,void* timezone) {
   t->tv_sec=timebuffer.time;
   t->tv_usec=1000*timebuffer.millitm;
 }
-#endif
-#ifdef __MINGW32__
 #define MISSING_USLEEP
 #define sleep(t) _sleep(1000*t);
 #endif
@@ -65,10 +63,10 @@ cpuid(int func) {
 static int64_t
 rdtsc(void)
 {
-  uint64_t i;
+  unsigned int i, j;
 #define RDTSC   ".byte 0x0f, 0x31; "
-  asm volatile (RDTSC : "=A"(i) : );
-  return i;
+  asm volatile (RDTSC : "=a"(i), "=d"(j) : );
+  return ((int64_t)j<<32) + (int64_t)i;
 }
 
 static const char*

@@ -98,7 +98,7 @@ static ao_macosx_t *ao = NULL;
  *    two immediately following calls, and the real number of free bytes
  *    might actually be larger!
  */
-static int buf_free(void) {
+static int buf_free() {
   int free = ao->buf_read_pos - ao->buf_write_pos - ao->chunk_size;
   if (free < 0) free += ao->buffer_len;
   return free;
@@ -111,7 +111,7 @@ static int buf_free(void) {
  *    two immediately following calls, and the real number of buffered bytes
  *    might actually be larger!
  */
-static int buf_used(void) {
+static int buf_used() {
   int used = ao->buf_write_pos - ao->buf_read_pos;
   if (used < 0) used += ao->buffer_len;
   return used;
@@ -221,7 +221,7 @@ OSStatus err;
 UInt32 size, maxFrames;
 int aoIsCreated = ao != NULL;
 
-	if (!aoIsCreated)	ao = malloc(sizeof(ao_macosx_t));
+	if (!aoIsCreated)	ao = (ao_macosx_t *)malloc(sizeof(ao_macosx_t));
 
 	// Build Description for the input format
 	inDesc.mSampleRate=rate;
@@ -315,8 +315,8 @@ int aoIsCreated = ao != NULL;
     
 	ao->num_chunks = NUM_BUFS;
     ao->buffer_len = (ao->num_chunks + 1) * ao->chunk_size;
-    ao->buffer = aoIsCreated ? realloc(ao->buffer,(ao->num_chunks + 1)*ao->chunk_size)
-							: calloc(ao->num_chunks + 1, ao->chunk_size);
+    ao->buffer = aoIsCreated ? (unsigned char *)realloc(ao->buffer,(ao->num_chunks + 1)*ao->chunk_size)
+							: (unsigned char *)calloc(ao->num_chunks + 1, ao->chunk_size);
 	
 	ao_data.samplerate = inDesc.mSampleRate;
 	ao_data.channels = inDesc.mChannelsPerFrame;
@@ -346,7 +346,7 @@ static int play(void* output_samples,int num_bytes,int flags)
 }
 
 /* set variables and buffer to initial state */
-static void reset(void)
+static void reset()
 {
   audio_pause();
   /* reset ring-buffer state */
@@ -359,14 +359,14 @@ static void reset(void)
 
 
 /* return available space */
-static int get_space(void)
+static int get_space()
 {
   return buf_free();
 }
 
 
 /* return delay until audio is played */
-static float get_delay(void)
+static float get_delay()
 {
   int buffered = ao->buffer_len - ao->chunk_size - buf_free(); // could be less
   // inaccurate, should also contain the data buffered e.g. by the OS
@@ -393,7 +393,7 @@ static void uninit(int immed)
 
 
 /* stop playing, keep buffers (for pause) */
-static void audio_pause(void)
+static void audio_pause()
 {
   OSErr status=noErr;
 
@@ -406,7 +406,7 @@ static void audio_pause(void)
 
 
 /* resume playing, after audio_pause() */
-static void audio_resume(void)
+static void audio_resume()
 {
   OSErr status=noErr;
   

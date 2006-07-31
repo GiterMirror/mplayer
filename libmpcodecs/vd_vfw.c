@@ -5,6 +5,8 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+#ifdef USE_WIN32DLL
+
 #include "vd_internal.h"
 
 #include "wine/driver.h"
@@ -339,3 +341,4 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
         
     return mpi;
 }
+#endif

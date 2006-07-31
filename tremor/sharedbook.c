@@ -2,12 +2,9 @@
  *                                                                  *
  * THIS FILE IS PART OF THE OggVorbis 'TREMOR' CODEC SOURCE CODE.   *
  *                                                                  *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
  * THE OggVorbis 'TREMOR' SOURCE CODE IS (C) COPYRIGHT 1994-2002    *
  * BY THE Xiph.Org FOUNDATION http://www.xiph.org/                  *
+ * ALL REDISTRIBUTION RIGHTS RESERVED.                              *
  *                                                                  *
  ********************************************************************
 
@@ -316,8 +313,7 @@ static ogg_uint32_t bitreverse(ogg_uint32_t x){
 }
 
 static int sort32a(const void *a,const void *b){
-  return (**(ogg_uint32_t **)a>**(ogg_uint32_t **)b)-
-    (**(ogg_uint32_t **)a<**(ogg_uint32_t **)b);
+  return ( (**(ogg_uint32_t **)a>**(ogg_uint32_t **)b)<<1)-1;
 }
 
 /* decode codebook arrangement is more heavily optimized than encode */

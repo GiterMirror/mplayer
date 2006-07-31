@@ -156,7 +156,7 @@
 typedef struct
 {
  int    code;
- const char * name;
+ char * name;
 } TwsKeyNames;
 
 extern TwsKeyNames wsKeyNames[ wsKeyNumber ];

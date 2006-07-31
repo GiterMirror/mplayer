@@ -412,6 +412,7 @@ static int mov_check_file(demuxer_t* demuxer){
 	  skipped+=8;
 	  i = stream_read_dword(demuxer->stream)-8;
 	  if(stream_read_dword(demuxer->stream)==MOV_FOURCC('r','m','r','a')){
+	      int ref=0;
 	      skipped+=i;
 	      mp_msg(MSGT_DEMUX,MSGL_INFO,"MOV: Reference Media file!!!\n");
 	      //set demuxer type to playlist ...
@@ -622,15 +623,6 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 		sh_audio_t* sh=new_sh_audio(demuxer,priv->track_db);
 		sh->format=trak->fourcc;
 
-		// crude audio delay from editlist0 hack ::atm
-		if(trak->editlist_size>=1) {
-		    if(trak->editlist[0].pos == -1) {
-			sh->stream_delay = (float)trak->editlist[0].dur/(float)priv->timescale;
-	    		mp_msg(MSGT_DEMUX,MSGL_V,"MOV: Initial Audio-Delay: %.3f sec\n", sh->stream_delay);
-		    }
-		}
-
-
 		switch( sh->format ) {
 		    case 0x726D6173: /* samr */
 			/* amr narrowband */
@@ -741,7 +733,7 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 			  if (len >= 36 + char2int(trak->stdata,52)) {
 			    sh->codecdata_len = char2int(trak->stdata,52+char2int(trak->stdata,52));
 			    mp_msg(MSGT_DEMUX, MSGL_V, "MOV: Found alac atom (%d)!\n", sh->codecdata_len);
-			    sh->codecdata = malloc(sh->codecdata_len);
+			    sh->codecdata = (unsigned char *)malloc(sh->codecdata_len);
 			    memcpy(sh->codecdata, &trak->stdata[52+char2int(trak->stdata,52)], sh->codecdata_len);
 			  }
 			  break;
@@ -851,7 +843,7 @@ quit_vorbis_block:
 			    if(!is_vorbis)
 			    {
 			    sh->codecdata_len = esds.decoderConfigLen;
-			    sh->codecdata = malloc(sh->codecdata_len);
+			    sh->codecdata = (unsigned char *)malloc(sh->codecdata_len);
 			    memcpy(sh->codecdata, esds.decoderConfig, sh->codecdata_len);
 			    }
 			    }
@@ -869,7 +861,7 @@ quit_vorbis_block:
 			if(atom_len > 8) {
 			    // copy all the atom (not only payload) for lavc alac decoder
 			    sh->codecdata_len = atom_len;
-			    sh->codecdata = malloc(sh->codecdata_len);
+			    sh->codecdata = (unsigned char *)malloc(sh->codecdata_len);
 			    memcpy(sh->codecdata, &trak->stdata[28], sh->codecdata_len);
 			}
 		      } break;
@@ -937,15 +929,6 @@ quit_vorbis_block:
 		sh_video_t* sh=new_sh_video(demuxer,priv->track_db);
 		int depth;
 		sh->format=trak->fourcc;
-
-		// crude video delay from editlist0 hack ::atm
-		if(trak->editlist_size>=1) {
-		    if(trak->editlist[0].pos == -1) {
-			sh->stream_delay = (float)trak->editlist[0].dur/(float)priv->timescale;
-	    		mp_msg(MSGT_DEMUX,MSGL_V,"MOV: Initial Video-Delay: %.3f sec\n", sh->stream_delay);
-		    }
-		}
-
 
 		if (trak->stdata_len < 78) {
 		  mp_msg(MSGT_DEMUXER, MSGL_WARN,
@@ -1051,7 +1034,7 @@ quit_vorbis_block:
 
 			  // dump away the codec specific configuration for the AAC decoder
 			  trak->stream_header_len = esds.decoderConfigLen;
-			  trak->stream_header = malloc(trak->stream_header_len);
+			  trak->stream_header = (unsigned char *)malloc(trak->stream_header_len);
 			  memcpy(trak->stream_header, esds.decoderConfig, trak->stream_header_len);
 			}
 			mp4_free_esds(&esds); // freeup esds mem
@@ -1086,7 +1069,7 @@ quit_vorbis_block:
 		        // Copy avcC for the AVC decoder
 		        // This data will be put in extradata below, where BITMAPINFOHEADER is created
 		        trak->stream_header_len = atom_len-8;
-		        trak->stream_header = malloc(trak->stream_header_len);
+		        trak->stream_header = (unsigned char *)malloc(trak->stream_header_len);
 		        memcpy(trak->stream_header, trak->stdata+pos+8, trak->stream_header_len);
 		      }	      
 		      break;
@@ -2140,6 +2123,8 @@ static void demux_seek_mov(demuxer_t *demuxer,float pts,float audio_delay,int fl
 	//if(!(flags&1)) pts+=ds->pts;
 	ds->pts=mov_seek_track(trak,pts,flags);
 	if (ds->pts < 0) ds->eof = 1;
+	if (demuxer->video->id < 0)
+	  ((sh_audio_t*)ds->sh)->delay = ds->pts;
     }
 
 }

@@ -107,8 +107,14 @@ demuxer_desc_t* demuxer_list[] = {
   &demuxer_desc_mpeg_gxf,
   &demuxer_desc_mpeg4_es,
   &demuxer_desc_h264_es,
+#ifdef HAVE_LIBDV095
+  &demuxer_desc_rawdv,
+#endif
   &demuxer_desc_mpc,
   &demuxer_desc_audio,
+#ifdef HAVE_XMMS
+  &demuxer_desc_xmms,
+#endif
   &demuxer_desc_mpeg_ty,
 #ifdef STREAMING_LIVE555
   &demuxer_desc_rtp,
@@ -116,13 +122,7 @@ demuxer_desc_t* demuxer_list[] = {
 #if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
   &demuxer_desc_lavf,
 #endif
-#ifdef HAVE_LIBDV095
-  &demuxer_desc_rawdv,
-#endif
   &demuxer_desc_aac,
-#ifdef HAVE_XMMS
-  &demuxer_desc_xmms,
-#endif
   NULL
 };
 
@@ -229,9 +229,7 @@ sh_audio_t* new_sh_audio(demuxer_t *demuxer,int id){
     return demuxer->a_streams[id];
 }
 
-void free_sh_audio(demuxer_t *demuxer, int id) {
-    sh_audio_t *sh = demuxer->a_streams[id];
-    demuxer->a_streams[id] = NULL;
+void free_sh_audio(sh_audio_t* sh){
     mp_msg(MSGT_DEMUXER,MSGL_DBG2,"DEMUXER: freeing sh_audio at %p\n",sh);
     if(sh->wf) free(sh->wf);
     free(sh);
@@ -272,9 +270,11 @@ void free_demuxer(demuxer_t *demuxer){
       goto skip_streamfree;
     // free streams:
     for(i = 0; i < MAX_A_STREAMS; i++)
-	if(demuxer->a_streams[i]) free_sh_audio(demuxer, i);
+	if(demuxer->a_streams[i]) free_sh_audio(demuxer->a_streams[i]);
     for(i = 0; i < MAX_V_STREAMS; i++)
 	if(demuxer->v_streams[i]) free_sh_video(demuxer->v_streams[i]);
+    //if(sh_audio) free_sh_audio(sh_audio);
+    //if(sh_video) free_sh_video(sh_video);
     // free demuxers:
     free_demuxer_stream(demuxer->audio);
     free_demuxer_stream(demuxer->video);
@@ -355,7 +355,7 @@ int ds_fill_buffer(demux_stream_t *ds){
       ds->pos=p->pos;
       ds->dpos+=p->len; // !!!
       ++ds->pack_no;
-      if (p->pts != (correct_pts ? MP_NOPTS_VALUE : 0)) {
+      if(p->pts){
         ds->pts=p->pts;
         ds->pts_bytes=0;
       }
@@ -511,11 +511,10 @@ int ds_get_packet_pts(demux_stream_t *ds,unsigned char **start, double *pts)
             *start = NULL;
             return -1;
 	}
+	// Should use MP_NOPTS_VALUE for "unknown pts" in the packets too
+	if (ds->current->pts)
+	    *pts = ds->current->pts;
     }
-    // Should use MP_NOPTS_VALUE for "unknown pts" in the packets too
-    // Return pts unless this read starts from the middle of a packet
-    if (!ds->buffer_pos && (correct_pts || ds->current->pts))
-	*pts = ds->current->pts;
     len=ds->buffer_size-ds->buffer_pos;
     *start = &ds->buffer[ds->buffer_pos];
     ds->buffer_pos+=len;
@@ -624,8 +623,6 @@ int get_demuxer_type_from_name(char *demuxer_name, int *force)
 }
 
 int extension_parsing=1; // 0=off 1=mixed (used only for unstable formats)
-
-int correct_pts=0;
 
 /*
   NOTE : Several demuxers may be opened at the same time so
@@ -922,7 +919,7 @@ if (demuxer->desc->seek)
 return 1;
 }
 
-int demux_info_add(demuxer_t *demuxer, const char *opt, const char *param)
+int demux_info_add(demuxer_t *demuxer, char *opt, char *param)
 {
     char **info = demuxer->info;
     int n = 0;

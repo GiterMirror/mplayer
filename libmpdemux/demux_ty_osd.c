@@ -84,6 +84,7 @@ void ty_ClearOSD( int start )
 
 static void ty_DrawChar( int *x, int *y, char disChar, int fgColor, int bgColor )
 {
+	int index;
    int cx;
    int cy;
 
@@ -475,7 +476,7 @@ static int ty_XDSAddLine = -1;
 static int ty_XDSDisplayCount = -1;
 
 
-static void ty_AddXDSToDisplay( const char *format, ... )
+static void ty_AddXDSToDisplay( char *format, ... )
 {
    char line[ 80 ];
    int  index;

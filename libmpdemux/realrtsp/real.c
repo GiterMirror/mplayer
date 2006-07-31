@@ -36,17 +36,12 @@
 #include "asmrp.h"
 #include "sdpplin.h"
 #include "xbuffer.h"
-#if USE_LIBAVUTIL_SO
-#include "ffmpeg/md5.h"
-#else
-#include "libavutil/md5.h"
-#endif
 
 /*
 #define LOG
 */
 
-static const unsigned char xor_table[] = {
+const unsigned char xor_table[] = {
     0x05, 0x18, 0x74, 0xd0, 0x0d, 0x09, 0x02, 0x53,
     0xc0, 0x01, 0x05, 0x05, 0x67, 0x03, 0x19, 0x70,
     0x08, 0x27, 0x66, 0x10, 0x10, 0x72, 0x08, 0x09,
@@ -63,8 +58,6 @@ static const unsigned char xor_table[] = {
 #ifndef MAX
 #define MAX(x,y) ((x>y) ? x : y)
 #endif
-
-#define BUF_SIZE 4096
 
 #ifdef LOG
 static void hexdump (const char *buf, int length) {
@@ -89,12 +82,273 @@ static void hexdump (const char *buf, int length) {
 #endif
 
 
+static void hash(char *field, char *param) {
+
+  uint32_t a, b, c, d;
+ 
+
+  /* fill variables */
+  a= le2me_32(*(uint32_t*)(field));
+  b= le2me_32(*(uint32_t*)(field+4));
+  c= le2me_32(*(uint32_t*)(field+8));
+  d= le2me_32(*(uint32_t*)(field+12));
+
+#ifdef LOG
+  printf("real: hash input: %x %x %x %x\n", a, b, c, d);
+  printf("real: hash parameter:\n");
+  hexdump(param, 64);
+  printf("real: hash field:\n");
+  hexdump(field, 64+24);
+#endif
+  
+  a = ((b & c) | (~b & d)) + le2me_32(*((uint32_t*)(param+0x00))) + a - 0x28955B88;
+  a = ((a << 0x07) | (a >> 0x19)) + b;
+  d = ((a & b) | (~a & c)) + le2me_32(*((uint32_t*)(param+0x04))) + d - 0x173848AA;
+  d = ((d << 0x0c) | (d >> 0x14)) + a;
+  c = ((d & a) | (~d & b)) + le2me_32(*((uint32_t*)(param+0x08))) + c + 0x242070DB;
+  c = ((c << 0x11) | (c >> 0x0f)) + d;
+  b = ((c & d) | (~c & a)) + le2me_32(*((uint32_t*)(param+0x0c))) + b - 0x3E423112;
+  b = ((b << 0x16) | (b >> 0x0a)) + c;
+  a = ((b & c) | (~b & d)) + le2me_32(*((uint32_t*)(param+0x10))) + a - 0x0A83F051;
+  a = ((a << 0x07) | (a >> 0x19)) + b;
+  d = ((a & b) | (~a & c)) + le2me_32(*((uint32_t*)(param+0x14))) + d + 0x4787C62A;
+  d = ((d << 0x0c) | (d >> 0x14)) + a;
+  c = ((d & a) | (~d & b)) + le2me_32(*((uint32_t*)(param+0x18))) + c - 0x57CFB9ED;
+  c = ((c << 0x11) | (c >> 0x0f)) + d;
+  b = ((c & d) | (~c & a)) + le2me_32(*((uint32_t*)(param+0x1c))) + b - 0x02B96AFF;
+  b = ((b << 0x16) | (b >> 0x0a)) + c;
+  a = ((b & c) | (~b & d)) + le2me_32(*((uint32_t*)(param+0x20))) + a + 0x698098D8;
+  a = ((a << 0x07) | (a >> 0x19)) + b;
+  d = ((a & b) | (~a & c)) + le2me_32(*((uint32_t*)(param+0x24))) + d - 0x74BB0851;
+  d = ((d << 0x0c) | (d >> 0x14)) + a;
+  c = ((d & a) | (~d & b)) + le2me_32(*((uint32_t*)(param+0x28))) + c - 0x0000A44F;
+  c = ((c << 0x11) | (c >> 0x0f)) + d;
+  b = ((c & d) | (~c & a)) + le2me_32(*((uint32_t*)(param+0x2C))) + b - 0x76A32842;
+  b = ((b << 0x16) | (b >> 0x0a)) + c;
+  a = ((b & c) | (~b & d)) + le2me_32(*((uint32_t*)(param+0x30))) + a + 0x6B901122;
+  a = ((a << 0x07) | (a >> 0x19)) + b;
+  d = ((a & b) | (~a & c)) + le2me_32(*((uint32_t*)(param+0x34))) + d - 0x02678E6D;
+  d = ((d << 0x0c) | (d >> 0x14)) + a;
+  c = ((d & a) | (~d & b)) + le2me_32(*((uint32_t*)(param+0x38))) + c - 0x5986BC72;
+  c = ((c << 0x11) | (c >> 0x0f)) + d;
+  b = ((c & d) | (~c & a)) + le2me_32(*((uint32_t*)(param+0x3c))) + b + 0x49B40821;
+  b = ((b << 0x16) | (b >> 0x0a)) + c;
+  
+  a = ((b & d) | (~d & c)) + le2me_32(*((uint32_t*)(param+0x04))) + a - 0x09E1DA9E;
+  a = ((a << 0x05) | (a >> 0x1b)) + b;
+  d = ((a & c) | (~c & b)) + le2me_32(*((uint32_t*)(param+0x18))) + d - 0x3FBF4CC0;
+  d = ((d << 0x09) | (d >> 0x17)) + a;
+  c = ((d & b) | (~b & a)) + le2me_32(*((uint32_t*)(param+0x2c))) + c + 0x265E5A51;
+  c = ((c << 0x0e) | (c >> 0x12)) + d;
+  b = ((c & a) | (~a & d)) + le2me_32(*((uint32_t*)(param+0x00))) + b - 0x16493856;
+  b = ((b << 0x14) | (b >> 0x0c)) + c;
+  a = ((b & d) | (~d & c)) + le2me_32(*((uint32_t*)(param+0x14))) + a - 0x29D0EFA3;
+  a = ((a << 0x05) | (a >> 0x1b)) + b;
+  d = ((a & c) | (~c & b)) + le2me_32(*((uint32_t*)(param+0x28))) + d + 0x02441453;
+  d = ((d << 0x09) | (d >> 0x17)) + a;
+  c = ((d & b) | (~b & a)) + le2me_32(*((uint32_t*)(param+0x3c))) + c - 0x275E197F;
+  c = ((c << 0x0e) | (c >> 0x12)) + d;
+  b = ((c & a) | (~a & d)) + le2me_32(*((uint32_t*)(param+0x10))) + b - 0x182C0438;
+  b = ((b << 0x14) | (b >> 0x0c)) + c;
+  a = ((b & d) | (~d & c)) + le2me_32(*((uint32_t*)(param+0x24))) + a + 0x21E1CDE6;
+  a = ((a << 0x05) | (a >> 0x1b)) + b;
+  d = ((a & c) | (~c & b)) + le2me_32(*((uint32_t*)(param+0x38))) + d - 0x3CC8F82A;
+  d = ((d << 0x09) | (d >> 0x17)) + a;
+  c = ((d & b) | (~b & a)) + le2me_32(*((uint32_t*)(param+0x0c))) + c - 0x0B2AF279;
+  c = ((c << 0x0e) | (c >> 0x12)) + d;
+  b = ((c & a) | (~a & d)) + le2me_32(*((uint32_t*)(param+0x20))) + b + 0x455A14ED;
+  b = ((b << 0x14) | (b >> 0x0c)) + c;
+  a = ((b & d) | (~d & c)) + le2me_32(*((uint32_t*)(param+0x34))) + a - 0x561C16FB;
+  a = ((a << 0x05) | (a >> 0x1b)) + b;
+  d = ((a & c) | (~c & b)) + le2me_32(*((uint32_t*)(param+0x08))) + d - 0x03105C08;
+  d = ((d << 0x09) | (d >> 0x17)) + a;
+  c = ((d & b) | (~b & a)) + le2me_32(*((uint32_t*)(param+0x1c))) + c + 0x676F02D9;
+  c = ((c << 0x0e) | (c >> 0x12)) + d;
+  b = ((c & a) | (~a & d)) + le2me_32(*((uint32_t*)(param+0x30))) + b - 0x72D5B376;
+  b = ((b << 0x14) | (b >> 0x0c)) + c;
+  
+  a = (b ^ c ^ d) + le2me_32(*((uint32_t*)(param+0x14))) + a - 0x0005C6BE;
+  a = ((a << 0x04) | (a >> 0x1c)) + b;
+  d = (a ^ b ^ c) + le2me_32(*((uint32_t*)(param+0x20))) + d - 0x788E097F;
+  d = ((d << 0x0b) | (d >> 0x15)) + a;
+  c = (d ^ a ^ b) + le2me_32(*((uint32_t*)(param+0x2c))) + c + 0x6D9D6122;
+  c = ((c << 0x10) | (c >> 0x10)) + d;
+  b = (c ^ d ^ a) + le2me_32(*((uint32_t*)(param+0x38))) + b - 0x021AC7F4;
+  b = ((b << 0x17) | (b >> 0x09)) + c;
+  a = (b ^ c ^ d) + le2me_32(*((uint32_t*)(param+0x04))) + a - 0x5B4115BC;
+  a = ((a << 0x04) | (a >> 0x1c)) + b;
+  d = (a ^ b ^ c) + le2me_32(*((uint32_t*)(param+0x10))) + d + 0x4BDECFA9;
+  d = ((d << 0x0b) | (d >> 0x15)) + a;
+  c = (d ^ a ^ b) + le2me_32(*((uint32_t*)(param+0x1c))) + c - 0x0944B4A0;
+  c = ((c << 0x10) | (c >> 0x10)) + d;
+  b = (c ^ d ^ a) + le2me_32(*((uint32_t*)(param+0x28))) + b - 0x41404390;
+  b = ((b << 0x17) | (b >> 0x09)) + c;
+  a = (b ^ c ^ d) + le2me_32(*((uint32_t*)(param+0x34))) + a + 0x289B7EC6;
+  a = ((a << 0x04) | (a >> 0x1c)) + b;
+  d = (a ^ b ^ c) + le2me_32(*((uint32_t*)(param+0x00))) + d - 0x155ED806;
+  d = ((d << 0x0b) | (d >> 0x15)) + a;
+  c = (d ^ a ^ b) + le2me_32(*((uint32_t*)(param+0x0c))) + c - 0x2B10CF7B;
+  c = ((c << 0x10) | (c >> 0x10)) + d;
+  b = (c ^ d ^ a) + le2me_32(*((uint32_t*)(param+0x18))) + b + 0x04881D05;
+  b = ((b << 0x17) | (b >> 0x09)) + c;
+  a = (b ^ c ^ d) + le2me_32(*((uint32_t*)(param+0x24))) + a - 0x262B2FC7;
+  a = ((a << 0x04) | (a >> 0x1c)) + b;
+  d = (a ^ b ^ c) + le2me_32(*((uint32_t*)(param+0x30))) + d - 0x1924661B;
+  d = ((d << 0x0b) | (d >> 0x15)) + a;
+  c = (d ^ a ^ b) + le2me_32(*((uint32_t*)(param+0x3c))) + c + 0x1fa27cf8;
+  c = ((c << 0x10) | (c >> 0x10)) + d;
+  b = (c ^ d ^ a) + le2me_32(*((uint32_t*)(param+0x08))) + b - 0x3B53A99B;
+  b = ((b << 0x17) | (b >> 0x09)) + c;
+  
+  a = ((~d | b) ^ c)  + le2me_32(*((uint32_t*)(param+0x00))) + a - 0x0BD6DDBC;
+  a = ((a << 0x06) | (a >> 0x1a)) + b; 
+  d = ((~c | a) ^ b)  + le2me_32(*((uint32_t*)(param+0x1c))) + d + 0x432AFF97;
+  d = ((d << 0x0a) | (d >> 0x16)) + a; 
+  c = ((~b | d) ^ a)  + le2me_32(*((uint32_t*)(param+0x38))) + c - 0x546BDC59;
+  c = ((c << 0x0f) | (c >> 0x11)) + d; 
+  b = ((~a | c) ^ d)  + le2me_32(*((uint32_t*)(param+0x14))) + b - 0x036C5FC7;
+  b = ((b << 0x15) | (b >> 0x0b)) + c; 
+  a = ((~d | b) ^ c)  + le2me_32(*((uint32_t*)(param+0x30))) + a + 0x655B59C3;
+  a = ((a << 0x06) | (a >> 0x1a)) + b; 
+  d = ((~c | a) ^ b)  + le2me_32(*((uint32_t*)(param+0x0C))) + d - 0x70F3336E;
+  d = ((d << 0x0a) | (d >> 0x16)) + a; 
+  c = ((~b | d) ^ a)  + le2me_32(*((uint32_t*)(param+0x28))) + c - 0x00100B83;
+  c = ((c << 0x0f) | (c >> 0x11)) + d; 
+  b = ((~a | c) ^ d)  + le2me_32(*((uint32_t*)(param+0x04))) + b - 0x7A7BA22F;
+  b = ((b << 0x15) | (b >> 0x0b)) + c; 
+  a = ((~d | b) ^ c)  + le2me_32(*((uint32_t*)(param+0x20))) + a + 0x6FA87E4F;
+  a = ((a << 0x06) | (a >> 0x1a)) + b; 
+  d = ((~c | a) ^ b)  + le2me_32(*((uint32_t*)(param+0x3c))) + d - 0x01D31920;
+  d = ((d << 0x0a) | (d >> 0x16)) + a; 
+  c = ((~b | d) ^ a)  + le2me_32(*((uint32_t*)(param+0x18))) + c - 0x5CFEBCEC;
+  c = ((c << 0x0f) | (c >> 0x11)) + d; 
+  b = ((~a | c) ^ d)  + le2me_32(*((uint32_t*)(param+0x34))) + b + 0x4E0811A1;
+  b = ((b << 0x15) | (b >> 0x0b)) + c; 
+  a = ((~d | b) ^ c)  + le2me_32(*((uint32_t*)(param+0x10))) + a - 0x08AC817E;
+  a = ((a << 0x06) | (a >> 0x1a)) + b; 
+  d = ((~c | a) ^ b)  + le2me_32(*((uint32_t*)(param+0x2c))) + d - 0x42C50DCB;
+  d = ((d << 0x0a) | (d >> 0x16)) + a; 
+  c = ((~b | d) ^ a)  + le2me_32(*((uint32_t*)(param+0x08))) + c + 0x2AD7D2BB;
+  c = ((c << 0x0f) | (c >> 0x11)) + d; 
+  b = ((~a | c) ^ d)  + le2me_32(*((uint32_t*)(param+0x24))) + b - 0x14792C6F;
+  b = ((b << 0x15) | (b >> 0x0b)) + c; 
+
+#ifdef LOG
+  printf("real: hash output: %x %x %x %x\n", a, b, c, d);
+#endif
+  
+  a += le2me_32(*((uint32_t *)(field+0)));
+  *((uint32_t *)(field+0)) = le2me_32(a);
+  b += le2me_32(*((uint32_t *)(field+4)));
+  *((uint32_t *)(field+4)) = le2me_32(b);
+  c += le2me_32(*((uint32_t *)(field+8)));
+  *((uint32_t *)(field+8)) = le2me_32(c);
+  d += le2me_32(*((uint32_t *)(field+12)));
+  *((uint32_t *)(field+12)) = le2me_32(d);
+
+#ifdef LOG
+  printf("real: hash field:\n");
+  hexdump(field, 64+24);
+#endif
+}
+
+static void call_hash (char *key, char *challenge, int len) {
+
+  uint32_t *ptr1, *ptr2;
+  uint32_t a, b, c, d;
+  uint32_t tmp;
+
+  ptr1=(uint32_t*)(key+16);
+  ptr2=(uint32_t*)(key+20);
+  
+  a = le2me_32(*ptr1);
+  b = (a >> 3) & 0x3f;
+  a += len * 8;
+  *ptr1 = le2me_32(a);
+  
+  if (a < (len << 3))
+  {
+#ifdef LOG
+    printf("not verified: (len << 3) > a true\n");
+#endif
+    ptr2 += 4;
+  }
+
+  tmp = le2me_32(*ptr2);
+  tmp += (len >> 0x1d);
+  *ptr2 = le2me_32(tmp);
+  a = 64 - b;
+  c = 0;  
+  if (a <= len)
+  {
+
+    memcpy(key+b+24, challenge, a);
+    hash(key, key+24);
+    c = a;
+    d = c + 0x3f;
+    
+    while ( d < len ) {
+
+#ifdef LOG
+      printf("not verified:  while ( d < len )\n");
+#endif
+      hash(key, challenge+d-0x3f);
+      d += 64;
+      c += 64;
+    }
+    b = 0;
+  }
+  
+  memcpy(key+b+24, challenge+c, len-c);
+}
+
+static void calc_response (char *result, char *field) {
+
+  char buf1[128];
+  char buf2[128];
+  int i;
+
+  memset (buf1, 0, 64);
+  *buf1 = 128;
+  
+  memcpy (buf2, field+16, 8);
+  
+  i = ( le2me_32(*((uint32_t*)(buf2))) >> 3 ) & 0x3f;
+ 
+  if (i < 56) {
+    i = 56 - i;
+  } else {
+#ifdef LOG
+    printf("not verified: ! (i < 56)\n");
+#endif
+    i = 120 - i;
+  }
+
+  call_hash (field, buf1, i);
+  call_hash (field, buf2, 8);
+
+  memcpy (result, field, 16);
+
+}
+
+
 static void calc_response_string (char *result, char *challenge) {
  
-  char zres[16];
+  char field[128];
+  char zres[20];
   int  i;
       
-  av_md5_sum(zres, challenge, 64);
+  /* initialize our field */
+  BE_32C (field,      0x01234567);
+  BE_32C ((field+4),  0x89ABCDEF);
+  BE_32C ((field+8),  0xFEDCBA98);
+  BE_32C ((field+12), 0x76543210);
+  BE_32C ((field+16), 0x00000000);
+  BE_32C ((field+20), 0x00000000);
+
+  /* calculate response */
+  call_hash(field, challenge, 64);
+  calc_response(zres,field);
  
   /* convert zres to ascii string */
   for (i=0; i<16; i++ ) {
@@ -108,7 +362,7 @@ static void calc_response_string (char *result, char *challenge) {
   }
 }
 
-static void real_calc_response_and_checksum (char *response, char *chksum, char *challenge) {
+void real_calc_response_and_checksum (char *response, char *chksum, char *challenge) {
 
   int   ch_len, table_len, resp_len;
   int   i;
@@ -143,6 +397,8 @@ static void real_calc_response_and_checksum (char *response, char *chksum, char 
     memcpy(ptr, challenge, ch_len);
   }
   
+  if (xor_table != NULL)
+  {
     table_len = strlen(xor_table);
 
     if (table_len > 56) table_len=56;
@@ -150,6 +406,7 @@ static void real_calc_response_and_checksum (char *response, char *chksum, char 
     /* xor challenge bytewise with xor_table */
     for (i=0; i<table_len; i++)
       ptr[i] = ptr[i] ^ xor_table[i];
+  }
 
   calc_response_string (response, buf);
 
@@ -232,7 +489,7 @@ static int select_mlti_data(const char *mlti_chunk, int mlti_size, int selection
  * looking at stream description.
  */
 
-static rmff_header_t *real_parse_sdp(char *data, char **stream_rules, uint32_t bandwidth) {
+rmff_header_t *real_parse_sdp(char *data, char **stream_rules, uint32_t bandwidth) {
 
   sdpplin_t *desc;
   rmff_header_t *header;
@@ -415,7 +672,7 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer) {
   return (n <= 0) ? 0 : n+12;
 }
 
-static int convert_timestamp(char *str, int *sec, int *msec) {
+int convert_timestamp(char *str, int *sec, int *msec) {
   int hh, mm, ss, ms = 0;
   if (sscanf(str, "%d:%d:%d.%d", &hh, &mm, &ss, &ms) < 3) {
     hh = 0;
@@ -508,7 +765,7 @@ rmff_header_t  *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwid
   printf("real: Stream description size: %u\n", size);
 #endif
 
-  description=malloc(size+1);
+  description=malloc(sizeof(char)*(size+1));
 
   if( rtsp_read_data(rtsp_session, description, size) <= 0) {
     buf = xbuffer_free(buf);
@@ -543,7 +800,7 @@ rmff_header_t  *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwid
   rtsp_schedule_field(rtsp_session, "Transport: x-pn-tng/tcp;mode=play,rtp/avp/tcp;unicast;mode=play");
   buf = xbuffer_ensure_size(buf, strlen(mrl) + 32);
   sprintf(buf, "%s/streamid=0", mrl);
-  rtsp_request_setup(rtsp_session,buf,NULL);
+  rtsp_request_setup(rtsp_session,buf);
 
   if (h->prop->num_streams > 1) {
     rtsp_schedule_field(rtsp_session, "Transport: x-pn-tng/tcp;mode=play,rtp/avp/tcp;unicast;mode=play");
@@ -553,7 +810,7 @@ rmff_header_t  *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwid
 
     buf = xbuffer_ensure_size(buf, strlen(mrl) + 32);
     sprintf(buf, "%s/streamid=1", mrl);
-    rtsp_request_setup(rtsp_session,buf,NULL);
+    rtsp_request_setup(rtsp_session,buf);
   }
   /* set stream parameter (bandwidth) with our subscribe string */
   rtsp_schedule_field(rtsp_session, subscribe);
@@ -588,25 +845,4 @@ rmff_header_t  *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwid
   subscribe = xbuffer_free(subscribe);
   buf = xbuffer_free(buf);
   return h;
-}
-
-struct real_rtsp_session_t *
-init_real_rtsp_session (void)
-{
-  struct real_rtsp_session_t *real_rtsp_session = NULL;
-
-  real_rtsp_session = malloc (sizeof (struct real_rtsp_session_t));
-  real_rtsp_session->recv = xbuffer_init (BUF_SIZE);
-
-  return real_rtsp_session;
-}
-
-void
-free_real_rtsp_session (struct real_rtsp_session_t* real_session)
-{
-  if (!real_session)
-    return;
-  
-  xbuffer_free (real_session->recv);
-  free (real_session);
 }

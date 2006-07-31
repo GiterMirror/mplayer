@@ -53,7 +53,7 @@ play_tree_parser_get_line(play_tree_parser_t* p) {
   int r,resize = 0;
 
   if(p->buffer == NULL) {
-    p->buffer = malloc(BUF_STEP);
+    p->buffer = (char*)malloc(BUF_STEP);
     p->buffer_size = BUF_STEP;
     p->iter = p->buffer;
   }
@@ -133,7 +133,7 @@ play_tree_parser_stop_keeping(play_tree_parser_t* p) {
 }
 
 
-static play_tree_t*
+play_tree_t*
 parse_asx(play_tree_parser_t* p) {
   int comments = 0,get_line = 1;
   char* line = NULL;
@@ -243,7 +243,7 @@ pls_read_entry(char* line,pls_entry_t** _e,int* _max_entry,char** val) {
 }
 
 
-static play_tree_t*
+play_tree_t*
 parse_pls(play_tree_parser_t* p) {
   char *line,*v;
   pls_entry_t* entries = NULL;
@@ -335,7 +335,7 @@ parse_pls(play_tree_parser_t* p) {
 /*
  Reference Ini-Format: Each entry is assumed a reference
  */
-static play_tree_t*
+play_tree_t*
 parse_ref_ini(play_tree_parser_t* p) {
   char *line,*v;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
@@ -378,7 +378,7 @@ parse_ref_ini(play_tree_parser_t* p) {
   return entry;
 }
 
-static play_tree_t*
+play_tree_t*
 parse_m3u(play_tree_parser_t* p) {
   char* line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
@@ -426,7 +426,7 @@ parse_m3u(play_tree_parser_t* p) {
   return entry;    
 }
 
-static play_tree_t*
+play_tree_t*
 parse_smil(play_tree_parser_t* p) {
   int entrymode=0;
   char* line,source[512],*pos,*s_start,*s_end;
@@ -515,7 +515,7 @@ parse_smil(play_tree_parser_t* p) {
   return entry;
 }
 
-static play_tree_t*
+play_tree_t*
 embedded_playlist_parse(char *line) {
   int f=DEMUXER_TYPE_PLAYLIST;
   stream_t* stream;
@@ -540,7 +540,7 @@ embedded_playlist_parse(char *line) {
   return entry;
 }
 
-static play_tree_t*
+play_tree_t*
 parse_textplain(play_tree_parser_t* p) {
   char* line;
   char *c;
@@ -633,12 +633,10 @@ play_tree_add_basepath(play_tree_t* pt, char* bp) {
       continue;
     // if the path begins with \ then prepend drive letter to it.
     if (pt->files[i][0] == '\\') {
-      if (pt->files[i][1] == '\\')
-        continue;
       pt->files[i] = (char*)realloc(pt->files[i],2+fl+1);
       memmove(pt->files[i] + 2,pt->files[i],fl+1);
       memcpy(pt->files[i],bp,2);
-      continue;
+      return;
     }
     pt->files[i] = (char*)realloc(pt->files[i],bl+fl+1);
     memmove(pt->files[i] + bl,pt->files[i],fl+1);
@@ -696,7 +694,7 @@ play_tree_parser_t*
 play_tree_parser_new(stream_t* stream,int deep) {
   play_tree_parser_t* p;
 
-  p = calloc(1,sizeof(play_tree_parser_t));
+  p = (play_tree_parser_t*)calloc(1,sizeof(play_tree_parser_t));
   if(!p)
     return NULL;
   p->stream = stream;

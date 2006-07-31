@@ -21,9 +21,9 @@ demuxer_t*  new_demuxers_demuxer(demuxer_t* vd, demuxer_t* ad, demuxer_t* sd) {
   demuxer_t* ret;
   dd_priv_t* priv;
 
-  ret = calloc(1,sizeof(demuxer_t));
+  ret = (demuxer_t*)calloc(1,sizeof(demuxer_t));
   
-  priv = malloc(sizeof(dd_priv_t));
+  priv = (dd_priv_t*)malloc(sizeof(dd_priv_t));
   priv->vd = vd;
   priv->ad = ad;
   priv->sd = sd;
@@ -78,6 +78,7 @@ static void demux_demuxers_seek(demuxer_t *demuxer,float rel_seek_secs,float aud
     // In case the demuxer don't set pts
     if(!demuxer->audio->pts)
       demuxer->audio->pts = pos-((ds_tell_pts(demuxer->audio)-sh->a_in_buffer_len)/(float)sh->i_bps);
+    sh->delay = 0;
   }
 
   if(priv->sd != priv->vd)
@@ -86,6 +87,7 @@ static void demux_demuxers_seek(demuxer_t *demuxer,float rel_seek_secs,float aud
 }
 
 static void demux_close_demuxers(demuxer_t* demuxer) {
+  int i;
   dd_priv_t* priv = demuxer->priv;
   stream_t *s;
 

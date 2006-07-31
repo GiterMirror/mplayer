@@ -586,7 +586,7 @@ int cmd_decoration( char * in )
 
 typedef struct
 {
- const char * name;
+ char * name;
  int  (*func)( char * in );
 } _item;
 

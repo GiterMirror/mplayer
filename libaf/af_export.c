@@ -23,7 +23,7 @@
 
 #include "af.h"
 
-extern char * get_path( const char * filename );
+extern char * get_path( char * filename );
 
 
 #define DEF_SZ 512 // default buffer size (in samples)
@@ -135,7 +135,7 @@ static int control(struct af_instance_s* af, int cmd, void* arg)
     if(s->filename)
       free(s->filename);
 
-    s->filename = calloc(i + 1, 1);
+    s->filename = calloc(i + 1, sizeof(char));
     memcpy(s->filename, str, i);
     s->filename[i] = 0;
 	

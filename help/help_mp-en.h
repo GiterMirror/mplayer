@@ -198,9 +198,6 @@ static char help_text[]=
 #define MSGTR_EdlBadLineOverlap "Last stop position was [%f]; next start is [%f].\n"\
 "Entries must be in chronological order, cannot overlap. Discarding.\n"
 #define MSGTR_EdlBadLineBadStop "Stop time has to be after start time.\n"
-#define MSGTR_EdloutBadStop "EDL skip canceled, last start > stop\n"
-#define MSGTR_EdloutStartSkip "EDL skip start, press 'i' again to end block.\n"
-#define MSGTR_EdloutEndSkip "EDL skip end, line written.\n"
 
 // mplayer.c OSD
 
@@ -486,6 +483,12 @@ static char help_text[]=
 #define MSGTR_CodecDefinitionIncorrect "Codec is not defined correctly."
 #define MSGTR_OutdatedCodecsConf "This codecs.conf is too old and incompatible with this MPlayer release!"
 
+// divx4_vbr.c:
+#define MSGTR_OutOfMemory "out of memory"
+#define MSGTR_OverridingTooLowBitrate "Specified bitrate is too low for this clip.\n"\
+"Minimum possible bitrate for the clip is %.0f kbps. Overriding\n"\
+"user-specified value.\n"
+
 // fifo.c
 #define MSGTR_CannotMakePipe "Cannot make PIPE!\n"
 
@@ -580,6 +583,8 @@ static char help_text[]=
 #define MSGTR_CouldntDetFNo "Could not determine number of frames (for absolute seek).\n"
 #define MSGTR_CantSeekRawAVI "Cannot seek in raw AVI streams. (Index required, try with the -idx switch.)\n"
 #define MSGTR_CantSeekFile "Cannot seek in this file.\n"
+
+#define MSGTR_EncryptedVOB "Encrypted VOB file! Read DOCS/HTML/en/cd-dvd.html.\n"
 
 #define MSGTR_MOVcomprhdr "MOV: Compressed headers support requires ZLIB!\n"
 #define MSGTR_MOVvariableFourCC "MOV: WARNING: Variable FourCC detected!?\n"
@@ -1567,15 +1572,15 @@ static char help_text[]=
 
 // mga_common.c
 
-#define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] error in mga_vid_config ioctl (wrong mga_vid.o version?)"
-#define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Could not get luma values from the kernel module!\n"
-#define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] Could not set luma values from the kernel module!\n"
-#define MSGTR_LIBVO_MGA_ScreenWidthHeightUnknown "[MGA] Screen width/height unknown!\n"
-#define MSGTR_LIBVO_MGA_InvalidOutputFormat "[MGA] invalid output format %0X\n"
-#define MSGTR_LIBVO_MGA_IncompatibleDriverVersion "[MGA] Your mga_vid driver version is incompatible with this MPlayer version!\n"
-#define MSGTR_LIBVO_MGA_UsingBuffers "[MGA] Using %d buffers.\n"
-#define MSGTR_LIBVO_MGA_CouldntOpen "[MGA] Couldn't open: %s\n"
-#define MGSTR_LIBVO_MGA_ResolutionTooHigh "[MGA] Source resolution is in at least one dimension larger than 1023x1023. Please rescale in software or use -lavdopts lowres=1\n"
+#define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "error in mga_vid_config ioctl (wrong mga_vid.o version?)"
+#define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "Could not get luma values from the kernel module!\n"
+#define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "Could not set luma values from the kernel module!\n"
+#define MSGTR_LIBVO_MGA_ScreenWidthHeightUnknown "Screen width/height unknown!\n"
+#define MSGTR_LIBVO_MGA_InvalidOutputFormat "mga: invalid output format %0X\n"
+#define MSGTR_LIBVO_MGA_MgaInvalidOutputFormat "Invalid output format %0X.\n"
+#define MSGTR_LIBVO_MGA_IncompatibleDriverVersion "Your mga_vid driver version is incompatible with this MPlayer version!\n"
+#define MSGTR_LIBVO_MGA_UsingBuffers "Using %d buffers.\n"
+#define MSGTR_LIBVO_MGA_CouldntOpen "Couldn't open: %s\n"
 
 // libvo/vesa_lvo.c
 

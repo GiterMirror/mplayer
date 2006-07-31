@@ -22,7 +22,7 @@
 //#define NO_FREE
 #endif
 
-m_option_t* m_option_list_find(m_option_t* list,const char* name) {
+m_option_t* m_option_list_find(m_option_t* list,char* name) {
   int i;
 
   for(i = 0 ; list[i].name ; i++) {
@@ -143,8 +143,6 @@ static int parse_int(m_option_t* opt,char *name, char *param, void* dst, int src
   if (param == NULL)
     return M_OPT_MISSING_PARAM;
 
-  tmp_int = strtol(param, &endptr, 10);
-  if (*endptr)
   tmp_int = strtol(param, &endptr, 0);
   if (*endptr) {
     mp_msg(MSGT_CFGPARSER, MSGL_ERR, "The %s option must be an integer: %s\n",name, param);
@@ -574,7 +572,7 @@ static int parse_str_list(m_option_t* opt,char *name, char *param, void* dst, in
       break;
     }
     len = ptr - last_ptr;
-    res[n] = malloc(len + 1);
+    res[n] = (char*)malloc(len + 1);
     if(len) strncpy(res[n],last_ptr,len);
     res[n][len] = '\0';
     ptr++;
@@ -615,7 +613,7 @@ static void copy_str_list(m_option_t* opt,void* dst, void* src) {
 
   for(n = 0 ; s[n] != NULL ; n++)
     /* NOTHING */;
-  d = malloc((n+1)*sizeof(char*));
+  d = (char**)malloc((n+1)*sizeof(char*));
   for( ; n >= 0 ; n--)
     d[n] = s[n] ? strdup(s[n]) : NULL;
 
@@ -699,7 +697,7 @@ static int parse_func_pf(m_option_t* opt,char *name, char *param, void* dst, int
   if(!dst)
     return 1;
 
-  s = calloc(1,sizeof(m_func_save_t));
+  s = (m_func_save_t*)calloc(1,sizeof(m_func_save_t));
   s->name = strdup(name);
   s->param = param ? strdup(param) : NULL;
 
@@ -724,7 +722,7 @@ static void copy_func_pf(m_option_t* opt,void* dst, void* src) {
     free_func_pf(dst);
 
   while(s) {
-    d = calloc(1,sizeof(m_func_save_t));
+    d = (m_func_save_t*)calloc(1,sizeof(m_func_save_t));
     d->name = strdup(s->name);
     d->param = s->param ? strdup(s->param) : NULL;
     if(last)
@@ -996,7 +994,7 @@ m_option_type_t m_option_type_subconfig = {
 
 /* FIXME: snyc with img_format.h */
 static struct {
-  const char* name;
+  char* name;
   unsigned int fmt;
 } mp_imgfmt_list[] = {
   {"444p", IMGFMT_444P},
@@ -1090,7 +1088,7 @@ m_option_type_t m_option_type_imgfmt = {
 
 /* FIXME: snyc with af_format.h */
 static struct {
-  const char* name;
+  char* name;
   unsigned int fmt;
 } mp_afmt_list[] = {
   // SPECIAL
@@ -1196,9 +1194,9 @@ static int find_obj_desc(char* name,m_obj_list_t* l,m_struct_t** ret) {
   return 0;
 }
 
-static int get_obj_param(const char* opt_name,const char* obj_name, m_struct_t* desc,
+static int get_obj_param(char* opt_name,char* obj_name, m_struct_t* desc,
 			 char* str,int* nold,int oldmax,char** dst) {
-  char* eq;
+  char* eq,param;
   m_option_t* opt;
   int r;
 
@@ -1249,10 +1247,10 @@ static int get_obj_param(const char* opt_name,const char* obj_name, m_struct_t* 
   return 1;
 }
 
-static int get_obj_params(const char* opt_name, const char* name,char* params,
+static int get_obj_params(char* opt_name, char* name,char* params,
 			  m_struct_t* desc,char separator, char*** _ret) {
   int n = 0,nold = 0, nopts,r;
-  char* ptr,*last_ptr = params;
+  char* ptr,*last_ptr = params,*eq;
   char** ret;
 
   if(!strcmp(params,"help")) { // Help

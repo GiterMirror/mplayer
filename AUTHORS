@@ -187,7 +187,7 @@ Cook, Kees <mplayer@outflux.net>
     * dvdnav hacks
     * rawdv demuxer fixes
 
-Curry, Alan (pacman, tcsetattr) <pacman@TheWorld.com>
+Curry, Alan <pacman@TheWorld.com>
     * swscale AltiVec/big-endian fixes
     * misc vo_fbdev fixes
 
@@ -338,9 +338,6 @@ Guyomarch, Rémi (rguyom) <rguyom@pobox.com>
     * unsharp video filter
     * XviD encoding support
 
-Hall, Julian <jules@meridiandigital.co.uk>
-    * black frame detection filter (vf_blackframe)
-
 Hammelmann, Jürgen <juergen.hammelmann@gmx.de>
     * TOOLS/mencvcd author
 
@@ -368,9 +365,6 @@ Holm, David (dholm, mswitch) <dholm@telia.com>
 
 Horst, Bohdan (Nexus) <nexus@irc.pl>
     * FreeBSD support
-
-Huehner, Stefan (huehner) <stefan@huehner.org>
-    * Major code cleanup patches
 
 Hug, Hampa <hhug@student.ethz.ch>
     * LUT-based soft eq video filter (vf_eq2)
@@ -578,9 +572,6 @@ Mohari, András <mayday@varoshaza.nagyatad.hu>
 Mueller, Steven <diffusor@ugcs.caltech.edu>
     * first implementation of live changing playback speed
 
-Murrell, Brian J. <brian@interlinx.bc.ca>
-    * black frame detection filter (vf_blackframe)
-
 Neundorf, Alexander <neundorf@kde.org>
     * raw DV demuxer
     * demuxer packet refcounting
@@ -651,7 +642,6 @@ van Poorten, Ivo (ivop) <ivop@euronet.nl>
     * vo_pnm video output driver
     * vo_md5sum video output driver
     * af_ladspa LADSPA plugin loader
-    * vf_blackframe cleanup and simplification
 
 Ran, Lu <hephooey@fastmail.fm>
     * Chinese documentation translation
@@ -718,9 +708,6 @@ Sommer, Sascha (Faust3) <saschasommer@freenet.de>
     * nvidia_vid VIDIX driver
     * dhahelperwin for direct hardware access under Windows NT/2000/XP
 
-Stepanov, Evgeniy (eugeni, Azzy) <eugeni.stepanov@gmail.com>
-    * SSA/ASS subtitle renderer
-
 Strasser, Alexander (beastd) <eclipse7@gmx.net>
     * string handling security audit
     * EWMH fullscreen
@@ -780,10 +767,10 @@ Vajna, Miklós (VMiklos) <mamajom@axelero.hu>
 
 Verdejo Pinochet, Reynaldo H. (reynaldo) <reynaldo@opendot.cl>
     * improved EDL support
-    * mp_msg transition / translatables to help_mp helper
+    * mp_msg transition on unmaintained libao2 drivers
+    * translatables to help_mp on input/libmpdemux
     * .wpl playlist support hack
     * karaoke audio filter
-    * major code cleanups
     * TOOLS/qepdvcd.sh
 
 Wigren, Per <wigren@home.se>
@@ -809,10 +796,6 @@ Ziv-Av, Matan <matan@svgalib.org>
 Zoltán, Márk Vicián (Se7en) <se7en@sch.bme.hu>
     * SVGAlib support in libvo
 
-Zores, Benjamin (ben) <ben@geexbox.org>
-    * RTSP demuxer in libmpdemux.
-    * PVR input layer for IVTV based cards.
-    * IVTV h/w MPEG decoder ao/vo driver.
 
 ________________
 The codecs, libs

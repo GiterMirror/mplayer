@@ -1,6 +1,8 @@
 
 #include "config.h"
 
+#ifdef HAVE_FTP
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -467,3 +469,5 @@ stream_info_t stream_info_ftp = {
   &stream_opts,
   1 // Urls are an option string
 };
+
+#endif

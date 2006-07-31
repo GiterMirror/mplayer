@@ -13,10 +13,14 @@ SRCS	= alloc.c \
 	  slice.c \
 
 OBJS	= $(SRCS:.c=.o)
-INCLUDE = -I. -I../libvo -I..
+INCLUDE = -I. -I../libvo -I.. $(EXTRA_INC)
 CFLAGS  = $(OPTFLAGS) $(INCLUDE) -DMPG12PLAY
 
-ifeq ($(TARGET_MMX),yes)
+ifeq ($(TARGET_ARCH_X86),yes)
+SRCS += idct_mmx.c motion_comp_mmx.c
+endif
+
+ifeq ($(TARGET_ARCH_X86_64),yes)
 SRCS += idct_mmx.c motion_comp_mmx.c
 endif
 

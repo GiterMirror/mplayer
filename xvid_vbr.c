@@ -704,7 +704,7 @@ static int vbr_init_2pass2(void *sstate)
 
 	/* Allocate memory space for the keyframe_location array */
 	if((state->keyframe_locations
-	    = malloc((state->nb_keyframes+1)*sizeof(int))) == NULL) {
+	    = (int*)malloc((state->nb_keyframes+1)*sizeof(int))) == NULL) {
 		fclose(state->pass1_file);
 		state->pass1_file = NULL;
 		return(-1);

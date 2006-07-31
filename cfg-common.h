@@ -27,16 +27,18 @@
 	{"vcd", "-vcd N is deprecated, use vcd://N instead.\n", CONF_TYPE_PRINT, CONF_NOCFG ,0,0, NULL},
 	{"cuefile", "-cuefile is deprecated, use cue://filename:N where N is the track number.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 	{"cdrom-device", &cdrom_device, CONF_TYPE_STRING, 0, 0, 0, NULL},
-#if defined(USE_DVDREAD) || defined(USE_DVDNAV)
-	{"dvd-device", &dvd_device,  CONF_TYPE_STRING, 0, 0, 0, NULL}, 
-#else
-	{"dvd-device", "MPlayer was compiled without libdvdread support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+#ifdef USE_DVDNAV
+	{"dvdnav", "-dvdnav is deprecated, use dvdnav:// instead.\n", CONF_TYPE_PRINT, 0, 0, 1, NULL},
+	{"skipopening", &dvd_nav_skip_opening, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"noskipopening", &dvd_nav_skip_opening, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 #endif
 #ifdef USE_DVDREAD
+	{"dvd-device", &dvd_device,  CONF_TYPE_STRING, 0, 0, 0, NULL}, 
 	{"dvd", "-dvd N is deprecated, use dvd://N instead.\n" , CONF_TYPE_PRINT, 0, 0, 0, NULL},
 	{"dvdangle", &dvd_angle, CONF_TYPE_INT, CONF_RANGE, 1, 99, NULL},
 	{"chapter", dvd_parse_chapter_range, CONF_TYPE_FUNC_PARAM, 0, 0, 0, NULL},
 #else
+	{"dvd-device", "MPlayer was compiled without libdvdread support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 	{"dvd", "MPlayer was compiled without libdvdread support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 #endif
 	{"alang", &audio_lang, CONF_TYPE_STRING, 0, 0, 0, NULL},
@@ -73,17 +75,12 @@
         {"sdp", "-sdp is obsolete, use sdp://file instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 	// -rtsp-stream-over-tcp option, specifying TCP streaming of RTP/RTCP
         {"rtsp-stream-over-tcp", &rtspStreamOverTCP, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+        {"rtsp-port", &rtsp_port, CONF_TYPE_INT, CONF_RANGE, -1, 65535, NULL},
 #else
 	{"rtsp-stream-over-tcp", "RTSP support requires the \"LIVE555 Streaming Media\" libraries.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+        {"rtsp-port", "RTSP support requires the \"LIVE555 Streaming Media\" libraries.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 #endif
-#ifdef MPLAYER_NETWORK
-        {"rtsp-port", &rtsp_port, CONF_TYPE_INT, CONF_RANGE, -1, 65535, NULL},	
-        {"rtsp-destination", &rtsp_destination, CONF_TYPE_STRING, CONF_MIN, 0, 0, NULL},
-#else
-        {"rtsp-port", "MPlayer was compiled without network support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
-        {"rtsp-destination", "MPlayer was compiled without network support.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
-#endif
-  
+	
 // ------------------------- demuxer options --------------------
 
 	// number of frames to play/convert
@@ -137,11 +134,6 @@
 	{"tv", tvopts_conf, CONF_TYPE_SUBCONFIG, 0, 0, 0, NULL},
 #else
 	{"tv", "MPlayer was compiled without TV interface support.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
-#endif
-#ifdef HAVE_PVR
-	{"pvr", pvropts_conf, CONF_TYPE_SUBCONFIG, 0, 0, 0, NULL},
-#else
-	{"pvr", "MPlayer was compiled without V4L2/PVR interface support.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #endif
 	{"vivo", vivoopts_conf, CONF_TYPE_SUBCONFIG, 0, 0, 0, NULL},
 #ifdef HAS_DVBIN_SUPPORT
@@ -202,9 +194,17 @@
 	{"vc", &video_codec_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
 
 	// postprocessing:
+	{"divxq", "-divxq has been renamed to -pp (postprocessing), use -pp.\n",
+            CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #ifdef USE_LIBAVCODEC
 	{"pp", &divx_quality, CONF_TYPE_INT, 0, 0, 0, NULL},
 #endif
+#ifdef HAVE_ODIVX_POSTPROCESS
+        {"oldpp", &use_old_pp, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+#else
+        {"oldpp", "MPlayer was compiled without the OpenDivX library.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+#endif
+	{"npp", "-npp has been removed, use -vf pp and read the fine manual.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 #if defined(USE_LIBPOSTPROC) || defined(USE_LIBPOSTPROC_SO)
         {"pphelp", &pp_help, CONF_TYPE_PRINT_INDIRECT, CONF_NOCFG, 0, 0, NULL},
 #endif
@@ -295,16 +295,6 @@
  	{"subfont-blur", &subtitle_font_radius, CONF_TYPE_FLOAT, CONF_RANGE, 0, 8, NULL},
  	{"subfont-outline", &subtitle_font_thickness, CONF_TYPE_FLOAT, CONF_RANGE, 0, 8, NULL},
  	{"subfont-autoscale", &subtitle_autoscale, CONF_TYPE_INT, CONF_RANGE, 0, 3, NULL},
-#endif
-#ifdef USE_ASS
-	{"ass", &ass_enabled, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{"noass", &ass_enabled, CONF_TYPE_FLAG, 0, 1, 0, NULL},
-	{"ass-font-scale", &ass_font_scale, CONF_TYPE_FLOAT, CONF_RANGE, 0, 100, NULL},
-	{"ass-line-spacing", &ass_line_spacing, CONF_TYPE_FLOAT, CONF_RANGE, -1000, 1000, NULL},
-	{"ass-top-margin", &ass_top_margin, CONF_TYPE_INT, CONF_RANGE, 0, 2000, NULL},
-	{"ass-bottom-margin", &ass_bottom_margin, CONF_TYPE_INT, CONF_RANGE, 0, 2000, NULL},
-	{"embeddedfonts", &extract_embedded_fonts, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{"noembeddedfonts", &extract_embedded_fonts, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 #endif
 #ifdef HAVE_FONTCONFIG
 	{"fontconfig", &font_fontconfig, CONF_TYPE_FLAG, 0, 0, 1, NULL},
@@ -418,31 +408,6 @@ m_option_t tvopts_conf[]={
 };
 #endif
 
-#ifdef HAVE_PVR
-extern int pvr_param_aspect_ratio;
-extern int pvr_param_sample_rate;
-extern int pvr_param_audio_layer;
-extern int pvr_param_audio_bitrate;
-extern char *pvr_param_audio_mode;
-extern int pvr_param_bitrate;
-extern char *pvr_param_bitrate_mode;
-extern int pvr_param_bitrate_peak;
-extern char *pvr_param_stream_type;
-
-m_option_t pvropts_conf[]={
-	{"aspect", &pvr_param_aspect_ratio, CONF_TYPE_INT, 0, 1, 4, NULL},
-	{"arate", &pvr_param_sample_rate, CONF_TYPE_INT, 0, 32000, 48000, NULL},
-	{"alayer", &pvr_param_audio_layer, CONF_TYPE_INT, 0, 1, 2, NULL},
-	{"abitrate", &pvr_param_audio_bitrate, CONF_TYPE_INT, 0, 32, 448, NULL},
-	{"amode", &pvr_param_audio_mode, CONF_TYPE_STRING, 0, 0, 0, NULL},
-	{"vbitrate", &pvr_param_bitrate, CONF_TYPE_INT, 0, 0, 0, NULL},
-	{"vmode", &pvr_param_bitrate_mode, CONF_TYPE_STRING, 0, 0, 0, NULL},
-	{"vpeak", &pvr_param_bitrate_peak, CONF_TYPE_INT, 0, 0, 0, NULL},
-	{"fmt", &pvr_param_stream_type, CONF_TYPE_STRING, 0, 0, 0, NULL},
-	{NULL, NULL, 0, 0, 0, 0, NULL}
-};
-#endif
-
 #ifdef HAS_DVBIN_SUPPORT
 #include "libmpdemux/dvbin.h"
 extern m_config_t dvbin_opts_conf[];
@@ -455,9 +420,8 @@ extern int flip_hebrew;
 
 #ifdef STREAMING_LIVE555
 extern int rtspStreamOverTCP;
-#endif
 extern int rtsp_port;
-extern char *rtsp_destination;
+#endif
 
 
 extern int audio_stream_cache;

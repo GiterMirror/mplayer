@@ -36,6 +36,8 @@
 
 #include "config.h"
 
+#ifdef MPLAYER_NETWORK
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -306,3 +308,5 @@ stream_info_t stream_info_netstream = {
   &stream_opts,
   1 // Url is an option string
 };
+
+#endif

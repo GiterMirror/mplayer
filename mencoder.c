@@ -1,6 +1,7 @@
 #define VCODEC_COPY 0
 #define VCODEC_FRAMENO 1
 // real codecs:
+#define VCODEC_DIVX4 2
 #define VCODEC_LIBAVCODEC 4
 #define VCODEC_VFW 7
 #define VCODEC_LIBDV 8
@@ -74,10 +75,6 @@
 #include "osdep/timer.h"
 
 #include "get_path.c"
-
-#ifdef USE_DVDREAD
-#include "libmpdemux/stream_dvd.h"
-#endif
 
 #ifdef USE_LIBAVCODEC
 #ifdef USE_LIBAVCODEC_SO
@@ -222,13 +219,6 @@ int mp_input_check_interrupt(int time) {
   return 0;
 }
 
-#ifdef USE_ASS
-#include "libass/ass.h"
-#include "libass/ass_mp.h"
-
-ass_track_t* ass_track = 0; // current track to render
-#endif
-
 //char *out_audio_codec=NULL; // override audio codec
 //char *out_video_codec=NULL; // override video codec
 
@@ -298,7 +288,7 @@ static int edl_seek(edl_record_ptr next_edl_record, demuxer_t* demuxer, demux_st
 
 #include "libao2/audio_out.h"
 /* FIXME */
-static void mencoder_exit(int level, const char *how)
+static void mencoder_exit(int level, char *how)
 {
     if (how)
 	mp_msg(MSGT_MENCODER, MSGL_INFO, MSGTR_ExitingHow, how);
@@ -308,7 +298,7 @@ static void mencoder_exit(int level, const char *how)
     exit(level);
 }
 
-static void parse_cfgfiles( m_config_t* conf )
+void parse_cfgfiles( m_config_t* conf )
 {
   char *conffile;
   if ((conffile = get_path("mencoder.conf")) == NULL) {
@@ -830,6 +820,8 @@ default: {
     static vf_instance_t * ve = NULL;
   if (!ve) {
     switch(mux_v->codec){
+    case VCODEC_DIVX4:
+	sh_video->vfilter=vf_open_encoder(NULL,"divx4",(char *)mux_v); break;
     case VCODEC_LIBAVCODEC:
         sh_video->vfilter=vf_open_encoder(NULL,"lavc",(char *)mux_v); break;
     case VCODEC_RAW:

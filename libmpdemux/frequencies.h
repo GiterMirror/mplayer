@@ -94,7 +94,7 @@ struct CHANLIST {
 };
 
 struct CHANLISTS {
-    const char             *name;
+    char                   *name;
     const struct CHANLIST  *list;
     int                    count;
 };

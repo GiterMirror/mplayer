@@ -1,7 +1,7 @@
 /* Imported from the dvbstream project
  *
- * Modified for use with MPlayer, for details see the changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, for details see the CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  */
 
@@ -32,7 +32,6 @@ struct rtpheader {	/* in network byte order */
 };
 
 
-static int getrtp2(int fd, struct rtpheader *rh, char** data, int* lengthData);
-int read_rtp_from_server(int fd, char *buffer, int length);
+int getrtp2(int fd, struct rtpheader *rh, char** data, int* lengthData);
 
 #endif

@@ -53,9 +53,6 @@ static GLuint osdatex[MAX_OSD_PARTS];
 #endif
 //! Display lists that draw the OSD parts
 static GLuint osdDispList[MAX_OSD_PARTS];
-#ifndef FAST_OSD
-static GLuint osdaDispList[MAX_OSD_PARTS];
-#endif
 //! How many parts the OSD currently consists of
 static int osdtexCnt;
 static int osd_color;
@@ -80,11 +77,11 @@ static GLenum gl_type;
 static GLuint gl_buffer;
 static int gl_buffersize;
 static GLuint fragprog;
-static GLuint default_texs[22];
+static GLuint uvtexs[2];
+static GLuint lookupTex;
 static char *custom_prog;
 static char *custom_tex;
 static int custom_tlin;
-static int custom_trect;
 
 static int int_pause;
 static int eq_bri = 0;
@@ -98,7 +95,6 @@ static int eq_bgamma = 0;
 static int texture_width;
 static int texture_height;
 static int mpi_flipped;
-static int vo_flipped;
 
 static unsigned int slice_height = 1;
 
@@ -172,6 +168,7 @@ static void update_yuvconv(void) {
       mp_msg(MSGT_VO, MSGL_WARN,
              "[gl] Could not read customprog %s\n", custom_prog);
     else {
+      int i;
       char *prog = calloc(1, MAX_CUSTOM_PROG_SIZE + 1);
       fread(prog, 1, MAX_CUSTOM_PROG_SIZE, f);
       fclose(f);
@@ -179,8 +176,7 @@ static void update_yuvconv(void) {
       free(prog);
     }
     ProgramEnvParameter4f(GL_FRAGMENT_PROGRAM, 0,
-               1.0 / texture_width, 1.0 / texture_height,
-               texture_width, texture_height);
+               1.0 / texture_width, 1.0 / texture_height, 0, 0);
   }
   if (custom_tex) {
     FILE *f = fopen(custom_tex, "r");
@@ -190,11 +186,11 @@ static void update_yuvconv(void) {
     else {
       int width, height, maxval;
       ActiveTexture(GL_TEXTURE3);
-      if (glCreatePPMTex(custom_trect?GL_TEXTURE_RECTANGLE:GL_TEXTURE_2D, 0,
+      if (glCreatePPMTex(GL_TEXTURE_2D, 3,
                      custom_tlin?GL_LINEAR:GL_NEAREST,
                      f, &width, &height, &maxval))
         ProgramEnvParameter4f(GL_FRAGMENT_PROGRAM, 1,
-                   1.0 / width, 1.0 / height, width, height);
+                   1.0 / width, 1.0 / height, 1.0 / maxval, 0);
       else
         mp_msg(MSGT_VO, MSGL_WARN,
                "[gl] Error parsing customtex %s\n", custom_tex);
@@ -214,8 +210,6 @@ static void clearOSD(void) {
   glDeleteTextures(osdtexCnt, osdtex);
 #ifndef FAST_OSD
   glDeleteTextures(osdtexCnt, osdatex);
-  for (i = 0; i < osdtexCnt; i++)
-    glDeleteLists(osdaDispList[i], 1);
 #endif
   for (i = 0; i < osdtexCnt; i++)
     glDeleteLists(osdDispList[i], 1);
@@ -226,15 +220,15 @@ static void clearOSD(void) {
  * \brief uninitialize OpenGL context, freeing textures, buffers etc.
  */
 static void uninitGl(void) {
-  int i = 0;
   if (DeletePrograms && fragprog)
     DeletePrograms(1, &fragprog);
   fragprog = 0;
-  while (default_texs[i] != 0)
-    i++;
-  if (i)
-    glDeleteTextures(i, default_texs);
-  default_texs[0] = 0;
+  if (uvtexs[0] || uvtexs[1])
+    glDeleteTextures(2, uvtexs);
+  uvtexs[0] = uvtexs[1] = 0;
+  if (lookupTex)
+    glDeleteTextures(1, &lookupTex);
+  lookupTex = 0;
   clearOSD();
   if (DeleteBuffers && gl_buffer)
     DeleteBuffers(1, &gl_buffer);
@@ -248,7 +242,7 @@ static void uninitGl(void) {
  */
 static int initGl(uint32_t d_width, uint32_t d_height) {
   osdtexCnt = 0; gl_buffer = 0; gl_buffersize = 0; err_shown = 0;
-  fragprog = 0;
+  fragprog = 0; uvtexs[0] = 0; uvtexs[1] = 0; lookupTex = 0;
   texSize(image_width, image_height, &texture_width, &texture_height);
 
   glDisable(GL_BLEND); 
@@ -263,23 +257,20 @@ static int initGl(uint32_t d_width, uint32_t d_height) {
           texture_width, texture_height);
 
   if (image_format == IMGFMT_YV12) {
-    int i;
-    glGenTextures(21, default_texs);
-    default_texs[21] = 0;
-    for (i = 0; i < 7; i++) {
-      ActiveTexture(GL_TEXTURE1 + i);
-      BindTexture(GL_TEXTURE_2D, default_texs[i]);
-      BindTexture(GL_TEXTURE_RECTANGLE, default_texs[i + 7]);
-      BindTexture(GL_TEXTURE_3D, default_texs[i + 14]);
-    }
+    glGenTextures(2, uvtexs);
     ActiveTexture(GL_TEXTURE1);
+    BindTexture(gl_target, uvtexs[0]);
     glCreateClearTex(gl_target, gl_texfmt, GL_LINEAR,
                      texture_width / 2, texture_height / 2, 128);
     ActiveTexture(GL_TEXTURE2);
+    BindTexture(gl_target, uvtexs[1]);
     glCreateClearTex(gl_target, gl_texfmt, GL_LINEAR,
                      texture_width / 2, texture_height / 2, 128);
     switch (use_yuv) {
       case YUV_CONVERSION_FRAGMENT_LOOKUP:
+        glGenTextures(1, &lookupTex);
+        ActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, lookupTex);
       case YUV_CONVERSION_FRAGMENT_POW:
       case YUV_CONVERSION_FRAGMENT:
         if (!GenPrograms || !BindProgram) {
@@ -318,7 +309,6 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 	glFindFormat(format, NULL, &gl_texfmt, &gl_format, &gl_type);
 
 	int_pause = 0;
-	vo_flipped = !!(flags & VOFLAG_FLIPPING);
 
 	panscan_init();
 	aspect_save_orig(width,height);
@@ -338,9 +328,7 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
     vo_dwidth = d_width;
     vo_dheight= d_height;
     guiGetEvent(guiSetShVideo, 0);
-#ifndef GL_WIN32
     goto glconfig;
-#endif
   }
 #endif
 #ifdef GL_WIN32
@@ -471,7 +459,7 @@ static void create_osd_texture(int x0, int y0, int w, int h,
   glCreateClearTex(gl_target, GL_ALPHA, scale_type, sx, sy, 255);
   {
   int i;
-  char *tmp = malloc(stride * h);
+  char *tmp = (char *)malloc(stride * h);
   // convert alpha from weird MPlayer scale.
   // in-place is not possible since it is reused for future OSDs
   for (i = h * stride - 1; i > 0; i--)
@@ -485,17 +473,16 @@ static void create_osd_texture(int x0, int y0, int w, int h,
   BindTexture(gl_target, 0);
 
   // Create a list for rendering this OSD part
-#ifndef FAST_OSD
-  osdaDispList[osdtexCnt] = glGenLists(1);
-  glNewList(osdaDispList[osdtexCnt], GL_COMPILE);
-  // render alpha
-  BindTexture(gl_target, osdatex[osdtexCnt]);
-  glDrawTex(x0, y0, w, h, 0, 0, w, h, sx, sy, use_rectangle == 1, 0, 0);
-  glEndList();
-#endif
   osdDispList[osdtexCnt] = glGenLists(1);
   glNewList(osdDispList[osdtexCnt], GL_COMPILE);
+#ifndef FAST_OSD
+  // render alpha
+  glBlendFunc(GL_ZERO, GL_SRC_ALPHA);
+  BindTexture(gl_target, osdatex[osdtexCnt]);
+  glDrawTex(x0, y0, w, h, 0, 0, w, h, sx, sy, use_rectangle == 1, 0, 0);
+#endif
   // render OSD
+  glBlendFunc (GL_ONE, GL_ONE);
   BindTexture(gl_target, osdtex[osdtexCnt]);
   glDrawTex(x0, y0, w, h, 0, 0, w, h, sx, sy, use_rectangle == 1, 0, 0);
   glEndList();
@@ -527,8 +514,7 @@ flip_page(void)
   glDrawTex(0, 0, image_width, image_height,
             0, 0, image_width, image_height,
             texture_width, texture_height,
-            use_rectangle == 1, image_format == IMGFMT_YV12,
-            mpi_flipped ^ vo_flipped);
+            use_rectangle == 1, image_format == IMGFMT_YV12, mpi_flipped);
   if (image_format == IMGFMT_YV12)
     glDisableYUVConversion(gl_target, yuvconvtype);
 
@@ -543,11 +529,6 @@ flip_page(void)
     glEnable(GL_BLEND);
     glColor4ub((osd_color >> 16) & 0xff, (osd_color >> 8) & 0xff, osd_color & 0xff, 0xff);
     // draw OSD
-#ifndef FAST_OSD
-    glBlendFunc(GL_ZERO, GL_SRC_ALPHA);
-    glCallLists(osdtexCnt, GL_UNSIGNED_INT, osdaDispList);
-#endif
-    glBlendFunc(GL_ONE, GL_ONE);
     glCallLists(osdtexCnt, GL_UNSIGNED_INT, osdDispList);
     // set rendering parameters back to defaults
     glDisable (GL_BLEND);
@@ -605,6 +586,7 @@ static uint32_t get_image(mp_image_t *mpi) {
                NULL, GL_DYNAMIC_DRAW);
     gl_buffersize = mpi->stride[0] * mpi->h;
   }
+  UnmapBuffer(GL_PIXEL_UNPACK_BUFFER); // HACK, needed for some MPEG4 files??
   mpi->planes[0] = MapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
   BindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
   if (mpi->planes[0] == NULL) {
@@ -628,31 +610,27 @@ static uint32_t get_image(mp_image_t *mpi) {
 }
 
 static uint32_t draw_image(mp_image_t *mpi) {
+  unsigned char *data = mpi->planes[0];
   int slice = slice_height;
-  int stride[3] = {mpi->stride[0], mpi->stride[1], mpi->stride[2]};
-  unsigned char *planes[3] = {mpi->planes[0], mpi->planes[1], mpi->planes[2]};
   if (mpi->flags & MP_IMGFLAG_DRAW_CALLBACK)
     return VO_TRUE;
-  mpi_flipped = (stride[0] < 0);
   if (mpi->flags & MP_IMGFLAG_DIRECT) {
-    intptr_t base = (intptr_t)planes[0];
-    if (mpi_flipped)
-      base += (mpi->h - 1) * stride[0];
-    planes[0] -= base;
-    planes[1] -= base;
-    planes[2] -= base;
+    data = NULL;
     BindBuffer(GL_PIXEL_UNPACK_BUFFER, gl_buffer);
     UnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     slice = 0; // always "upload" full texture
   }
-  glUploadTex(gl_target, gl_format, gl_type, planes[0], stride[0],
+  mpi_flipped = (mpi->stride[0] < 0);
+  glUploadTex(gl_target, gl_format, gl_type, data, mpi->stride[0],
               mpi->x, mpi->y, mpi->w, mpi->h, slice);
   if (mpi->imgfmt == IMGFMT_YV12) {
+    data += mpi->planes[1] - mpi->planes[0];
     ActiveTexture(GL_TEXTURE1);
-    glUploadTex(gl_target, gl_format, gl_type, planes[1], stride[1],
+    glUploadTex(gl_target, gl_format, gl_type, data, mpi->stride[1],
                 mpi->x / 2, mpi->y / 2, mpi->w / 2, mpi->h / 2, slice);
+    data += mpi->planes[2] - mpi->planes[1];
     ActiveTexture(GL_TEXTURE2);
-    glUploadTex(gl_target, gl_format, gl_type, planes[2], stride[2],
+    glUploadTex(gl_target, gl_format, gl_type, data, mpi->stride[2],
                 mpi->x / 2, mpi->y / 2, mpi->w / 2, mpi->h / 2, slice);
     ActiveTexture(GL_TEXTURE0);
   }
@@ -671,7 +649,6 @@ static int
 query_format(uint32_t format)
 {
     int caps = VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW |
-               VFCAP_FLIP |
                VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN | VFCAP_ACCEPT_STRIDE;
     if (use_osd)
       caps |= VFCAP_OSD;
@@ -714,7 +691,6 @@ static opt_t subopts[] = {
   {"customprog",   OPT_ARG_MSTRZ,&custom_prog,  NULL},
   {"customtex",    OPT_ARG_MSTRZ,&custom_tex,   NULL},
   {"customtlin",   OPT_ARG_BOOL, &custom_tlin,  NULL},
-  {"customtrect",  OPT_ARG_BOOL, &custom_trect, NULL},
   {"osdcolor",     OPT_ARG_INT,  &osd_color,    NULL},
   {NULL}
 };
@@ -736,7 +712,6 @@ static int preinit(const char *arg)
     custom_prog = NULL;
     custom_tex = NULL;
     custom_tlin = 1;
-    custom_trect = 0;
     osd_color = 0xffffff;
     if (subopt_parse(arg, subopts) != 0) {
       mp_msg(MSGT_VO, MSGL_FATAL,
@@ -768,19 +743,12 @@ static int preinit(const char *arg)
               "    3: use fragment program with gamma correction.\n"
               "    4: use fragment program with gamma correction via lookup.\n"
               "    5: use ATI-specific method (for older cards).\n"
-              "  lscale=<n>\n"
-              "    0: use standard bilinear scaling for luma.\n"
-              "    1: use improved bicubic scaling for luma.\n"
-              "  cscale=<n>\n"
-              "    as lscale but for chroma (2x slower with little visible effect).\n"
               "  customprog=<filename>\n"
               "    use a custom YUV conversion program\n"
               "  customtex=<filename>\n"
               "    use a custom YUV conversion lookup texture\n"
               "  nocustomtlin\n"
               "    use GL_NEAREST scaling for customtex texture\n"
-              "  customtrect\n"
-              "    use texture_rectangle for customtex texture\n"
               "  osdcolor=<0xRRGGBB>\n"
               "    use the given color for the OSD\n"
               "\n" );

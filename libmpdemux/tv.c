@@ -21,6 +21,7 @@
 
 int tv_param_on = 0;
 
+#ifdef USE_TV
 #include "mp_msg.h"
 #include "help_mp.h"
 
@@ -56,7 +57,7 @@ int tv_param_outfmt = -1;
 float tv_param_fps = -1.0;
 char **tv_param_channels = NULL;
 int tv_param_audio_id = 0;
-#if defined(HAVE_TV_V4L)
+#if defined(HAVE_TV_V4L) || defined(HAVE_TV_V4L2)
 int tv_param_amode = -1;
 int tv_param_volume = -1;
 int tv_param_bass = -1;
@@ -237,7 +238,7 @@ static int open_tv(tvi_handle_t *tvh)
     }
 #endif
 
-#ifdef HAVE_TV_V4L1
+#ifdef HAVE_TV_V4L
     if ( tv_param_mjpeg )
     {
       /* set width to expected value */
@@ -330,8 +331,7 @@ static int open_tv(tvi_handle_t *tvh)
 
 		if (!sep) continue; // Wrong syntax, but mplayer should not crash
 
-		strlcpy(tv_channel_current->name, sep + 1,
-		        sizeof(tv_channel_current->name));
+		strcpy(tv_channel_current->name, sep + 1);
 		sep[0] = '\0';
 		strncpy(tv_channel_current->number, tmp, 5);
 
@@ -589,7 +589,7 @@ static demuxer_t* demux_open_tv(demuxer_t *demuxer)
 	    sh_audio->channels;
 
 	// emulate WF for win32 codecs:
-	sh_audio->wf = malloc(sizeof(WAVEFORMATEX));
+	sh_audio->wf = (WAVEFORMATEX *)malloc(sizeof(WAVEFORMATEX));
 	sh_audio->wf->wFormatTag = sh_audio->format;
 	sh_audio->wf->nChannels = sh_audio->channels;
 	sh_audio->wf->wBitsPerSample = sh_audio->samplesize * 8;
@@ -638,7 +638,7 @@ tvi_handle_t *tv_begin(void)
 {
     if (!strcmp(tv_param_driver, "dummy"))
 	return tvi_init_dummy(tv_param_device);
-#ifdef HAVE_TV_V4L1
+#ifdef HAVE_TV_V4L
     if (!strcmp(tv_param_driver, "v4l"))
 	return tvi_init_v4l(tv_param_device, tv_param_adevice);
 #endif
@@ -917,3 +917,5 @@ demuxer_desc_t demuxer_desc_tv = {
   NULL,
   NULL
 };
+
+#endif /* USE_TV */

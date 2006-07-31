@@ -41,11 +41,6 @@ extern af_cfg_t af_cfg;
 #include "libmpdemux/stheader.h"
 #include "libmpcodecs/dec_video.h"
 
-#ifdef USE_DVDREAD
-#include "libmpdemux/stream_dvd.h"
-#endif
-
-
 #include "m_config.h"
 #include "m_option.h"
 
@@ -54,7 +49,7 @@ extern mixer_t mixer; // mixer from mplayer.c
 guiInterface_t guiIntfStruct;
 int guiWinID=-1;
 
-char * gstrcat( char ** dest,const char * src )
+char * gstrcat( char ** dest,char * src )
 {
  char * tmp = NULL;
 
@@ -75,21 +70,21 @@ char * gstrcat( char ** dest,const char * src )
  return tmp;
 }
 
-int gstrcmp( const char * a,const char * b )
+int gstrcmp( char * a,char * b )
 {
  if ( !a && !b ) return 0;
  if ( !a || !b ) return -1;
  return strcmp( a,b );
 }
 
-int gstrncmp( const char * a,const char * b,int size )
+int gstrncmp( char * a,char * b,int size )
 {
  if ( !a && !b ) return 0;
  if ( !a || !b ) return -1;
  return strncmp( a,b,size );
 }
 
-char * gstrdup( const char * str )
+char * gstrdup( char * str )
 {
  if ( !str ) return NULL;
  return strdup( str );
@@ -107,7 +102,7 @@ void gfree( void ** p )
  free( *p ); *p=NULL;
 }
 
-void gset( char ** str, const char * what )
+void gset( char ** str,char * what )
 {
  if ( *str ) { if ( !strstr( *str,what ) ) { gstrcat( str,"," ); gstrcat( str,what ); }}
    else gstrcat( str,what );
@@ -116,7 +111,7 @@ void gset( char ** str, const char * what )
 /**
  * \brief this actually creates a new list containing only one element...
  */
-void gaddlist( char *** list,const char * entry )
+void gaddlist( char *** list,char * entry )
 {
  int i;
 
@@ -135,7 +130,7 @@ void gaddlist( char *** list,const char * entry )
  * \brief this replaces a string starting with search by replace.
  * If not found, replace is appended.
  */
-void greplace(char ***list, const char *search, const char *replace)
+void greplace(char ***list, char *search, char *replace)
 {
  int i = 0;
  int len = (search) ? strlen(search) : 0;
@@ -213,7 +208,7 @@ void guiInit( void )
  if ( !gtkDXR3Device ) gtkDXR3Device=strdup( "/dev/em8300-0" );
 #endif
  if ( stream_cache_size > 0 ) { gtkCacheOn=1; gtkCacheSize=stream_cache_size; }
- else if ( stream_cache_size == 0 ) gtkCacheOn = 0;
+ else gtkCacheOn = 0;
  if ( autosync && autosync != gtkAutoSync ) { gtkAutoSyncOn=1; gtkAutoSync=autosync; }
    
  gtkInit();
@@ -241,7 +236,7 @@ void guiInit( void )
    case -2: mp_msg( MSGT_GPLAYER,MSGL_ERR,MSGTR_SKIN_SKINCFG_SkinCfgReadError,skinName ); exit( 0 );
   }
 // --- initialize windows
- if ( ( mplDrawBuffer = malloc( appMPlayer.main.Bitmap.ImageSize ) ) == NULL )
+ if ( ( mplDrawBuffer = (unsigned char *)malloc( appMPlayer.main.Bitmap.ImageSize ) ) == NULL )
   {
    fprintf( stderr,MSGTR_NEMDB );
    exit( 0 );
@@ -1151,7 +1146,7 @@ void * gtkSet( int cmd,float fparam, void * vparam )
    case gtkSetPanscan:
         {
 	 mp_cmd_t * mp_cmd;
-         mp_cmd=calloc( 1,sizeof( *mp_cmd ) );
+         mp_cmd=(mp_cmd_t *)calloc( 1,sizeof( *mp_cmd ) );
          mp_cmd->id=MP_CMD_PANSCAN;    mp_cmd->name=strdup( "panscan" );
 	 mp_cmd->args[0].v.f=fparam;   mp_cmd->args[1].v.i=1;
 	 mp_input_queue_cmd( mp_cmd );

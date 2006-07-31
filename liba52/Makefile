@@ -9,11 +9,12 @@ SRCS    = crc.c \
           bitstream.c \
           downmix.c \
           imdct.c \
+          imdct_mlib.c \
           parse.c \
 
 OBJS	= $(SRCS:.c=.o)
 
-CFLAGS  = $(OPTFLAGS) -I..
+CFLAGS  = $(MLIB_INC) $(OPTFLAGS) -I..
 
 .SUFFIXES: .c .o
 

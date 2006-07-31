@@ -559,7 +559,7 @@ void vo_uninit(void)
 extern void mplayer_put_key(int code);
 
 #ifdef XF86XK_AudioPause
-static void vo_x11_putkey_ext(int keysym)
+void vo_x11_putkey_ext(int keysym)
 {
     switch (keysym)
     {
@@ -1512,8 +1512,6 @@ void vo_x11_fullscreen(void)
         vo_x11_setlayer(mDisplay, vo_window, vo_ontop);
 
     XMapRaised(mDisplay, vo_window);
-    if ( ! (vo_fs_type & vo_wm_FULLSCREEN) ) // some WMs change window pos on map
-        XMoveResizeWindow(mDisplay, vo_window, x, y, w, h);
     XRaiseWindow(mDisplay, vo_window);
     XFlush(mDisplay);
 }

@@ -48,9 +48,6 @@
 #define MKV_V_QUICKTIME  "V_QUICKTIME"
 #define MKV_V_MPEG1      "V_MPEG1"
 #define MKV_V_MPEG2      "V_MPEG2"
-#define MKV_V_MPEG4_SP   "V_MPEG4/ISO/SP"
-#define MKV_V_MPEG4_ASP  "V_MPEG4/ISO/ASP"
-#define MKV_V_MPEG4_AP   "V_MPEG4/ISO/AP"
 #define MKV_V_MPEG4_AVC  "V_MPEG4/ISO/AVC"
 
 #define MKV_S_TEXTASCII  "S_TEXT/ASCII"
@@ -60,6 +57,16 @@
 #define MKV_S_VOBSUB     "S_VOBSUB"
 #define MKV_S_SSA        "S_SSA" // Deprecated
 #define MKV_S_ASS        "S_ASS" // Deprecated
+
+typedef struct {
+  char type;                    // t = text, v = VobSub
+  int has_palette;              // If we have a valid palette
+  unsigned int palette[16];     // for VobSubs
+  int width, height;            // for VobSubs
+  int custom_colors;
+  unsigned int colors[4];
+  int forced_subs_only;
+} mkv_sh_sub_t;
 
 int demux_mkv_num_subs(demuxer_t *demuxer);
 int demux_mkv_change_subs(demuxer_t *demuxer, int new_num);

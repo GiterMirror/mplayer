@@ -6,6 +6,8 @@
 
 #include "config.h"
 
+#ifdef USE_LIBMAD
+
 #include "ad_internal.h"
 
 static ad_info_t info =  {
@@ -169,3 +171,4 @@ static int control(sh_audio_t *sh,int cmd,void* arg, ...){
     }
   return CONTROL_UNKNOWN;
 }
+#endif

@@ -27,6 +27,8 @@ typedef struct da_priv {
   float length;
 } da_priv_t;
 
+extern void free_sh_audio(sh_audio_t* sh);
+
 static uint32_t get_bits(da_priv_t* priv, stream_t* s, int bits) {
   uint32_t out = priv->dword;
   uint32_t mask = (1 << bits) - 1;
@@ -78,7 +80,7 @@ static demuxer_t *demux_mpc_open(demuxer_t* demuxer) {
   sh_audio = new_sh_audio(demuxer,0);
 
   {
-    char *wf = calloc(1, sizeof(WAVEFORMATEX) + HDR_SIZE);
+    char *wf = (char *)calloc(1, sizeof(WAVEFORMATEX) + HDR_SIZE);
     char *header = &wf[sizeof(WAVEFORMATEX)];
     const int freqs[4] = {44100, 48000, 37800, 32000};
     int frames;
@@ -102,7 +104,7 @@ static demuxer_t *demux_mpc_open(demuxer_t* demuxer) {
     demuxer->movi_end = s->end_pos;
   }
 
-  priv = malloc(sizeof(da_priv_t));
+  priv = (da_priv_t *)malloc(sizeof(da_priv_t));
   priv->last_pts = -1;
   priv->pts_per_packet = (32 * 36) / (float)sh_audio->wf->nSamplesPerSec;
   priv->length = seconds;
@@ -145,7 +147,8 @@ static int demux_mpc_fill_buffer(demuxer_t *demux, demux_stream_t *ds) {
     priv->last_pts = 0;
   else
     priv->last_pts += priv->pts_per_packet;
-  dp->pts = priv->last_pts;
+  ds->pts = priv->last_pts - (ds_tell_pts(demux->audio) -
+              sh_audio->a_in_buffer_len)/(float)sh_audio->i_bps;
   ds_add_packet(ds, dp);
   return 1;
 }
@@ -176,6 +179,8 @@ static void demux_mpc_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
     if (s->eof) break;
   }
   if (!sh_audio) return;
+  sh_audio->delay = priv->last_pts - (ds_tell_pts(demuxer->audio) -
+                     sh_audio->a_in_buffer_len)/(float)sh_audio->i_bps;
 }
 
 static void demux_close_mpc(demuxer_t* demuxer) {

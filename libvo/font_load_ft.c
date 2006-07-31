@@ -11,6 +11,8 @@
 
 #include "config.h"
 
+#ifdef HAVE_FREETYPE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -38,7 +40,7 @@
 #define HAVE_FREETYPE21
 #endif
 
-char *get_path(const char *filename);
+char *get_path(char *filename);
 
 char *subtitle_font_encoding = NULL;
 float text_font_scale_factor = 5.0;
@@ -179,8 +181,8 @@ static int check_font(font_desc_t *desc, float ppem, int padding, int pic_idx,
 	else {
 	    glyph_index = FT_Get_Char_Index(face, uni_charmap ? character:code);
 	    if (glyph_index==0) {
-		WARNING("Glyph for char 0x%02lx|U+%04lX|%c not found.", code, character,
-			code<' '||code>255 ? '.':(char)code);
+		WARNING("Glyph for char 0x%02x|U+%04X|%c not found.", code, character,
+			code<' '||code>255 ? '.':code);
 		desc->font[unicode?character:code] = -1;
 		continue;
 	    }
@@ -234,7 +236,7 @@ static int check_font(font_desc_t *desc, float ppem, int padding, int pic_idx,
 }
 
 // general outline
-static void outline(
+void outline(
 	unsigned char *s,
 	unsigned char *t,
 	int width,
@@ -277,7 +279,7 @@ static void outline(
 
 
 // 1 pixel outline
-static void outline1(
+void outline1(
 	unsigned char *s,
 	unsigned char *t,
 	int width,
@@ -315,7 +317,7 @@ static void outline1(
 }
 
 // "0 pixel outline"
-static void outline0(
+void outline0(
 	unsigned char *s,
 	unsigned char *t,
 	int width,
@@ -330,7 +332,7 @@ static void outline0(
 }
 
 // gaussian blur
-static void blur(
+void blur(
 	unsigned char *buffer,
 	unsigned short *tmp2,
 	int width,
@@ -618,9 +620,9 @@ static int prepare_font(font_desc_t *desc, FT_Face face, float ppem, int pic_idx
 
     desc->faces[pic_idx] = face;
 
-    desc->pic_a[pic_idx] = malloc(sizeof(raw_file));
+    desc->pic_a[pic_idx] = (raw_file*)malloc(sizeof(raw_file));
     if (!desc->pic_a[pic_idx]) return -1;
-    desc->pic_b[pic_idx] = malloc(sizeof(raw_file));
+    desc->pic_b[pic_idx] = (raw_file*)malloc(sizeof(raw_file));
     if (!desc->pic_b[pic_idx]) return -1;
 
     desc->pic_a[pic_idx]->bmp = NULL;
@@ -628,11 +630,11 @@ static int prepare_font(font_desc_t *desc, FT_Face face, float ppem, int pic_idx
     desc->pic_b[pic_idx]->bmp = NULL;
     desc->pic_b[pic_idx]->pal = NULL;
 
-    desc->pic_a[pic_idx]->pal = malloc(sizeof(unsigned char)*256*3);
+    desc->pic_a[pic_idx]->pal = (unsigned char*)malloc(sizeof(unsigned char)*256*3);
     if (!desc->pic_a[pic_idx]->pal) return -1;
     for (i = 0; i<768; ++i) desc->pic_a[pic_idx]->pal[i] = i/3;
 
-    desc->pic_b[pic_idx]->pal = malloc(sizeof(unsigned char)*256*3);
+    desc->pic_b[pic_idx]->pal = (unsigned char*)malloc(sizeof(unsigned char)*256*3);
     if (!desc->pic_b[pic_idx]->pal) return -1;
     for (i = 0; i<768; ++i) desc->pic_b[pic_idx]->pal[i] = i/3;
 
@@ -654,7 +656,7 @@ static int prepare_font(font_desc_t *desc, FT_Face face, float ppem, int pic_idx
     
 }
 
-static int generate_tables(font_desc_t *desc, double thickness, double radius)
+int generate_tables(font_desc_t *desc, double thickness, double radius)
 {
     int width = desc->max_height;
     int height = desc->max_width;
@@ -673,13 +675,13 @@ static int generate_tables(font_desc_t *desc, double thickness, double radius)
 //    fprintf(stderr, "o_r = %d\n", desc->tables.o_r);
 
     if (desc->tables.g_r) {
-	desc->tables.g = malloc(desc->tables.g_w * sizeof(unsigned));
-	desc->tables.gt2 = malloc(256 * desc->tables.g_w * sizeof(unsigned));
+	desc->tables.g = (unsigned*)malloc(desc->tables.g_w * sizeof(unsigned));
+	desc->tables.gt2 = (unsigned*)malloc(256 * desc->tables.g_w * sizeof(unsigned));
 	if (desc->tables.g==NULL || desc->tables.gt2==NULL) {
 	    return -1;
 	}
     }
-    desc->tables.om = malloc(desc->tables.o_w*desc->tables.o_w * sizeof(unsigned));
+    desc->tables.om = (unsigned*)malloc(desc->tables.o_w*desc->tables.o_w * sizeof(unsigned));
     desc->tables.omt = malloc(desc->tables.o_size*256);
 
     omtp = desc->tables.omt;
@@ -737,8 +739,8 @@ static FT_ULong decode_char(iconv_t *cd, char c) {
     FT_ULong o;
     char *inbuf = &c;
     char *outbuf = (char*)&o;
-    size_t inbytesleft = 1;
-    size_t outbytesleft = sizeof(FT_ULong);
+    int inbytesleft = 1;
+    int outbytesleft = sizeof(FT_ULong);
 
     iconv(*cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
@@ -797,7 +799,7 @@ static int prepare_charset_unicode(FT_Face face, FT_ULong *charset, FT_ULong *ch
     FT_ULong  charcode;
 #endif
     FT_UInt   gindex;
-    int i;
+    int i,j;
 
     if (face->charmap==NULL || face->charmap->encoding!=ft_encoding_unicode) {
 	WARNING("Unicode charmap not available for this font. Very bad!");
@@ -816,7 +818,6 @@ static int prepare_charset_unicode(FT_Face face, FT_ULong *charset, FT_ULong *ch
     }
 #else
     // for FT < 2.1 we have to use brute force enumeration
-    int j;
     i = 0;
     for (j = 33; j < 65536; j++) {
 	gindex = FT_Get_Char_Index(face, j);
@@ -906,7 +907,7 @@ void free_font_desc(font_desc_t *desc)
     free(desc);
 }
 
-static int load_sub_face(const char *name, FT_Face *face)
+static int load_sub_face(char *name, FT_Face *face)
 {
     int err = -1;
     
@@ -953,14 +954,14 @@ int kerning(font_desc_t *desc, int prevc, int c)
     return f266ToInt(kern.x);
 }
 
-font_desc_t* read_font_desc_ft(const char *fname, int movie_width, int movie_height)
+font_desc_t* read_font_desc_ft(char *fname, int movie_width, int movie_height)
 {
-    font_desc_t *desc = NULL;
+    font_desc_t *desc;
 
     FT_Face face;
 
-    FT_ULong *my_charset = malloc(MAX_CHARSET_SIZE * sizeof(FT_ULong)); /* characters we want to render; Unicode */
-    FT_ULong *my_charcodes = malloc(MAX_CHARSET_SIZE * sizeof(FT_ULong)); /* character codes in 'encoding' */
+    FT_ULong my_charset[MAX_CHARSET_SIZE]; /* characters we want to render; Unicode */
+    FT_ULong my_charcodes[MAX_CHARSET_SIZE]; /* character codes in 'encoding' */
 
     char *charmap = "ucs-4";
     int err;
@@ -972,11 +973,6 @@ font_desc_t* read_font_desc_ft(const char *fname, int movie_width, int movie_hei
 
     float subtitle_font_ppem;
     float osd_font_ppem;
-
-    if (my_charset == NULL || my_charcodes == NULL) {
-	mp_msg(MSGT_OSD, MSGL_ERR, "subtitle font: malloc failed.\n");
-	goto err_out;
-    }
 
     switch (subtitle_autoscale) {
     case 1:
@@ -1010,7 +1006,7 @@ font_desc_t* read_font_desc_ft(const char *fname, int movie_width, int movie_hei
     }
 
     desc = init_font_desc();
-    if(!desc) goto err_out;
+    if(!desc) return NULL;
 
 //    t=GetTimer();
 
@@ -1035,10 +1031,11 @@ font_desc_t* read_font_desc_ft(const char *fname, int movie_width, int movie_hei
 
     if (charset_size < 0) {
 	mp_msg(MSGT_OSD, MSGL_ERR, "subtitle font: prepare_charset failed.\n");
-	goto err_out;
+	free_font_desc(desc);
+	return NULL;
     }
 #else
-    goto err_out;
+    return NULL;
 #endif
 
 //    fprintf(stderr, "fg: prepare t = %lf\n", GetTimer()-t);
@@ -1049,7 +1046,8 @@ font_desc_t* read_font_desc_ft(const char *fname, int movie_width, int movie_hei
 
     if (err) {
 	mp_msg(MSGT_OSD, MSGL_ERR, "Cannot prepare subtitle font.\n");
-	goto err_out;
+	free_font_desc(desc);
+	return NULL;
     }
 
 gen_osd:
@@ -1057,7 +1055,8 @@ gen_osd:
     /* generate the OSD font */
     err = load_osd_face(&face);
     if (err) {
-	goto err_out;
+	free_font_desc(desc);
+	return NULL;
     }
     desc->face_cnt++;
 
@@ -1067,14 +1066,16 @@ gen_osd:
     
     if (err) {
 	mp_msg(MSGT_OSD, MSGL_ERR, "Cannot prepare OSD font.\n");
-	goto err_out;
+	free_font_desc(desc);
+	return NULL;
     }
 
     err = generate_tables(desc, subtitle_font_thickness, subtitle_font_radius);
     
     if (err) {
 	mp_msg(MSGT_OSD, MSGL_ERR, "Cannot generate tables.\n");
-	goto err_out;
+	free_font_desc(desc);
+	return NULL;
     }
 
     // final cleanup
@@ -1092,16 +1093,7 @@ gen_osd:
 	    desc->font[i] = desc->font[j];
 	}
     }
-    free(my_charset);
-    free(my_charcodes);
     return desc;
-
-err_out:
-    if (desc)
-      free_font_desc(desc);
-    free(my_charset);
-    free(my_charcodes);
-    return NULL;
 }
 
 int init_freetype(void)
@@ -1178,3 +1170,5 @@ void load_font_ft(int width, int height)
     vo_font=read_font_desc_ft(font_name, width, height);
 #endif
 }
+
+#endif /* HAVE_FREETYPE */

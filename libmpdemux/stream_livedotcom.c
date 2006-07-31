@@ -1,6 +1,7 @@
 
 #include "config.h"
 
+#ifdef MPLAYER_NETWORK
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,6 +11,8 @@
 #include "network.h"
 #include "demuxer.h"
 #include "help_mp.h"
+
+#ifdef STREAMING_LIVE555
 
 extern int network_bandwidth;
 
@@ -78,7 +81,7 @@ static int open_live_sdp(stream_t *stream,int mode, void* opts, int* file_format
     if(len > SIZE_MAX - 1)
       return STREAM_ERROR;
 
-    sdpDescription = malloc(len+1);
+    sdpDescription = (char*)malloc(len+1);
     if(sdpDescription == NULL) return STREAM_ERROR;
     numBytesRead = read(f, sdpDescription, len);
     if(numBytesRead != len) {
@@ -117,3 +120,6 @@ stream_info_t stream_info_sdp = {
   NULL,
   0 // Urls are an option string
 };
+
+#endif
+#endif

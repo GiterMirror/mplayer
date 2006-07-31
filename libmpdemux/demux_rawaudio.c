@@ -35,7 +35,7 @@ static demuxer_t* demux_rawaudio_open(demuxer_t* demuxer) {
   WAVEFORMATEX* w;
 
   sh_audio = new_sh_audio(demuxer,0);
-  sh_audio->wf = w = malloc(sizeof(WAVEFORMATEX));
+  sh_audio->wf = w = (WAVEFORMATEX*)malloc(sizeof(WAVEFORMATEX));
   w->wFormatTag = sh_audio->format = format;
   w->nChannels = sh_audio->channels = channels;
   w->nSamplesPerSec = sh_audio->samplerate = samplerate;
@@ -92,6 +92,7 @@ static void demux_rawaudio_seek(demuxer_t *demuxer,float rel_seek_secs,float aud
 
   pos -= (pos % (sh_audio->channels * sh_audio->samplesize) );
   stream_seek(s,pos);
+  sh_audio->delay= (pos-ds_tell_pts(demuxer->audio)-sh_audio->a_in_buffer_len) / (float)(sh_audio->wf->nAvgBytesPerSec);
 //  printf("demux_rawaudio: streamtell=%d\n",(int)stream_tell(demuxer->stream));
 }
 
