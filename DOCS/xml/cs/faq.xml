@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- Synced with r19828  -->
+<!-- Synced with: 1.102  -->
 <chapter id="faq" xreflabel="FAQ">
 <title>Často Kladené Dotazy (FAQ)</title>
 
@@ -24,8 +24,9 @@ Jak přeložím <application>MPlayer</application> do nového jazyka?
 </para></question>
 <answer><para>
 Přečtěte si <ulink url="../../tech/translations.txt">translation HOWTO</ulink>,
-to vám objasní vše. Podrobnější pomoc můžete dostat v&nbsp;e-mailové konferenci
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer&ndash;translations</ulink>.
+to vám objasní vše. Podrobnější pomoc můžete dostat v
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer-translations</ulink>.
+mailing listu.
 </para></answer>
 </qandaentry>
 
@@ -48,10 +49,10 @@ Jak se mohu stát vývojářem <application>MPlayer</application>u?
 Vždy uvítáme nové kodéry i dokumentaristy. Přečtěte si
 <ulink url="../../tech/">technickou dokumentaci</ulink>
 abyste dostali obecnou představu. Pak byste se měli přihlásit do
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
-e-mailové konference a začít psát kód. Pokud chcete pomoci s dokumentací, připojte se do
-konference
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>.
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
+mailing listu a začít psát kód. Pokud chcete pomoci s dokumentací, připojte se do
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>
+mailing listu.
 </para></answer>
 </qandaentry>
 
@@ -147,50 +148,6 @@ v Debianu Sarge je to <filename>libx11-dev</filename>. Také se přesvědčte,
 problém v systémech Mandrake).
 </para></answer>
 </qandaentry>
-
-
-<qandaentry>
-<question><para>
-Kompilace na Mac OS 10.3 vede k několika linkovacím chybám</para></question>
-<answer><para>
-Chyba linkování, kterou zakoušíte vypadá nejspíš takto:
-<screen>
-ld: Undefined symbols:
-_LLCStyleInfoCheckForOpenTypeTables referenced from QuartzCore expected to be defined in ApplicationServices
-_LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be defined in ApplicationServices
-</screen>
-Tento problém působí vývojáři Apple, kteří používají 10.4 pro kompilaci
-svého software a distribuují binárky uživatelům 10.3 přes
-Software Update.
-Nedefinované symboly jsou přítomny v Mac OS 10.4,
-ale nikoli 10.3.
-Jedním z řešení může být downgrade na QuickTime 7.0.1.
-Následující řešení je však lepší.
-</para><para>
-Stáhněte si <ulink url="http://rapidshare.de/files/20281171/CompatFrameworks.tgz.html">starší verzi framevorků</ulink>.
-Získáte zde komprimovaný soubor obsahující QuickTime
-7.0.1 Framework a 10.3.9 QuartzCore Framework.
-</para><para>
-Rozbalte soubory někde mimo adresář System.
-(čili neinstalujte tyto frameworky do svého
-<filename class="directory">/System/Library/Frameworks</filename>!
-Použití těchto starších verzí slouží jen k obejití linkovacích chyb!)
-<screen>
-gunzip &lt; CompatFrameworks.tgz | tar xvf -
-</screen>
-V config.mak byste měli přidat
-<systemitem>-F/cesta/kam/jste/to/rozbalili</systemitem>
-do proměnné <systemitem>OPTFLAGS</systemitem>.
-Pokud používáte <application>X-Code</application>, můžete prostě zvolit tyto
-frameworky místo systémových.
-</para><para>
-Výsledná binárka <application>MPlayer</application>u bude využívat
-framework nainstalovaný na vašem systému přes dynamické linkování
-prováděné za běhu.
-(Můžete si to ověřit pomocí <systemitem>otool -l</systemitem>).
-</para></answer>
-</qandaentry>
-
 </qandadiv>
 
 <qandadiv id="faq-general">
@@ -198,12 +155,10 @@ prováděné za běhu.
 
 <qandaentry>
 <question><para>
-Existují nějaké e-mailové konference pro <application>MPlayer</application>?
+Existují nějaké mailing listy pro <application>MPlayer</application>?
 </para></question>
 <answer><para>
-Ano. Podívejte se do sekce
-<ulink url="http://www.mplayerhq.hu/design7/mailing_lists.html">e-mailových konferencí</ulink>
-naší domácí stránky.
+Ano. Viz sekci <link linkend="mailinglists">mailing listy</link>.
 </para></answer>
 </qandaentry>
 
@@ -239,8 +194,8 @@ Při startu přehrávání dostanu následující hlášku, ale jinak vše vypadá dobře:
 <screen>Linux RTC init: ioctl (rtc_pie_on): Permission denied</screen>
 </para></question>
 <answer><para>
-Potřebujete speciálně nastavené jádro, abychom mohli použít
-RTC časování. Detaily naleznete v <link linkend="rtc">RTC</link> části
+Potřebujete práva roota nebo speciálně nastavené jádro, abychom mohli použít
+nový kód časování. Detaily naleznete v <link linkend="rtc">RTC</link> části
 dokumentace.
 </para></answer>
 </qandaentry>
@@ -325,7 +280,7 @@ Objevuje se chybová zpráva o chybějícím souboru <filename>/usr/local/lib/codecs/
 </para></question>
 <answer><para>
 Stáhněte si a nainstalujte binární kodeky z naší
-<ulink url="http://www.mplayerhq.hu/design7/dload.html">download stránky</ulink>.
+<ulink url="http://www.mplayerhq.hu/design7/codecs.html">kodekové stránky</ulink>.
 </para></answer>
 </qandaentry>
 
@@ -460,7 +415,7 @@ Nedaří se mi přimět titulky, aby se zobrazovaly, pomoc!!
 </para></question>
 <answer><para>
 Ujistěte se, že máte správně nainstalovány fonty. Znovu proveďte kroky v části
-<link linkend="fonts-osd">Fonty a OSD</link> sekce instalace.
+<link linkend="mpsub-install">OSD a titulky</link> sekce instalace.
 Pokud používáte TrueType fonty, ověřte zda máte nainstalovánu
 <systemitem class="library">FreeType</systemitem> knihovnu.
 Další postup zahrnuje prověření vašich titulků v textovém editoru nebo v jiných
@@ -562,8 +517,7 @@ Dostávám podivné procentní hodnoty (příliš velké) při přehrávání na notebooku.
 To je práce power managementu / systému šetřícímu energií vašeho notebooku
 (BIOS, nikoli jádro). Zapojte konektor vnějšího napájení
 <emphasis role="bold">před</emphasis> zapnutím notebooku. Můžete také
-zkusit zda vám pomůže
-<ulink url="http://www.kernel.org/pub/linux/utils/kernel/cpufreq/cpufreq.html">cpufreq</ulink>
+zkusit zda vám pomůže <ulink url="http://www.brodo.de/cpufreq/">cpufreq</ulink>
 (rozhraní k SpeedStep pro Linux).
 </para></answer>
 </qandaentry>
@@ -803,21 +757,6 @@ ji naprogramovat, ale uvědomte si, že to bude velká akce.
 
 <qandaentry>
 <question><para>
-Nepřehraji žádná současná DVD od Sony Pictures/BMG.
-</para></question>
-<answer><para>
-To je normální; byli jste podfouknuti a prodali vám uměle defektní disk.
-Jediný způsob, jak přehrávat tato DVD je obcházet špatné bloky na disku
-použitím DVDnav místo mpdvdkit2.
-Toho lze dosáhnout kompilací MPlayeru s podporou DVDnav a následně
-záměnou dvd:// za dvdnav:// na příkazovém řádku.
-DVDnav se zatím vzájemně vylučuje s mpdvdkit2, takže musíte configure skriptu
-předat volbu <option>--disable-mpdvdkit</option>.
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
 Co takhle titulky? Umí je <application>MPlayer</application> zobrazovat?
 </para></question>
 <answer><para>
@@ -1015,30 +954,6 @@ Poměr stran lze opravit díky volbě <application>MEncoder</application>u
 v AVI OpenDML vprp hlavičce. Například:
 <screen>
 mencoder <replaceable>vstupní.avi</replaceable> -ovc copy -oac copy -o <replaceable>výstupní.avi</replaceable> -force-avi-aspect 4/3
-</screen>
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
-Jak mohu zálohovat a enkódovat VOB soubor s poškozeným začátkem?
-</para></question>
-<answer><para>
-Hlavní problém, když chcete enkódovat VOB soubor, který je poškozen
-<footnote id='fn-corrupted-files-or-copy-protection'><para>
-Navíc některé formy ochrany proti kopírování používané na DVD mohou
-být považovány za poškození obsahu.
-</para></footnote>,
-je to, že bude velmi těžké získat enkódovaný soubor s perfektní A/V synchronizací.
-Jedna z možností je vystřihnout poškozenou část a enkódovat jen
-čistou část.
-Nejdřív musíte zjistit, kde čistá část začíná:
-<screen>
-mplayer <replaceable>input.vob</replaceable> -sb <replaceable>nb_of_bytes_to_skip</replaceable>
-</screen>
-Pak můžete vytvořit nový soubor obsahující pouze bezchybnou část:
-<screen>
-dd if=<replaceable>input.vob</replaceable> of=<replaceable>output_cut.vob</replaceable> skip=1 ibs=<replaceable>nb_of_bytes_to_skip</replaceable>
 </screen>
 </para></answer>
 </qandaentry>

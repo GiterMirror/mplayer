@@ -17,7 +17,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
  ****************************************************************************/
 
@@ -35,6 +35,8 @@
 
 #include "config.h"
 #include "mp_msg.h"
+
+#ifdef HAVE_XVID4
 
 #include "codec-cfg.h"
 #include "stream.h"
@@ -331,8 +333,7 @@ m_option_t xvidencopts_conf[] =
 	{"nohq_ac", &xvidenc_hqacpred, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"frame_drop_ratio", &xvidenc_frame_drop_ratio, CONF_TYPE_INT, CONF_RANGE, 0, 100, NULL},
 	{"max_key_interval", &xvidenc_max_key_interval, CONF_TYPE_INT, CONF_MIN, 0, 0, NULL},
-	{"greyscale", &xvidenc_greyscale, CONF_TYPE_FLAG, 0, 0, 1, NULL}, /* kept for backward compatibility */
-	{"grayscale", &xvidenc_greyscale, CONF_TYPE_FLAG, 0, 0, 1, NULL},		
+	{"greyscale", &xvidenc_greyscale, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"nogreyscale", &xvidenc_greyscale, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"lumi_mask", &xvidenc_luminance_masking, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"nolumi_mask", &xvidenc_luminance_masking, CONF_TYPE_FLAG, 0, 1, 0, NULL},
@@ -1455,25 +1456,22 @@ print_stats(xvid_mplayer_module_t *mod)
 				"The value 99.99dB is a special value and represents "
 				"the upper range limit\n");
 		mp_msg(MSGT_MENCODER, MSGL_INFO,
-				"xvid:     Min PSNR Y:%.2f, Cb:%.2f, Cr:%.2f, All:%.2f in frame %d\n",
+				"xvid:     Min PSNR y : %.2f dB, u : %.2f dB, v : %.2f dB, in frame %d\n",
 				SSE2PSNR(mod->max_sse_y, mod->pixels),
 				SSE2PSNR(mod->max_sse_u, mod->pixels/4),
 				SSE2PSNR(mod->max_sse_v, mod->pixels/4),
-				SSE2PSNR(mod->max_sse_y + mod->max_sse_u + mod->max_sse_v, mod->pixels*1.5),
 				mod->max_framenum);
 		mp_msg(MSGT_MENCODER, MSGL_INFO,
-				"xvid: Average PSNR Y:%.2f, Cb:%.2f, Cr:%.2f, All:%.2f for %d frames\n",
+				"xvid: Average PSNR y : %.2f dB, u : %.2f dB, v : %.2f dB, for %d frames\n",
 				SSE2PSNR(mod->sse_y, mod->pixels),
 				SSE2PSNR(mod->sse_u, mod->pixels/4),
 				SSE2PSNR(mod->sse_v, mod->pixels/4),
-				SSE2PSNR(mod->sse_y + mod->sse_u + mod->sse_v, mod->pixels*1.5),
 				mod->frames);
 		mp_msg(MSGT_MENCODER, MSGL_INFO,
-				"xvid:     Max PSNR Y:%.2f, Cb:%.2f, Cr:%.2f, All:%.2f in frame %d\n",
+				"xvid:     Max PSNR y : %.2f dB, u : %.2f dB, v : %.2f dB, in frame %d\n",
 				SSE2PSNR(mod->min_sse_y, mod->pixels),
 				SSE2PSNR(mod->min_sse_u, mod->pixels/4),
 				SSE2PSNR(mod->min_sse_v, mod->pixels/4),
-				SSE2PSNR(mod->min_sse_y + mod->min_sse_u + mod->min_sse_v, mod->pixels*1.5),
 				mod->min_framenum);
 	}
 }
@@ -1598,6 +1596,8 @@ vf_info_t ve_info_xvid = {
 	vf_open
 };
 
+
+#endif /* HAVE_XVID4 */
 
 /* Please do not change that tag comment.
  * arch-tag: 42ccc257-0548-4a3e-9617-2876c4e8ac88 mplayer xvid encoder module */

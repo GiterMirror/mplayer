@@ -41,13 +41,13 @@
 #include <ws2tcpip.h>
 #endif
 
-#include <stream/stream.h>
+#include <libmpdemux/stream.h>
 #include <libmpdemux/demuxer.h>
 #include <mp_msg.h>
 #include <bswap.h>
 
 /// Netstream packets def and some helpers
-#include <stream/netstream.h>
+#include <libmpdemux/netstream.h>
 
 
 //Set some standard variables

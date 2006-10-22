@@ -3,17 +3,10 @@ include ../config.mak
 
 LIBNAME = libinput.a
 
-SRCS=input.c
-ifeq ($(JOYSTICK),yes)
-SRCS += joystick.c
-endif
-ifeq ($(LIRC),yes)
-SRCS += lirc.c
-endif
-
+SRCS=input.c joystick.c lirc.c 
 OBJS=$(SRCS:.c=.o)
 
-CFLAGS  = -I. -I.. $(OPTFLAGS)
+CFLAGS  = $(OPTFLAGS) -I. -I.. $(EXTRA_INC)
 
 .SUFFIXES: .c .o
 

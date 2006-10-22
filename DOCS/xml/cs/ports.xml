@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- Synced with r19820 -->
+<!-- Synced with: 1.80 -->
 <chapter id="ports" xreflabel="Ports">
 <title>Porty</title>
 
@@ -45,8 +45,8 @@ způsobem:
 <para>
 Christian Marillat vytvářel jistou dobu neoficiální Debianí balíčky
 <application>MPlayer</application>u, <application>MEncoder</application>u a
-našich binárních balíků s kodeky, můžete si je stáhnout (apt-get) z
-<ulink url="http://www.debian-multimedia.org/">jeho domácí stránky</ulink>.
+našich bitmapových fontů, můžete si je stáhnout (apt-get) z
+<ulink url="http://hpisi.nerim.net/">jeho domácí stránky</ulink>.
 </para>
 </sect2>
 
@@ -177,23 +177,6 @@ na 400MHz CPU. Budete k tomu potřebovat nainstalovanou
 <ulink url="http://www.sun.com/sparc/vis/mediaLib.html"><systemitem class="library">mLib</systemitem></ulink>.
 </para>
 
-<para><emphasis role="bold">Caveat:</emphasis></para>
-<itemizedlist>
-<listitem><para>Podpora <emphasis role="bold">mediaLib</emphasis> je
-<emphasis role="bold">v současnosti vypnutá</emphasis> ve výchozím nastavení
-<application>MPlayer</application>u kvůli chybovosti. Uživatelé SPARCu
-překládající MPlayer s podporou mediaLib hlásili tlustý zelený pruh
-v enkódovaném videu dekódovaném libavcodecem. Pokud chcete, můžete si ji
-zapnout:
-<screen>
-$ ./configure --enable-mlib
-</screen>
-Děláte to na vlastní nebezpečí. Uživatelé x86 by
-<emphasis role="bold">nikdy</emphasis> neměli používat mediaLib, jelikož
-vede k velmi slabému výkonu MPlayeru.
-</para></listitem>
-</itemizedlist>
-
 <para>
 Pro kompilaci balíku budete potřebovat GNU <application>make</application>
 (<filename>gmake</filename>, <filename>/opt/sfw/gmake</filename>), jelikož
@@ -225,9 +208,7 @@ pro nastavení <filename>configure</filename> skriptu tak, aby našel GNU
 "as" na vašem systému).
 </para>
 
-<para>Řešení běžných potíží:</para>
-<itemizedlist>
-<listitem><para>
+<para>
 Chybová zpráva z <filename>configure</filename> na systému Solaris x86
 s použitím GCC bez GNU assembleru:
 <screen>
@@ -253,33 +234,8 @@ nepoužívá GNU as:
    ... more "Illegal mnemonic" and "Syntax error" errors ...
 </screen>
 </para>
-</listitem>
 
-<listitem><para><application>MPlayer</application> může zhavarovat (segfault),
-pokud dekódujete nebo enkódujete video používající win32 kodeky:
-<screen>
-...
-Trying to force audio codec driver family acm...
-Opening audio decoder: [acm] Win32/ACM decoders
-sysi86(SI86DSCR): Invalid argument
-Couldn't install fs segment, expect segfault
-
-
-MPlayer interrupted by signal 11 in module: init_audio_codec
-...
-</screen>
-To díky změně na sysi86() ve verzích Solaris 10 a před-Solaris
-Nevada b31. V Solaris Nevada b32 to bylo opraveno;
-Sun však ještě musí portovat opravu do Solaris 10. MPlayer
-Project upozornil Sun na tento problém a záplata pro Solaris 10
-je v současnosti rozpracována. Více informací o této chybě naleznete
-na:
-<ulink
-url="http://bugs.opensolaris.org/bugdatabase/view_bug.do?bug_id=6308413"/>.
-</para>
-</listitem>
-
-<listitem><para>
+<para>
 Díky chybám v Solarisu 8, nemůžete přehrávat DVD disky větší než 4 GB:
 </para>
 
@@ -299,8 +255,6 @@ modulo 4GB
 (<ulink url="http://groups.yahoo.com/group/solarisonintel/message/22592"/>).
 Problém hsfs může být odstraněn nainstalováním patche 109764-04 (sparc) / 109765-04 (x86).
 </para></listitem>
-</itemizedlist>
-</listitem>
 </itemizedlist>
 </sect2>
 
@@ -478,7 +432,6 @@ Testovány byly následující architektury:
 
 <itemizedlist>
 <listitem><para>604e</para></listitem>
-<listitem><para>POWER3</para></listitem>
 <listitem><para>POWER4</para></listitem>
 </itemizedlist>
 
@@ -488,6 +441,7 @@ Následující architektury nebyly testovány, ale měly by pracovat:
 <itemizedlist>
 <listitem><para>POWER</para></listitem>
 <listitem><para>POWER2</para></listitem>
+<listitem><para>POWER3</para></listitem>
 <listitem><para>POWER5</para></listitem>
 </itemizedlist>
 
@@ -495,37 +449,9 @@ Následující architektury nebyly testovány, ale měly by pracovat:
 Zvuk přes Ultimedia Services není podporován, jelikož Ultimedia byla
 opuštěna v AIX 5.1; tudíš je jedinou možností použití ovladačů AIX Open
 Sound System (OSS) od 4Front Technologies z <ulink
-url="http://www.opensound.com/aix.html">http://www.opensound.com/aix.html
-</ulink>.
-4Front Technologies volně poskytuje OSS ovladače pro AIX 5.1 pro
-nekomerční použití; zatím však neexistují zvukové ovladače
-pro AIX 5.2 nebo 5.3. To znamená, že <emphasis role="bold">AIX 5.2
-a 5.3 nejsou nyní schopny provozovat MPlayer se zvukem.</emphasis>
+url="http://www.opensound.com/aix.html">http://www.opensound.com/aix.html</ulink>.
+4Front Technologies dodává OSS ovladače zdarma pro osobní a nekomerční využití.
 </para>
-
-<para>Řešení běžných potíží:</para>
-
-<itemizedlist>
-<listitem>
-<para>
-Pokud dostanete tuto chybovou hlášku z <filename>configure</filename>:
-<screen>
-$ ./configure
-...
-Checking for iconv program ... no
-No working iconv program found, use
---charset=US-ASCII to continue anyway.
-Messages in the GTK-2 interface will be broken then.
-</screen>
-To proto, že AIX používá nestandardní názvy znakových sad; proto
-konverze výstupu MPlayeru do jiné znakové sady není zatím podporováno.
-Řešením je:
-<screen>
-$ ./configure --charset=noconv
-</screen>
-</para>
-</listitem>
-</itemizedlist>
 
 </sect2>
 </sect1>
@@ -538,7 +464,7 @@ $ ./configure --charset=noconv
   <ulink url="http://www.mingw.org/"><application>MinGW</application></ulink>.
   Nemá zatím oficiální GUI, ale verze pro příkazový řádek je plně funkční.
   Měli byste navštívit konferenci
-  <ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-cygwin/">MPlayer-cygwin</ulink>
+  <ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-cygwin/">MPlayer-cygwin</ulink>
   pro pomoc a poslední informace.
   Oficiální Windows binárky naleznete na
   <ulink url="http://www.mplayerhq.hu/design7/dload.html">download stránce</ulink>.
@@ -608,46 +534,47 @@ $ ./configure --charset=noconv
   zakáže jeho použití. Přidejte si to do vašeho konfig souboru, aby zůstal
   zakázán natrvalo.</para>
 
-<para>Pro Windows máme k dispozici speciální balíčky kodeků na naší
-  <ulink url="http://www.mplayerhq.hu/design7/dload.html">download stránce</ulink>,
-  abyste mohli přehrávat formáty, pro které zatím není nativní podpora.
-  Umístěte kodeky někde do cesty (path), nebo přidejte
-  <option>--with-codecsdir=<replaceable>c:/cesta/ke/kodekům</replaceable></option>
-  (případně
-  <option>--with-codecsdir=<replaceable>/cesta/ke/kodekům</replaceable></option>
-  používate-li <application>Cygwin</application>) do <filename>configure</filename>.
-  Máme několik zpráv, že Real DLL musí mít práva zápisu pro uživatele, který
-  pouští <application>MPlayer</application>, ale pouze na některých systémech (NT4).
-  Máte-li potíže, zkuste jim přidat právo zápisu.</para>
+<para>There are special codec packages for Windows available on our
+  <ulink url="http://www.mplayerhq.hu/design7/codecs.html">codecs page</ulink>
+  to allow playing formats for which there is no native support yet.
+  Put the codecs somewhere in your path or pass
+  <option>--with-codecsdir=<replaceable>c:/path/to/your/codecs</replaceable></option>
+  (alternatively
+  <option>--with-codecsdir=<replaceable>/path/to/your/codecs</replaceable></option>
+  only on <application>Cygwin</application>) to <filename>configure</filename>.
+  We have had some reports that Real DLLs need to be writable by the user
+  running <application>MPlayer</application>, but only on some systems (NT4).
+  Try making them writable if you have problems.</para>
 
-<para>Můžete přehrávat VCD přehráváním <filename>.DAT</filename> nebo <filename>.MPG</filename>
-  souborů, které Windows ukazuje na VCD. Pracuje to takto
-  (upravte písmeno disku vaší CD-ROM):</para>
+<para>You can play VCDs by playing the <filename>.DAT</filename> or <filename>.MPG</filename> files
+  that Windows exposes on VCDs. It works like this (adjust for the drive letter
+  of your CD-ROM):</para>
 
 <screen>mplayer <replaceable>d:/mpegav/avseq01.dat</replaceable></screen>
 
-<para>DVD pracují také, upravte <option>-dvd-device</option> na písmeno
-  DVD-ROM mechaniky:</para>
+<para>DVDs also work, adjust <option>-dvd-device</option> for the drive letter
+  of your DVD-ROM:</para>
 
-<screen>mplayer dvd://<replaceable>&lt;titul&gt;</replaceable> -dvd-device <replaceable>d</replaceable>:</screen>
+<screen>mplayer dvd://<replaceable>&lt;title&gt;</replaceable> -dvd-device <replaceable>d</replaceable>:</screen>
 
-<para><application>Cygwin</application>/<application>MinGW</application>
-  terminál je spíše pomalý. Přesměrování výstupu nebo použití volby
-  <option>-quiet</option> podle hlášení zvýší výkon na některých systémech.
-  Direct rendering (<option>-dr</option>) může rovněž pomoci.
-  Pokud je přehrávání trhané, zkuste
-  <option>-autosync 100</option>. Pokud vám některé z těchto voleb pomohly,
-  měli byste si je zapsat do konfiguračního souboru.</para>
+<para>The <application>Cygwin</application>/<application>MinGW</application>
+  console is rather slow. Redirecting output or using the
+  <option>-quiet</option> option has been reported to improve performance on
+  some systems. Direct rendering (<option>-dr</option>) may also help.
+  If playback is jerky, try
+  <option>-autosync 100</option>. If some of these options help you, you
+  may want to put them in your config file.</para>
 
 <note>
 
-<para>Runtime CPU detekce na Windows vypíná podporu SSE kvůli opakovaným a
-  těžko vystopovatelným se SSE souvisejícím pádům. Pokud chcete mít podporu
-  SSE pod Windows, budete muset kompilovat bez runtime CPU detekce.
+<para>On Windows the runtime CPU detection disables SSE support
+  because of recurring and hard-to-trace SSE-related crashes. If you
+  wish to have SSE support under Windows, you will have to compile without
+  runtime CPU-detection.
 </para>
 
-<para>Máte-li Pentium 4 a dojde k pádu při použití
-  RealPlayer kodeků, možná budete muset vypnout podporu hyperthreading.
+<para>If you have a Pentium 4 and are experiencing a crash using the
+  RealPlayer codecs, you may need to disable hyperthreading support.
 </para>
 
 </note>
@@ -656,15 +583,15 @@ $ ./configure --charset=noconv
 <sect2 id="cygwin">
 <title><application>Cygwin</application></title>
 
-<para>Musíte používat <application>Cygwin</application> 1.5.0 nebo vyšší,
-  abyste mohli kompilovat <application>MPlayer</application>.</para>
+<para>You need to run <application>Cygwin</application> 1.5.0 or later in
+  order to compile <application>MPlayer</application>.</para>
 
-<para>Hlavičkové soubory DirectX musí být rozbaleny do <filename class="directory">/usr/include/</filename> nebo
+<para>DirectX header files need to be extracted to <filename class="directory">/usr/include/</filename> or
   <filename class="directory">/usr/local/include/</filename>.</para>
 
-<para>Instrukce a soubory nutné pro běh SDL pod
-  <application>Cygwin</application> lze nalézt na
-  <ulink url="http://www.libsdl.org/extras/win32/cygwin/">libsdl stránkách</ulink>.</para>
+<para>Instructions and files for making SDL run under
+  <application>Cygwin</application> can be found on the
+  <ulink url="http://www.libsdl.org/extras/win32/cygwin/">libsdl site</ulink>.</para>
 
 </sect2>
 
@@ -672,22 +599,22 @@ $ ./configure --charset=noconv
 <sect2 id="mingw">
 <title><application>MinGW</application></title>
 
-<para>Instalace takové verze <application>MinGW</application>, aby bylo lze
-  kompilovat <application>MPlayer</application> byla obtížná, ale nyní
-  pracuje bez dalších úprav. Jen nainstalujte <application>MinGW</application>
-  3.1.0 nebo vyšší a MSYS 1.0.9 nebo vyšší a zvolte v MSYS postinstall, že je
-  <application>MinGW</application> nainstalováno.</para>
+<para>Installing a version of <application>MinGW</application> that could
+  compile <application>MPlayer</application> used to be quite tricky, but it
+  works out of the box now. Just install <application>MinGW</application>
+  3.1.0 or later and MSYS 1.0.9 or later and tell the MSYS postinstall that
+  <application>MinGW</application> is installed.</para>
 
-<para>Rozbalte DirectX hlavičkové soubory do <filename class="directory">/mingw/include/</filename>.</para>
+<para>Extract DirectX header files to <filename class="directory">/mingw/include/</filename>.</para>
 
-<para>Podpora MOV compressed header vyžaduje
-  <ulink url="http://www.gzip.org/zlib/">zlib</ulink>, kterou
-  <application>MinGW</application> neobsahuje.
-  Konfigurujte ji s <option>--prefix=/mingw</option> a nainstalujte
-  ji před kompilací <application>MPlayer</application>u.</para>
+<para>MOV compressed header support requires
+  <ulink url="http://www.gzip.org/zlib/">zlib</ulink>, which
+  <application>MinGW</application> does not provide by default.
+  Configure it with <option>--prefix=/mingw</option> and install
+  it before compiling <application>MPlayer</application>.</para>
 
-<para>Kompletní instrukce pro překlad <application>MPlayer</application>u
-  a potřebné knihovny naleznete v
+<para>Complete instructions for building <application>MPlayer</application>
+  and necessary libraries can be found in the
   <ulink url="http://mplayerhq.hu/MPlayer/releases/win32/contrib/MPlayer-MinGW-Howto.txt">MPlayer MinGW HOWTO</ulink>.</para>
 
 </sect2>
@@ -697,203 +624,157 @@ $ ./configure --charset=noconv
 
 <sect1 id="macos">
 <title>Mac OS</title>
-
 <para>
-<application>MPlayer</application> nepracuje na Mac OS verzích pod
-10, ale měl by být bez úprav kompilovatelný na Mac OS X 10.2 a vyšších.
-Preferovaná verze kompileru je Apple verze
-GCC 3.x a vyšších.
-Základní prostředí pro kompilaci můžete získat instalací
-<ulink url="http://developer.apple.com/tools/download/">Xcode</ulink>
-od Apple. Máte-li Mac OS X 10.3.9 nebo pozdější a QuickTime 7
-můžete použít výstupní video rozhraní <option>macosx</option>.
-</para>
-
-<para>
-Naneštěstí toto základní prostředí neumožňuje využít všechny
-pěkné vlastnosti <application>MPlayer</application>u.
-Například, budete-li chtít mít zakompilovánu podporu OSD, budete
-muset mít na svém stroji nainstalovány knihovny
-<systemitem class="library">fontconfig</systemitem>
-a <systemitem class="library">freetype</systemitem>.
- Narozdíl od jiných Unixů, jako je většina variant Linuxu a BSD, OS X
- nemá balíčkovací systém distribuovaný se systémem.
-</para>
-
-<para>
-Můžete vybírat minimálně ze dvou:
-<ulink url="http://fink.sourceforge.net/">Fink</ulink>u a
-<ulink url="http://www.macports.org/">DarwinPorts</ulink>.
-Oba poskytují zhruba stejné služby (např. mnoho dostupných balíčků,
-řešení závislostí, schopnost jednoduše přidávat/aktualizovat/odebírat
-balíčky, atp...).
-Fink nabízí jak předkompilované binární balíčky, tak možnost kompilovat
-všechno ze zdrojového kódu, zatímco DarwinPorts nabízí pouze možnost
-kompilace ze zdrojového kódu.
-Autor této příručky zvolil DarwinPorts z jednoduchého důvodu, že jeho
-základní nastavení je mnohem lehčí.
-Pozdější příklady budou založeny na DarwinPorts.
-</para>
-
-<para>
-Například pro kompilaci <application>MPlayer</application> s podporou OSD:
-<screen>sudo port install pkgconfig</screen>
-Takto nainstalujete <application>pkg-config</application>, což je systém pro správu
-knihovních příznaků compile/link.
-<application>MPlayer</application>ův skript <systemitem>configure</systemitem> jej
-používá pro správnou detekci knihoven.
-Pak můžete nainstalovat <application>fontconfig</application>
-podobným způsobem:
-<screen>sudo port install fontconfig</screen>
-Následně můžete pokračovat spuštěním <application>MPlayer</application>ova
-<systemitem>configure</systemitem> skriptu (ověřte proměnné prostředí
-<systemitem>PKG_CONFIG_PATH</systemitem> a <systemitem>PATH</systemitem>,
-aby <systemitem>configure</systemitem> našel knihovny instalované pomocí
-DarwinPorts):
-<screen>PKG_CONFIG_PATH=/opt/local/lib/pkgconfig/ PATH=$PATH:/opt/local/bin/ ./configure</screen>
+<application>MPlayer</application> does not work on Mac OS versions before
+10, but should compile out-of-the-box on Mac OS X 10.2 and up.
+The preferred compiler is the Apple version of
+GCC 3.x or later. If you have Mac OS X 10.3.9 or later and QuickTime 7
+you can use the macosx video output driver.
 </para>
 
 <sect2 id="osx_gui">
 <title>MPlayer OS X GUI</title>
 
 <para>
-Můžete si stáhnout nativní GUI pro <application>MPlayer</application> spolu
-s předkompilovanými binárkami <application>MPlayer</application>u pro Mac OS X
-z <ulink url="http://mplayerosx.sf.net/">MPlayerOSX</ulink> projektu, ale upozorňujeme:
-tento projekt již není aktivní.
+You can get a native GUI for <application>MPlayer</application> together with
+precompiled <application>MPlayer</application> binaries for Mac OS X from the
+<ulink url="http://mplayerosx.sf.net/">MPlayerOSX</ulink> project, but be
+warned: that project is not active anymore.
 </para>
 
 <para>
-Naštěstí byl <application>MPlayerOSX</application> převzat členem
-<application>MPlayer</application> týmu.
-Předváděcí verze lze stáhnout z naší
-<ulink url="http://mplayerhq.hu/dload.html">download stránky</ulink>
-a oficiální verze by měla přijít již brzy.
+Fortunately, <application>MPlayerOSX</application> has been taken over
+by a member of the <application>MPlayer</application> team.
+Preview releases are available from our
+<ulink url="http://mplayerhq.hu/dload.html">download page</ulink>
+and an official release should arrive soon.
 </para>
 
 <para>
-Abyste mohli skompilovat <application>MPlayerOSX</application> ze zdrojového
-kódu sami, budete potřebovat <systemitem>mplayerosx</systemitem>,
-<systemitem>main</systemitem> a kopii
-<systemitem>main</systemitem> CVS modulu jménem
+In order to build <application>MPlayerOSX</application> from source
+yourself, you need the <systemitem>mplayerosx</systemitem>, the
+<systemitem>main</systemitem> and a copy of the
+<systemitem>main</systemitem> CVS module named
 <systemitem>main_noaltivec</systemitem>.
-<systemitem>mplayerosx</systemitem> je GUI nadstavba,
-<systemitem>main</systemitem> je MPlayer a
-<systemitem>main_noaltivec</systemitem> je MPlayer přeložený bez podpory AltiVec.
+<systemitem>mplayerosx</systemitem> is the GUI frontend,
+<systemitem>main</systemitem> is MPlayer and
+<systemitem>main_noaltivec</systemitem> is MPlayer built without AltiVec
+support.
 </para>
 
 <para>
-Pro stažení SVN modulů použijte:
+To check out CVS modules use:
 
 <screen>
-svn checkout svn://svn.mplayerhq.hu/mplayerosx/trunk/ mplayerosx
-svn checkout svn://svn.mplayerhq.hu/mplayer/trunk/ main
+cvs -d:pserver:anonymous@mplayerhq.hu:/cvsroot/mplayer login
+cvs -z3 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/mplayer co -P mplayerosx
+cvs -z3 -d:pserver:anonymous@mplayerhq.hu:/cvsroot/mplayer co -P main
 </screen>
 </para>
 
 <para>
-Abyste skompilovali <application>MPlayerOSX</application> budete muset setavit
-asi toto:
+In order to build <application>MPlayerOSX</application> you will need to
+set up something like this:
 
 <screen>
-Adresář_se_zdrojáky_MPlayeru
+MPlayer_source_directory
    |
-   |--->main           (Zdrojový kód MPlayeru ze Subversion)
+   |--->main           (MPlayer CVS source)
    |
-   |--->main_noaltivec (Zdrojový kód MPlayeru ze Subversion konfigurován s --disable-altivec)
+   |--->main_noaltivec (MPlayer CVS source configured with --disable-altivec)
    |
-   |--->mplayerosx     (Zdrojový kód MPlayer OS X ze Subversion)
+   |--->mplayerosx     (MPlayer OS X CVS source)
 </screen>
 
-Nejdřív musíte skompilovat main a main_noaltivec.
+You first need to build main and main_noaltivec.
 </para>
 
 <para>
-Pak nastavte globální proměnnou:
+Next, set a global variable:
 
 <screen>export MACOSX_DEPLOYMENT_TARGET=10.3</screen>
 </para>
 
 <para>
-Pak konfigurujte:
+Then, configure:
 </para>
 
 <para>
-Pokud konfigurujete pro G4 nebo pozdější CPU s podporou AltiVec, proveďte následující:
+If you configure for a G4 or later CPU with AltiVec support, do as follows:
 <screen>
 ./configure --with-termcaplib=ncurses.5 --disable-gl --disable-x11
 </screen>
-Pokud konfigurujete pro stroj s G3 bez AltiVec, použijte:
+If you configure for a G3-powered machine without AltiVec, use:
 <screen>
 ./configure --with-termcaplib=ncurses.5 --disable-gl --disable-x11
 --disable-altivec
 </screen>
-Možná budete muset editovat <filename>config.mak</filename> a změnit
-<systemitem>-mcpu</systemitem> a <systemitem>-mtune</systemitem>
-z <systemitem>74XX</systemitem> na <systemitem>G3</systemitem>.
+You may need to edit <filename>config.mak</filename> and change
+<systemitem>-mcpu</systemitem> and <systemitem>-mtune</systemitem>
+from <systemitem>74XX</systemitem> to <systemitem>G3</systemitem>.
 </para>
 
 <para>
-Pokračujte s
+Continue with
 <screen>
 make
 </screen>
-pak jděte do adresáře mplayerosx a napište
+then go to the mplayerosx directory and type
 
 <screen>
 make dist
 </screen>
-To vytvoří komprimovaný <systemitem>.dmg</systemitem> archiv
-s binárkou připravenou k použití.
+This will create a compressed <systemitem>.dmg</systemitem> archive
+with the ready to use binary.
 </para>
 
 <para>
-Také lze použít projekt <application>Xcode</application> 2.1;
-starý projekt pro <application>Xcode</application> 1.x
-již nepracuje.
+You can also use the <application>Xcode</application> 2.1 project;
+the old project for <application>Xcode</application> 1.x does
+not work anymore.
 </para>
 </sect2>
 </sect1>
 
 <sect1 id="exotic_platforms">
-<title>Exotické platformy</title>
+<title>Exotic Platforms</title>
 
 <para>
-<application>MPlayer</application> běží na mnoha exotických platformách,
-ale většina platformně závislých změn z těchto systémů nebyla přidána zpět
-do hlavního zdrojového stromu.
-Pokyny k sestavení byste měli najít v dokumentaci pro daný systém.
+<application>MPlayer</application> runs on a number of exotic platforms,
+but most of the platform-specific changes from those systems have not been
+merged back into the main source tree.
+For build instructions you should refer to the system-specific documentation.
 </para>
 
 <sect2 id="qnx">
 <title>QNX</title>
 <para>
-Musíte si stáhnout a nainstalovat SDL pro QNX. Pak spusťte
-<application>MPlayer</application> s volbami <option>-vo sdl:driver=photon</option>
-a <option>-ao sdl:nto</option>, mělo by to být rychlé.
+You'll need to download and install SDL for QNX. Then run
+<application>MPlayer</application> with <option>-vo sdl:driver=photon</option>
+and <option>-ao sdl:nto</option> options, it should be fast.
 </para>
 
 <para>
-Výstup <option>-vo x11</option> bude ještě pomalejší než na Linuxu,
-jelikož QNX má pouze X <emphasis>emulaci</emphasis>, která je velmi pomalá.
+The <option>-vo x11</option> output will be even slower than on Linux,
+since QNX has only X <emphasis>emulation</emphasis> which is very slow.
 </para>
 </sect2>
 
 <sect2 id="amiga">
 <title>Amiga/MorphOS (GeekGadgets)</title>
 <para>
-Lidé z okruhu <ulink url="www.amigasoft.net">www.amigasoft.net</ulink>
-tvoří současné balíčky <application>MPlayer</application> a
-<application>MEncoder</application>.
+The people over at <ulink url="www.amigasoft.net">www.amigasoft.net</ulink>
+make current <application>MPlayer</application> and
+<application>MEncoder</application> packages.
 </para>
 
 <para>
-Nicholas Det at Genesi vytvořil velký a výkonný port <application>MPlayer
-</application>u pro MorphOS. Naneštěstí je založen na verzi 0.90.
+Nicholas Det at Genesi has done a big and powerful port of <application>MPlayer
+</application> for MorphOS. Sadly it's based on the 0.90 series.
 </para>
 
 <para>
-Stáhněte si ji z <ulink url="http://www.morphzone.org/">MorphZone</ulink>:
+Get if from <ulink url="http://www.morphzone.org/">MorphZone</ulink>:
 <itemizedlist>
 <listitem><para>
 <ulink url="http://www.morphzone.org/modules/mydownloads/singlefile.php?lid=90">

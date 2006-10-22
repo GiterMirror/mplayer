@@ -1,8 +1,8 @@
 /*
  * Copyright 1998 Marcus Meissner
  *
- * Modified for use with MPlayer, detailed changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, detailed CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  *
  */
@@ -78,7 +78,7 @@ ICOpen(long filename,long fccHandler,unsigned int wMode) {
 	/* FIXME: do we need to fill out the rest too? */
 	hdrv=OpenDriverA((long)&icopen);
 	if (!hdrv) return 0;
-	whic = malloc(sizeof(WINE_HIC));
+	whic = (WINE_HIC*)malloc(sizeof(WINE_HIC));
 	whic->hdrv	= hdrv;
 	whic->driverproc= ((DRVR*)hdrv)->DriverProc;
 //	whic->private	= ICSendMessage((HIC)whic,DRV_OPEN,0,(long)&icopen);

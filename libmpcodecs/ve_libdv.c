@@ -8,6 +8,8 @@
 #include "config.h"
 #include "mp_msg.h"
 
+#ifdef HAVE_LIBDV095
+
 #include "codec-cfg.h"
 #include "stream.h"
 #include "demuxer.h"
@@ -114,3 +116,4 @@ vf_info_t ve_info_libdv = {
 };
 
 //===========================================================================//
+#endif

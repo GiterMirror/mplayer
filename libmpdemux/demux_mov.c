@@ -412,6 +412,7 @@ static int mov_check_file(demuxer_t* demuxer){
 	  skipped+=8;
 	  i = stream_read_dword(demuxer->stream)-8;
 	  if(stream_read_dword(demuxer->stream)==MOV_FOURCC('r','m','r','a')){
+	      int ref=0;
 	      skipped+=i;
 	      mp_msg(MSGT_DEMUX,MSGL_INFO,"MOV: Reference Media file!!!\n");
 	      //set demuxer type to playlist ...
@@ -540,23 +541,10 @@ static void demux_close_mov(demuxer_t *demuxer) {
   free(priv);
 }
 
-unsigned int store_ughvlc(unsigned char *s, unsigned int v){
-  unsigned int n = 0;
-
-  while(v >= 0xff) {
-    *s++ = 0xff;
-    v -= 0xff;
-    n++;
-  }
-  *s = v;
-  n++;
-
-  return n;
-}
-
 static int lschunks_intrak(demuxer_t* demuxer, int level, unsigned int id,
                            off_t pos, off_t len, mov_track_t* trak);
 
+extern unsigned int store_ughvlc(unsigned char *s, unsigned int v);
 static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak){
     mov_priv_t* priv=demuxer->priv;
 //    printf("lschunks (level=%d,endpos=%x)\n", level, endpos);
@@ -582,13 +570,9 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 	} else { /* not in track */
 	  switch(id) {
 	    case MOV_FOURCC('m','v','h','d'): {
-		int version = stream_read_char(demuxer->stream);
-		stream_skip(demuxer->stream, (version == 1) ? 19 : 11);
+		stream_skip(demuxer->stream,12);
 		priv->timescale=stream_read_dword(demuxer->stream);
-		if (version == 1)
-		    priv->duration=stream_read_qword(demuxer->stream);
-		else
-		    priv->duration=stream_read_dword(demuxer->stream);
+		priv->duration=stream_read_dword(demuxer->stream);
 		mp_msg(MSGT_DEMUX, MSGL_V,"MOV: %*sMovie header (%d bytes): tscale=%d  dur=%d\n",level,"",(int)len,
 		    (int)priv->timescale,(int)priv->duration);
 		break;
@@ -638,15 +622,6 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 		int is_vorbis = 0;
 		sh_audio_t* sh=new_sh_audio(demuxer,priv->track_db);
 		sh->format=trak->fourcc;
-
-		// crude audio delay from editlist0 hack ::atm
-		if(trak->editlist_size>=1) {
-		    if(trak->editlist[0].pos == -1) {
-			sh->stream_delay = (float)trak->editlist[0].dur/(float)priv->timescale;
-	    		mp_msg(MSGT_DEMUX,MSGL_V,"MOV: Initial Audio-Delay: %.3f sec\n", sh->stream_delay);
-		    }
-		}
-
 
 		switch( sh->format ) {
 		    case 0x726D6173: /* samr */
@@ -758,7 +733,7 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 			  if (len >= 36 + char2int(trak->stdata,52)) {
 			    sh->codecdata_len = char2int(trak->stdata,52+char2int(trak->stdata,52));
 			    mp_msg(MSGT_DEMUX, MSGL_V, "MOV: Found alac atom (%d)!\n", sh->codecdata_len);
-			    sh->codecdata = malloc(sh->codecdata_len);
+			    sh->codecdata = (unsigned char *)malloc(sh->codecdata_len);
 			    memcpy(sh->codecdata, &trak->stdata[52+char2int(trak->stdata,52)], sh->codecdata_len);
 			  }
 			  break;
@@ -807,9 +782,7 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 			if(atom_len > 8) {
 			  esds_t esds; 				  
 			  if(!mp4_parse_esds(&trak->stdata[36+adjust], atom_len-8, &esds)) {
-			    /* 0xdd is a "user private" id, not an official allocated id (see http://www.mp4ra.org/object.html),
-			       so perform some extra checks to be sure that this is really vorbis audio */
-			    if(esds.objectTypeId==0xdd && esds.streamType==0x15 && sh->format==0x6134706D && esds.decoderConfigLen > 8)
+			    if(sh->format==0x6134706D && esds.decoderConfigLen > 8)
 				{
 					//vorbis audio
 					unsigned char *buf[3];
@@ -863,12 +836,6 @@ quit_vorbis_block:
 			    if(esds.objectTypeId==MP4OTI_MPEG1Audio || esds.objectTypeId==MP4OTI_MPEG2AudioPart3)
 				sh->format=0x55; // .mp3
 
-			    if(esds.objectTypeId==MP4OTI_13kVoice) { // 13K Voice, defined by 3GPP2
-				sh->format=mmioFOURCC('Q', 'c', 'l', 'p');
-				trak->nchannels=sh->channels=1;
-				trak->samplebytes=sh->samplesize=1;
-			    }
-
 			    // dump away the codec specific configuration for the AAC decoder
 			    if(esds.decoderConfigLen){
 			    if( (esds.decoderConfig[0]>>3) == 29 )
@@ -876,7 +843,7 @@ quit_vorbis_block:
 			    if(!is_vorbis)
 			    {
 			    sh->codecdata_len = esds.decoderConfigLen;
-			    sh->codecdata = malloc(sh->codecdata_len);
+			    sh->codecdata = (unsigned char *)malloc(sh->codecdata_len);
 			    memcpy(sh->codecdata, esds.decoderConfig, sh->codecdata_len);
 			    }
 			    }
@@ -894,7 +861,7 @@ quit_vorbis_block:
 			if(atom_len > 8) {
 			    // copy all the atom (not only payload) for lavc alac decoder
 			    sh->codecdata_len = atom_len;
-			    sh->codecdata = malloc(sh->codecdata_len);
+			    sh->codecdata = (unsigned char *)malloc(sh->codecdata_len);
 			    memcpy(sh->codecdata, &trak->stdata[28], sh->codecdata_len);
 			}
 		      } break;
@@ -962,15 +929,6 @@ quit_vorbis_block:
 		sh_video_t* sh=new_sh_video(demuxer,priv->track_db);
 		int depth;
 		sh->format=trak->fourcc;
-
-		// crude video delay from editlist0 hack ::atm
-		if(trak->editlist_size>=1) {
-		    if(trak->editlist[0].pos == -1) {
-			sh->stream_delay = (float)trak->editlist[0].dur/(float)priv->timescale;
-	    		mp_msg(MSGT_DEMUX,MSGL_V,"MOV: Initial Video-Delay: %.3f sec\n", sh->stream_delay);
-		    }
-		}
-
 
 		if (trak->stdata_len < 78) {
 		  mp_msg(MSGT_DEMUXER, MSGL_WARN,
@@ -1076,7 +1034,7 @@ quit_vorbis_block:
 
 			  // dump away the codec specific configuration for the AAC decoder
 			  trak->stream_header_len = esds.decoderConfigLen;
-			  trak->stream_header = malloc(trak->stream_header_len);
+			  trak->stream_header = (unsigned char *)malloc(trak->stream_header_len);
 			  memcpy(trak->stream_header, esds.decoderConfig, trak->stream_header_len);
 			}
 			mp4_free_esds(&esds); // freeup esds mem
@@ -1111,7 +1069,7 @@ quit_vorbis_block:
 		        // Copy avcC for the AVC decoder
 		        // This data will be put in extradata below, where BITMAPINFOHEADER is created
 		        trak->stream_header_len = atom_len-8;
-		        trak->stream_header = malloc(trak->stream_header_len);
+		        trak->stream_header = (unsigned char *)malloc(trak->stream_header_len);
 		        memcpy(trak->stream_header, trak->stdata+pos+8, trak->stream_header_len);
 		      }	      
 		      break;
@@ -1592,16 +1550,12 @@ static int lschunks_intrak(demuxer_t* demuxer, int level, unsigned int id,
       break;
     }
     case MOV_FOURCC('m','d','h','d'): {
-      int version = stream_read_char(demuxer->stream);
       mp_msg(MSGT_DEMUX, MSGL_V, "MOV: %*sMedia header!\n", level, "");
-      stream_skip(demuxer->stream, (version == 1) ? 19 : 11);
+      stream_skip(demuxer->stream, 12);
       // read timescale
       trak->timescale = stream_read_dword(demuxer->stream);
       // read length
-      if (version == 1)
-          trak->length = stream_read_qword(demuxer->stream);
-      else
-          trak->length = stream_read_dword(demuxer->stream);
+      trak->length = stream_read_dword(demuxer->stream);
       break;
     }
     case MOV_FOURCC('h','d','l','r'): {
@@ -1919,24 +1873,6 @@ static demuxer_t* mov_read_header(demuxer_t* demuxer){
 	}
     }
 
-    if(demuxer->video->id<0 && demuxer->audio->id<0) {
-        /* No AV streams found. Try to find an MPEG stream. */
-        for(t_no=0;t_no<priv->track_db;t_no++){
-            mov_track_t* trak=priv->tracks[t_no];
-            if(trak->media_handler == MOV_FOURCC('M','P','E','G')) {
-                stream_t *s;
-                demuxer_t *od;
-    
-                demuxer->video->id = t_no;
-                s = new_ds_stream(demuxer->video);
-                od = demux_open(s, DEMUXER_TYPE_MPEG_PS, -1, -1, -1, NULL);
-                if(od) return new_demuxers_demuxer(od, od, od);
-                demuxer->video->id = -2;	//new linked demuxer couldn't be allocated
-                break;
-            }
-        }
-    }
-
 #if 0
     if( mp_msg_test(MSGT_DEMUX,MSGL_DBG3) ){
 	for(t_no=0;t_no<priv->track_db;t_no++){
@@ -2187,6 +2123,8 @@ static void demux_seek_mov(demuxer_t *demuxer,float pts,float audio_delay,int fl
 	//if(!(flags&1)) pts+=ds->pts;
 	ds->pts=mov_seek_track(trak,pts,flags);
 	if (ds->pts < 0) ds->eof = 1;
+	if (demuxer->video->id < 0)
+	  ((sh_audio_t*)ds->sh)->delay = ds->pts;
     }
 
 }

@@ -1,10 +1,6 @@
 #ifndef __DEMUXER_H
 #define __DEMUXER_H 1
 
-#ifdef USE_ASS
-#include "libass/ass_types.h"
-#endif
-
 #define MAX_PACKS 4096
 #ifdef HAVE_TV_BSDBT848
 #define MAX_PACK_BYTES 0x2000000
@@ -54,12 +50,11 @@
 #define DEMUXER_TYPE_MPC 40
 #define DEMUXER_TYPE_MPEG_PES 41
 #define DEMUXER_TYPE_MPEG_GXF 42
-#define DEMUXER_TYPE_NUT 43
 
 // This should always match the higest demuxer type number.
 // Unless you want to disallow users to force the demuxer to some types
 #define DEMUXER_TYPE_MIN 0
-#define DEMUXER_TYPE_MAX 43
+#define DEMUXER_TYPE_MAX 42
 
 #define DEMUXER_TYPE_DEMUXERS (1<<16)
 // A virtual demuxer type for the network code
@@ -126,25 +121,10 @@ typedef struct demuxer_info_st {
   char *copyright;
 } demuxer_info_t;
 
-typedef struct {
-  char type;                    // t = text, v = VobSub, a = SSA/ASS
-  int has_palette;              // If we have a valid palette
-  unsigned int palette[16];     // for VobSubs
-  int width, height;            // for VobSubs
-  int custom_colors;
-  unsigned int colors[4];
-  int forced_subs_only;
-#ifdef USE_ASS
-  ass_track_t* ass_track;  // for SSA/ASS streams (type == 'a')
-#endif
-} sh_sub_t;
-
 #define MAX_A_STREAMS 256
 #define MAX_V_STREAMS 256
 
 struct demuxer_st;
-
-extern int correct_pts;
 
 /**
  * Demuxer description structure
@@ -173,12 +153,6 @@ typedef struct demuxers_desc_st {
   int (*control)(struct demuxer_st *demuxer, int cmd, void *arg); ///< Optional
 } demuxer_desc_t;
 
-typedef struct demux_chapter_s
-{
-  uint64_t start, end;
-  char* name;
-} demux_chapter_t;
-
 typedef struct demuxer_st {
   demuxer_desc_t *desc;  ///< Demuxer description structure
   off_t filepos; // input stream current pos.
@@ -199,9 +173,6 @@ typedef struct demuxer_st {
   void* a_streams[MAX_A_STREAMS]; // audio streams (sh_audio_t)
   void* v_streams[MAX_V_STREAMS]; // video sterams (sh_video_t)
   char s_streams[32];   // dvd subtitles (flag)
-
-  demux_chapter_t* chapters;
-  int num_chapters;
   
   void* priv;  // fileformat-dependent data
   char** info;
@@ -211,9 +182,7 @@ inline static demux_packet_t* new_demux_packet(int len){
   demux_packet_t* dp=(demux_packet_t*)malloc(sizeof(demux_packet_t));
   dp->len=len;
   dp->next=NULL;
-  // still using 0 by default in case there is some code that uses 0 for both
-  // unknown and a valid pts value
-  dp->pts=correct_pts ? MP_NOPTS_VALUE : 0;
+  dp->pts=0;
   dp->pos=0;
   dp->flags=0;
   dp->refcount=1;
@@ -358,7 +327,7 @@ extern int pts_from_bps;
 
 extern int extension_parsing;
 
-int demux_info_add(demuxer_t *demuxer, const char *opt, const char *param);
+int demux_info_add(demuxer_t *demuxer, char *opt, char *param);
 char* demux_info_get(demuxer_t *demuxer, char *opt);
 int demux_info_print(demuxer_t *demuxer);
 int demux_control(demuxer_t *demuxer, int cmd, void *arg);
@@ -380,7 +349,3 @@ extern int demuxer_type_by_filename(char* filename);
 
 extern void demuxer_help(void);
 extern int get_demuxer_type_from_name(char *demuxer_name, int *force);
-
-int demuxer_add_chapter(demuxer_t* demuxer, const char* name, uint64_t start, uint64_t end);
-int demuxer_seek_chapter(demuxer_t *demuxer, int chapter, int mode, float *seek_pts, int *num_chapters, char **chapter_name);
-

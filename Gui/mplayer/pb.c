@@ -17,7 +17,7 @@
 #include "../libvo/x11_common.h"
 #include "../libvo/fastmemcpy.h"
 
-#include "../stream/stream.h"
+#include "../libmpdemux/stream.h"
 #include "../mixer.h"
 #include "../libvo/sub.h"
 #include "../mplayer.h"
@@ -226,7 +226,7 @@ void mplPBInit( void )
 
  gfree( (void**)&mplPBDrawBuffer );
 
- if ( ( mplPBDrawBuffer = malloc( appMPlayer.bar.Bitmap.ImageSize ) ) == NULL )
+ if ( ( mplPBDrawBuffer = (unsigned char *)malloc( appMPlayer.bar.Bitmap.ImageSize ) ) == NULL )
   {
    mp_msg( MSGT_GPLAYER,MSGL_FATAL,MSGTR_NEMDB );
    exit( 0 );

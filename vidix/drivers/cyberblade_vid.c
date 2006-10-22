@@ -488,6 +488,7 @@ int vixConfigPlayback(vidix_playback_t *info)
 
 		if(CRINB(0xd1)&0x80)
 		{
+			int hcorr,vcorr;
 			int TVHTotal,TVVTotal,TVHSyncStart,TVVSyncStart,TVOverflow;
 			LOGWRITE("[cyberblade] Using TV-CRTC\n");
 

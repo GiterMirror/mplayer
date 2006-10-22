@@ -12,6 +12,7 @@
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
+#include "postproc/rgb2rgb.h"
 
 //===========================================================================//
 

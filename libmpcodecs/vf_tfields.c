@@ -15,9 +15,6 @@
 struct vf_priv_s {
 	int mode;
 	int parity;
-	int buffered_i;
-	mp_image_t *buffered_mpi;
-	double buffered_pts;
 };
 
 static inline void *my_memcpy_pic(void * dst, void * src, int bytesPerLine, int height, int dstStride, int srcStride)
@@ -314,31 +311,14 @@ static void qpel_4tap_C(unsigned char *d, unsigned char *s, int w, int h, int ds
 static void (*qpel_li)(unsigned char *d, unsigned char *s, int w, int h, int ds, int ss, int up);
 static void (*qpel_4tap)(unsigned char *d, unsigned char *s, int w, int h, int ds, int ss, int up);
 
-static int continue_buffered_image(struct vf_instance_s *);
-extern int correct_pts;
-
 static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 {
-	vf->priv->buffered_mpi = mpi;
-	vf->priv->buffered_pts = pts;
-	vf->priv->buffered_i = 0;
-	return continue_buffered_image(vf);
-}
-
-static int continue_buffered_image(struct vf_instance_s *vf)
-{
-	int i=vf->priv->buffered_i;
-	double pts = vf->priv->buffered_pts;
-	mp_image_t *mpi = vf->priv->buffered_mpi;
+	int i;
 	int ret=0;
 	mp_image_t *dmpi;
 	void (*qpel)(unsigned char *, unsigned char *, int, int, int, int, int);
 	int bpp=1;
 	int tff;
-
-	if (i == 0)
-		vf_queue_frame(vf, continue_buffered_image);
-	pts += i * .02;  // XXX not right
 
 	if (!(mpi->flags & MP_IMGFLAG_PLANAR)) bpp = mpi->bpp/8;
 	if (vf->priv->parity < 0) {
@@ -364,7 +344,7 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 
 	switch (vf->priv->mode) {
 	case 0:
-		for (; i<2; i++) {
+		for (i=0; i<2; i++) {
 			dmpi = vf_get_image(vf->next, mpi->imgfmt,
 				MP_IMGTYPE_EXPORT, MP_IMGFLAG_ACCEPT_STRIDE,
 				mpi->width, mpi->height/2);
@@ -376,15 +356,12 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 				dmpi->stride[1] = 2*mpi->stride[1];
 				dmpi->stride[2] = 2*mpi->stride[2];
 			}
-			ret |= vf_next_put_image(vf, dmpi, pts);
-			if (correct_pts)
-				break;
-			else
-				if (!i) vf_next_control(vf, VFCTRL_FLIP_PAGE, NULL);
+			ret |= vf_next_put_image(vf, dmpi, MP_NOPTS_VALUE);
+			if (!i) vf_next_control(vf, VFCTRL_FLIP_PAGE, NULL);
 		}
 		break;
 	case 1:
-		for (; i<2; i++) {
+		for (i=0; i<2; i++) {
 			dmpi = vf_get_image(vf->next, mpi->imgfmt,
 				MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE,
 				mpi->width, mpi->height);
@@ -406,17 +383,14 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 				deint(dmpi->planes[2], dmpi->stride[2], mpi->planes[2], mpi->stride[2],
 					mpi->chroma_width, mpi->chroma_height, (i^!tff));
 			}
-			ret |= vf_next_put_image(vf, dmpi, pts);
-			if (correct_pts)
-				break;
-			else
-				if (!i) vf_next_control(vf, VFCTRL_FLIP_PAGE, NULL);
+			ret |= vf_next_put_image(vf, dmpi, MP_NOPTS_VALUE);
+			if (!i) vf_next_control(vf, VFCTRL_FLIP_PAGE, NULL);
 		}
 		break;
 	case 2:
 	case 3:
 	case 4:
-		for (; i<2; i++) {
+		for (i=0; i<2; i++) {
 			dmpi = vf_get_image(vf->next, mpi->imgfmt,
 				MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE,
 				mpi->width, mpi->height/2);
@@ -432,15 +406,11 @@ static int continue_buffered_image(struct vf_instance_s *vf)
 					mpi->chroma_width, mpi->chroma_height/2,
 					dmpi->stride[2], mpi->stride[2]*2, (i^!tff));
 			}
-			ret |= vf_next_put_image(vf, dmpi, pts);
-			if (correct_pts)
-				break;
-			else
-				if (!i) vf_next_control(vf, VFCTRL_FLIP_PAGE, NULL);
+			ret |= vf_next_put_image(vf, dmpi, MP_NOPTS_VALUE);
+			if (!i) vf_next_control(vf, VFCTRL_FLIP_PAGE, NULL);
 		}
 		break;
 	}
-	vf->priv->buffered_i = 1;
 	return ret;
 }
 

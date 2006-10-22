@@ -15,14 +15,14 @@
 #include "m_option.h"
 //#include "m_config.h"
 #include "mp_msg.h"
-#include "stream/url.h"
+#include "libmpdemux/url.h"
 
 // Don't free for 'production' atm
 #ifndef MP_DEBUG
 //#define NO_FREE
 #endif
 
-m_option_t* m_option_list_find(m_option_t* list,const char* name) {
+m_option_t* m_option_list_find(m_option_t* list,char* name) {
   int i;
 
   for(i = 0 ; list[i].name ; i++) {
@@ -143,8 +143,6 @@ static int parse_int(m_option_t* opt,char *name, char *param, void* dst, int src
   if (param == NULL)
     return M_OPT_MISSING_PARAM;
 
-  tmp_int = strtol(param, &endptr, 10);
-  if (*endptr)
   tmp_int = strtol(param, &endptr, 0);
   if (*endptr) {
     mp_msg(MSGT_CFGPARSER, MSGL_ERR, "The %s option must be an integer: %s\n",name, param);
@@ -574,7 +572,7 @@ static int parse_str_list(m_option_t* opt,char *name, char *param, void* dst, in
       break;
     }
     len = ptr - last_ptr;
-    res[n] = malloc(len + 1);
+    res[n] = (char*)malloc(len + 1);
     if(len) strncpy(res[n],last_ptr,len);
     res[n][len] = '\0';
     ptr++;
@@ -615,7 +613,7 @@ static void copy_str_list(m_option_t* opt,void* dst, void* src) {
 
   for(n = 0 ; s[n] != NULL ; n++)
     /* NOTHING */;
-  d = malloc((n+1)*sizeof(char*));
+  d = (char**)malloc((n+1)*sizeof(char*));
   for( ; n >= 0 ; n--)
     d[n] = s[n] ? strdup(s[n]) : NULL;
 
@@ -699,7 +697,7 @@ static int parse_func_pf(m_option_t* opt,char *name, char *param, void* dst, int
   if(!dst)
     return 1;
 
-  s = calloc(1,sizeof(m_func_save_t));
+  s = (m_func_save_t*)calloc(1,sizeof(m_func_save_t));
   s->name = strdup(name);
   s->param = param ? strdup(param) : NULL;
 
@@ -724,7 +722,7 @@ static void copy_func_pf(m_option_t* opt,void* dst, void* src) {
     free_func_pf(dst);
 
   while(s) {
-    d = calloc(1,sizeof(m_func_save_t));
+    d = (m_func_save_t*)calloc(1,sizeof(m_func_save_t));
     d->name = strdup(s->name);
     d->param = s->param ? strdup(s->param) : NULL;
     if(last)
@@ -996,7 +994,7 @@ m_option_type_t m_option_type_subconfig = {
 
 /* FIXME: snyc with img_format.h */
 static struct {
-  const char* name;
+  char* name;
   unsigned int fmt;
 } mp_imgfmt_list[] = {
   {"444p", IMGFMT_444P},
@@ -1090,7 +1088,7 @@ m_option_type_t m_option_type_imgfmt = {
 
 /* FIXME: snyc with af_format.h */
 static struct {
-  const char* name;
+  char* name;
   unsigned int fmt;
 } mp_afmt_list[] = {
   // SPECIAL
@@ -1175,75 +1173,6 @@ m_option_type_t m_option_type_afmt = {
 };
 
 
-// Time or size (-endpos)
-
-static int parse_time_size(m_option_t* opt,char *name, char *param, void* dst, int src) {
-  m_time_size_t ts;
-  char unit[4];
-  int a,b;
-  float d;
-  double end_at;
-
-  if (param == NULL || strlen(param) == 0)
-    return M_OPT_MISSING_PARAM;
-  
-  ts.pos=0;
-  /* End at size parsing */
-  if(sscanf(param, "%lf%3s", &end_at, unit) == 2) {
-    ts.type = END_AT_SIZE;
-    if(!strcasecmp(unit, "b"))
-      ;
-    else if(!strcasecmp(unit, "kb"))
-      end_at *= 1024;
-    else if(!strcasecmp(unit, "mb"))
-      end_at *= 1024*1024;
-    else if(!strcasecmp(unit, "gb"))
-      end_at *= 1024*1024*1024;
-    else
-      ts.type = END_AT_NONE;
-
-    if (ts.type == END_AT_SIZE) {
-      ts.pos  = end_at;
-      goto out;
-    }
-  }
-
-  /* End at time parsing. This has to be last because of
-   * sscanf("%f", ...) below */
-  if (sscanf(param, "%d:%d:%f", &a, &b, &d) == 3)
-    end_at = 3600*a + 60*b + d;
-  else if (sscanf(param, "%d:%f", &a, &d) == 2)
-    end_at = 60*a + d;
-  else if (sscanf(param, "%f", &d) == 1)
-    end_at = d;
-  else {
-    mp_msg(MSGT_CFGPARSER, MSGL_ERR, "Option %s: invalid time or size: '%s'\n",
-           name,param);
-    return M_OPT_INVALID;
-  }
-  
-  ts.type = END_AT_TIME;
-  ts.pos  = end_at;
-out:
-  if(dst)
-    *(m_time_size_t *)dst = ts;
-  return 1;
-}
-
-m_option_type_t m_option_type_time_size = {
-  "Time or size",
-  "",
-  sizeof(m_time_size_t),
-  0,
-  parse_time_size,
-  NULL,
-  copy_opt,
-  copy_opt,
-  NULL,
-  NULL
-};
-
- 
 //// Objects (i.e. filters, etc) settings
 
 #include "m_struct.h"
@@ -1265,9 +1194,9 @@ static int find_obj_desc(char* name,m_obj_list_t* l,m_struct_t** ret) {
   return 0;
 }
 
-static int get_obj_param(const char* opt_name,const char* obj_name, m_struct_t* desc,
+static int get_obj_param(char* opt_name,char* obj_name, m_struct_t* desc,
 			 char* str,int* nold,int oldmax,char** dst) {
-  char* eq;
+  char* eq,param;
   m_option_t* opt;
   int r;
 
@@ -1318,10 +1247,10 @@ static int get_obj_param(const char* opt_name,const char* obj_name, m_struct_t* 
   return 1;
 }
 
-static int get_obj_params(const char* opt_name, const char* name,char* params,
+static int get_obj_params(char* opt_name, char* name,char* params,
 			  m_struct_t* desc,char separator, char*** _ret) {
   int n = 0,nold = 0, nopts,r;
-  char* ptr,*last_ptr = params;
+  char* ptr,*last_ptr = params,*eq;
   char** ret;
 
   if(!strcmp(params,"help")) { // Help
@@ -1420,15 +1349,14 @@ static int parse_obj_params(m_option_t* opt,char *name,
   char** opts;
   int r;
   m_obj_params_t* p = opt->priv;
-  m_struct_t* desc;
+  m_struct_t* desc = p->desc;
   char* cpy = strdup(param);
   
   // We need the object desc
   if(!p)
     return M_OPT_INVALID;
   
-  desc = p->desc;
-  r = get_obj_params(name,desc->name,cpy,desc,p->separator,dst ? &opts : NULL);
+  r = get_obj_params(name,desc->name,cpy,desc,p->separator,&opts);
   free(cpy);
   if(r < 0)
     return r;
@@ -1672,14 +1600,7 @@ static int parse_obj_settings_list(m_option_t* opt,char *name,
 
   while(ptr[0] != '\0') {
     last_ptr = ptr;
-    for(;;){
-        ptr = strchr(ptr,LIST_SEPARATOR);
-        if(ptr && ptr>last_ptr && ptr[-1]=='\\'){
-            memmove(ptr-1, ptr, strlen(ptr)+1);
-        }else
-            break;
-    }
-
+    ptr = strchr(ptr,LIST_SEPARATOR);
     if(!ptr) {
       r = parse_obj_settings(name,last_ptr,opt->priv,dst ? &res : NULL,n);
       if(r < 0) {
@@ -1795,7 +1716,7 @@ static int parse_obj_presets(m_option_t* opt,char *name,
   m_obj_presets_t* obj_p = (m_obj_presets_t*)opt->priv;
   m_struct_t *in_desc,*out_desc;
   int s,i;
-  unsigned char* pre;
+  unsigned char* pre = obj_p->presets;
   char* pre_name = NULL;
 
   if(!obj_p) {
@@ -1806,7 +1727,6 @@ static int parse_obj_presets(m_option_t* opt,char *name,
   if(!param)
     return M_OPT_MISSING_PARAM;
 
-  pre = obj_p->presets;
   in_desc = obj_p->in_desc;
   out_desc = obj_p->out_desc ? obj_p->out_desc : obj_p->in_desc;
   s = in_desc->size;
@@ -1915,6 +1835,7 @@ static int parse_custom_url(m_option_t* opt,char *name,
   if( ptr2!=NULL ) {
     
     // We got something, at least a username...
+    int len = ptr2-ptr1;
     if(!m_option_list_find(desc->fields,"username")) {
       mp_msg(MSGT_CFGPARSER, MSGL_WARN, "Option %s: This URL doesn't have a username part.\n",name);
       // skip
@@ -1922,6 +1843,7 @@ static int parse_custom_url(m_option_t* opt,char *name,
       ptr3 = strstr(ptr1, ":");
       if( ptr3!=NULL && ptr3<ptr2 ) {
 	// We also have a password
+	int len2 = ptr2-ptr3-1;
 	if(!m_option_list_find(desc->fields,"password")) {
 	  mp_msg(MSGT_CFGPARSER, MSGL_WARN, "Option %s: This URL doesn't have a password part.\n",name);
 	  // skip

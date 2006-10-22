@@ -112,9 +112,6 @@ int init_audio_codec(sh_audio_t *sh_audio)
 	af_fmt2str_short(sh_audio->sample_format),
 	sh_audio->i_bps*8*0.001,((float)sh_audio->i_bps/sh_audio->o_bps)*100.0,
         sh_audio->i_bps,sh_audio->o_bps);
-  mp_msg(MSGT_IDENTIFY,MSGL_INFO,"ID_AUDIO_BITRATE=%d\nID_AUDIO_RATE=%d\n"
-    "ID_AUDIO_NCH=%d\n", sh_audio->i_bps*8, sh_audio->samplerate,
-    sh_audio->channels );
 
   sh_audio->a_out_buffer_size=sh_audio->a_buffer_size;
   sh_audio->a_out_buffer=sh_audio->a_buffer;
@@ -202,7 +199,7 @@ int init_audio(sh_audio_t *sh_audio,char* codecname,char* afm,int status){
     return 0;
 }
 
-extern char *get_path(const char *filename);
+extern char *get_path(char *filename);
 
 int init_best_audio_codec(sh_audio_t *sh_audio,char** audio_codec_list,char** audio_fm_list){
 char* ac_l_default[2]={"",(char*)NULL};
@@ -293,7 +290,7 @@ int init_audio_filters(sh_audio_t *sh_audio,
 	int out_minsize, int out_maxsize){
   af_stream_t* afs=sh_audio->afilter;
   if(!afs){
-    afs = malloc(sizeof(af_stream_t));
+    afs = (af_stream_t*)malloc(sizeof(af_stream_t));
     memset(afs,0,sizeof(af_stream_t));
   }
 
@@ -377,12 +374,7 @@ int decode_audio(sh_audio_t *sh_audio,unsigned char *buf,int minlen,int maxlen)
       mp_msg(MSGT_DECAUDIO,MSGL_DBG2,"decaudio: decoding %d bytes, max: %d (%d)\n",
         len, maxlen, sh_audio->audio_out_minsize);
 
-      // When a decoder sets audio_out_minsize that should guarantee it can
-      // write up to audio_out_minsize bytes at a time until total >= minlen
-      // without checking maxlen. Thus maxlen must be at least minlen +
-      // audio_out_minsize. Check that to guard against buffer overflows.
-      if (maxlen < len + sh_audio->audio_out_minsize)
-	  break;
+      if(maxlen<sh_audio->audio_out_minsize) break; // don't overflow buffer!
       // not enough decoded data waiting, decode 'len' bytes more:
       len=mpadec->decode_audio(sh_audio,
           sh_audio->a_buffer+sh_audio->a_buffer_len, len, maxlen);
@@ -443,4 +435,8 @@ void skip_audio_frame(sh_audio_t *sh_audio)
   if(sh_audio->ad_driver->control(sh_audio,ADCTRL_SKIP_FRAME,NULL)==CONTROL_TRUE) return;
   // default skip code:
   ds_fill_buffer(sh_audio->ds);  // skip block
+}
+
+void adjust_volume(void)
+{
 }

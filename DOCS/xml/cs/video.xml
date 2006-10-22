@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- Synced with r19832 -->
+<!-- Synced with: 1.82 -->
 <chapter id="video">
 <title>Výstupní video zařízení/rozhraní</title>
 
@@ -191,14 +191,6 @@ nebo vyšší (v případě problémů s obrazem, zkuste 16bpp). Stejně ajko S3 Virge:
 má sice podporu xv, ale karta samotná je velmi pomalá, takže ji raději prodejte.
 </para>
 
-<para>
-Pro karty S3 Virge nyní existuje nativní framebuffer ovladač podobný 
-tdfxfb. Nastavte si framebuffer (čili přidejte
-"<option>vga=792 video=vesa:mtrr</option>" do kernelu) a použijte
-<option>-vo s3fb</option> (<option>-vf yuy2</option> a <option>-dr</option>
-rovněž pomůžou).
-</para>
-
 <note>
 <para>
 Zatím není jasné, kterým modelům Savage chybí podpora YV12 a konvertují
@@ -213,7 +205,8 @@ slušně požádejte v konferenci MPlayer-users o ovladač s MMX/3DNow!.
 <title>Karty nVidia</title>
 
 <para>
-nVidia není vždy pod Linuxem nejlepší volbou... Open-source ovladač
+nVidia není vždy pod Linuxem nejlepší volbou (podle nVidie to
+<link linkend="nvidia-opinions">není pravda</link>)... Open-source ovladač
 v XFree86 podporuje většinu těchto karet, ale v některých případech musíte
 použít binární closed-source ovladač od nVidie, který je k dispozici na
 <ulink url="http://www.nvidia.com/object/linux.html">serveru nVidia</ulink>.
@@ -801,7 +794,7 @@ Výstup FBdev přijímá několik dodatečných voleb:
 <varlistentry>
   <term><option>-fb</option></term>
   <listitem><simpara>
-    nastaví zařízení framebufferu k použití (výchozí: <filename>/dev/fb0</filename>)
+    nastaví zařízení framebufferu k použití (<filename>/dev/fb0</filename>)
     </simpara></listitem>
 </varlistentry>
 <varlistentry>
@@ -813,7 +806,7 @@ Výstup FBdev přijímá několik dodatečných voleb:
 <varlistentry>
   <term><option>-fbmodeconfig</option></term>
   <listitem><simpara>
-    config soubor režimů (výchozí: <filename>/etc/fb.modes</filename>)
+    config soubor režimů (výchozí <filename>/etc/fb.modes</filename>)
     </simpara></listitem>
 </varlistentry>
 <varlistentry>
@@ -877,9 +870,8 @@ framebufferu a nechtějte to po nás, jelikož to není omezení
 
 <para>
 Tato sekce je o podpoře Matrox G200/G400/G450/G550 BES (Back-End Scaler)
-jaderného modulu <systemitem>mga_vid</systemitem>.
-Má hardwarovou podporu VSYNC s trojitou vyrovnávací pamětí.
-Pracuje jak v konzoli, tak pod X.
+jaderného modulu mga_vid. Aktivně je vyvíjena A'rpim a má hardwarovou
+podporu VSYNC s trojitou vyrovnávací pamětí. Pracuje jak v konzoli, tak pod X.
 </para>
 
 <warning>
@@ -1075,25 +1067,25 @@ důležitých:</title>
 <varlistentry>
   <term><option>-aadriver</option></term>
   <listitem><simpara>
-    Nastaví doporučený aa ovladač (X11, curses, Linux).
+    nastaví doporučený aa ovladač (X11, curses, Linux)
     </simpara></listitem>
 </varlistentry>
 <varlistentry>
   <term><option>-aaextended</option></term>
   <listitem><simpara>
-    Použití všech 256 znaků.
+    použití všech 256 znaků
     </simpara></listitem>
 </varlistentry>
 <varlistentry>
   <term><option>-aaeight</option></term>
   <listitem><simpara>
-    Použití osmibitového ASCII.
+    použití osmibitového ASCII
     </simpara></listitem>
 </varlistentry>
 <varlistentry>
   <term><option>-aahelp</option></term>
   <listitem><simpara>
-    Vypíše všechny aalib volby.
+    vypíše všechny aalib volby
     </simpara></listitem>
 </varlistentry>
 </variablelist>
@@ -1499,6 +1491,12 @@ autodetekce.
 </para>
 
 <para>
+VIDIX je nová technologie a je extrémně možné, že na vašem systému nebude
+pracovat. V tom případě je jediným řešením ji portovat (hlavně libdha).
+Ale je šance, že bude pracovat na systémech, kde funguje X11.
+</para>
+
+<para>
 Jelikož VIDIX vyžaduje přímý přístup k hardware, můžete jej buď spustit jako
 root, nebo nastavit SETUID bit binárce <application>MPlayer</application>u
 (<emphasis role="bold">Varování: Toto je bezpečnostní risk!</emphasis>).
@@ -1589,14 +1587,47 @@ netestoval, takže hlášení vítáme.
 <sect3 id="vidix-nvidia">
 <title>Karty nVidia</title>
 <para>
+Existuje relativně nová ovladač pro nVidie o kterém je známo, že pracuje
+s čipsety Riva 128, TNT a GeForce2 a některé další byly rovněž hlášeny jako
+funkční.
+</para>
+
+<itemizedlist spacing="compact">
+<title>OMEZENÍ</title>
+<listitem><para>
+  Doporučujeme použití binárních nVidia ovladačů pro X přednostně před tímto
+  VIDIX ovladačem, protože některé registry, které je nutné nastavit nebyly
+  dosud oběveny, takže pravděpodobně selže s Open Source XFree86
+  ovladačem <filename>nv.o</filename>.
+  </para></listitem>
+<listitem><para>
+  V současnosti mohou s tímto ovladačem pracovat pouze kodeky schopné výstupu
+  v barevném prostoru UYVY. Naneštěstí to vylučuje všechny dekodéry z rodiny
+  <systemitem class="library">libavcodec</systemitem>. Takže zůstávají
+  následující použitelné populární kodeky:
+  <systemitem>cvid, divxds, xvid, divx4, wmv7, wmv8</systemitem> a některé
+  další. Mějte však prosím na paměti, že to je pouze dočasná obtíž.
+  Syntaxe pro použití je následující:
+  <screen>
+    mplayer -vf format=uyvy -vc divxds <replaceable>divx3soubor.avi</replaceable>
+  </screen>
+  </para></listitem>
+</itemizedlist>
+
+<para>
   Unikátní vlastností ovladače nvidia_vid je jeho schopnost zobrazit video na
   <emphasis role="bold">jednoduché, čisté, pouze textové konzoli</emphasis>
   &ndash; bez framebufferu nebo nějaké X magie. Pro tento účel budete muset
   použít video rozhraní <option>cvidix</option>, jak to ukazuje následující
   příklad:
-  <screen>mplayer -vo cvidix <replaceable>příklad.avi</replaceable></screen>
+  <screen>
+    mplayer -vf format=uyvy -vc divxds -vo cvidix <replaceable>příklad.avi</replaceable>
+  </screen>
 </para>
 
+<para>
+Hlášení očekávána!
+</para>
 </sect3>
 
 <sect3 id="vidix-sis">
@@ -1837,14 +1868,6 @@ pro 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
   Další možná použití jsou: televideo pid, druhá audio stopa, atd.
 </para>
 
-<para>
-  Pokud <application>MPlayer</application> často protestuje o
-  <screen>Příliš mnoha video/audio paketech ve vyrovnávací paměti</screen> nebo
-  pokud si povšimnete rostoucí desynchronizace mezi zvukem a
-  videem, zkuste použít MPEG-TS demuxer z libavformat přidáím
-  <option>-demuxer lavf -lavfdopts probesize=128</option>
-  na příkazovém řádku.
-</para>
 
 <para>
   Pro zobrazení prvního z kanálů uvedeného v seznamu, spusťte
@@ -1873,8 +1896,8 @@ pro 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
 
 <para>
   Pro změnu kanálu stiskněte klávesu <keycap>h</keycap> (další) a
-  <keycap>k</keycap> (předchozí), nebo použijte
-  <link linkend="osdmenu">OSD menu</link>.
+  <keycap>k</keycap> (předchozí), nebo použijte OSD menu (vyžaduje funkční
+  <link linkend="subosd">OSD subsystém</link>).
 </para>
 
 <para>
@@ -1914,7 +1937,7 @@ pro 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
 <para>
 Máte-li otázky, nebo chcete dostávat oznámení o nových vlastnostech a zapojit
 se do diskuse o těchto věcech, připojte se k naší
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dvb">MPlayer-DVB</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dvb">MPlayer-DVB</ulink>
 e-mailové konferenci. Pamatujte prosím, že jazykem konference je angličtina.
 </para>
 </formalpara>
@@ -1941,12 +1964,12 @@ k jejich instalaci naleznete na stránkách
 <title>POUŽITÍ</title>
 <varlistentry>
 <term><option>-vo dxr2</option></term>
-<listitem><para>Zapíná TV výstup.</para></listitem>
+<listitem><para>zapíná TV výstup</para></listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-vo dxr2:x11</option> nebo <option>-vo dxr2:xv</option></term>
-<listitem><para>Zapíná Overlay výstup v X11.</para></listitem>
+<listitem><para>zapíná Overlay výstup v X11</para></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2424,6 +2447,13 @@ jednou během POST procedury.
 </sect2>
 
 
+<sect2 id="tvout-voodoo">
+<title>Voodoo 3</title>
+<para>
+Shlédněte <ulink url="http://www.iki.fi/too/tvout-voodoo3-3000-xfree">tuto URL</ulink>.
+</para>
+</sect2>
+
 <sect2 id="tvout-nvidia">
 <title>nVidia</title>
 <para>
@@ -2453,6 +2483,7 @@ Section "Device"
         Option          "ConnectedMonitor" "CRT, TV"
         Option          "TVStandard" "PAL-B"
         Option          "TVOutFormat" "Composite"
+
 EndSection
 </programlisting>
 </para>

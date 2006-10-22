@@ -17,8 +17,8 @@ OBJS = $(SRCS:.c=.o)
 
 # OBJS	= DS_AudioDec.o DS_VideoDec.o DS_Filter.o allocator.o cmediasample.o guids.o inputpin.o outputpin.o
 
-INCLUDE = -I. -I..
-CFLAGS  = $(INCLUDE) $(OPTFLAGS) -DNOAVIFILE_HEADERS
+INCLUDE = -I. -I.. $(EXTRA_INC) -DNOAVIFILE_HEADERS
+CFLAGS  = $(OPTFLAGS) $(INCLUDE)
 
 .SUFFIXES: .c .o
 
@@ -31,7 +31,7 @@ $(LIBNAME):	$(OBJS)
 	$(AR) r $(LIBNAME) $(OBJS)
 
 test:   test.c $(LIBNAME)
-	$(CC) test.c $(CFLAGS) -o test ./libDS_Filter.a ../libloader.a -lstdc++
+	$(CC) test.c $(CFLAGS) -o test ./libDS_Filter.a ../libloader.a $(ARCH_LIBS) -lstdc++
 
 all:	$(LIBNAME)
 

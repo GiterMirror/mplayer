@@ -59,7 +59,7 @@ man page for a detailed explanation).
 </para>
 
 <para>
-Please refer to &quot;<filename>/proc/ide/<replaceable>[cdrom device]</replaceable>/settings</filename>&quot;
+Please refer to &quot;<filename>/proc/ide/<replaceable>cdrom device</replaceable>/settings&quot;</filename>
 for fine-tuning your CD-ROM.
 </para>
 
@@ -107,23 +107,30 @@ Example:
 </para>
 
 <para>
-If you have compiled <application>MPlayer</application> with dvdnav support, the
-syntax is the same, except that you need to use dvdnav:// instead of dvd://.
-</para>
-
-<para>
 The default DVD device is <filename>/dev/dvd</filename>. If your setup
 differs, make a symlink or specify the correct device on the command
 line with the <option>-dvd-device</option> option.
 </para>
 
+<formalpara>
+<title>New-style DVD support (mpdvdkit2)</title>
 <para>
 <application>MPlayer</application> uses <systemitem>libdvdread</systemitem> and
 <systemitem>libdvdcss</systemitem> for DVD decryption and playback. These two
-libraries are contained in the <filename class="directory">libmpdvdkit2</filename>
+libraries are contained in the <filename class="directory">libmpdvdkit2/</filename>
 subdirectory of the <application>MPlayer</application> source tree, you do not have
-to install them separately. You can also use system-wide versions of the two
-libraries, but this solution is not recommended, as it can result in bugs,
+to install them separately. We opted for this solution because we had to fix a
+<systemitem>libdvdread</systemitem> bug and apply a patch which adds
+<emphasis role="bold">cracked CSS keys caching support</emphasis> to
+<systemitem>libdvdcss</systemitem>. This results in a large speed increase because the
+keys do not have to be cracked every time before playing.
+</para>
+</formalpara>
+
+<para>
+<application>MPlayer</application> can also use system-wide <systemitem>libdvdread</systemitem>
+and <systemitem>libdvdcss</systemitem> libraries, but this solution is
+<emphasis role="bold">not</emphasis> recommended, as it can result in bugs,
 library incompatibilities and slower speed.
 </para>
 
@@ -288,7 +295,7 @@ implement generic SCSI support for VCDs.
 
 <para>
 In the meantime you can extract data from VCDs with
-<ulink url="http://ftp.ntut.edu.tw/ftp/OS/Linux/packages/X/viewers/readvcd/">readvcd</ulink>
+<ulink url="http://miketeo.net/links/readvcd-0.3.tgz">readvcd</ulink>
 and play the resulting file with <application>MPlayer</application>.
 </para>
 

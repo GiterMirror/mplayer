@@ -105,127 +105,6 @@ mplayer -abs 65536 -delay -0.4 -nobps <replaceable>~/movies/test.avi</replaceabl
 </sect1>
 
 
-<sect1 id="subosd">
-<title>Subtitles and OSD</title>
-
-<para>
-<application>MPlayer</application> can display subtitles along with movie files.
-Currently the following formats are supported:
-<itemizedlist>
-<listitem><para>VOBsub</para></listitem>
-<listitem><para>OGM</para></listitem>
-<listitem><para>CC (closed caption)</para></listitem>
-<listitem><para>MicroDVD</para></listitem>
-<listitem><para>SubRip</para></listitem>
-<listitem><para>SubViewer</para></listitem>
-<listitem><para>Sami</para></listitem>
-<listitem><para>VPlayer</para></listitem>
-<listitem><para>RT</para></listitem>
-<listitem><para>SSA</para></listitem>
-<listitem><para>PJS (Phoenix Japanimation Society)</para></listitem>
-<listitem><para>MPsub</para></listitem>
-<listitem><para>AQTitle</para></listitem>
-<listitem><para><ulink url="http://unicorn.us.com/jacosub/">JACOsub</ulink></para></listitem>
-</itemizedlist>
-</para>
-
-<para>
-<application>MPlayer</application> can dump the previously listed subtitle formats
-(<emphasis role="bold">except the three first</emphasis>) into the following
-destination formats, with the given options:
-<itemizedlist>
-<listitem><para>MPsub: <option>-dumpmpsub</option></para></listitem>
-<listitem><para>SubRip: <option>-dumpsrtsub</option></para></listitem>
-<listitem><para>MicroDVD: <option>-dumpmicrodvdsub</option></para></listitem>
-<listitem><para>JACOsub: <option>-dumpjacosub</option></para></listitem>
-<listitem><para>Sami: <option>-dumpsami</option></para></listitem>
-</itemizedlist>
-</para>
-
-<para>
-<application>MEncoder</application> can dump DVD subtitles into
-<link linkend="menc-feat-extractsub">VOBsub</link> format.
-</para>
-
-<para>
-The command line options differ slightly for the different formats:
-</para>
-
-<formalpara>
-<title>VOBsub subtitles</title>
-<para>
-VOBsub subtitles consist of a big (some megabytes) <filename>.SUB</filename> file,
-and optional <filename>.IDX</filename> and/or <filename>.IFO</filename>
-files.  If you have files like
-<filename><replaceable>sample.sub</replaceable></filename>,
-<filename><replaceable>sample.ifo</replaceable></filename> (optional),
-<filename><replaceable>sample.idx</replaceable></filename> - you have to pass
-<application>MPlayer</application> the <option>-vobsub sample
-[-vobsubid <replaceable>id</replaceable>]</option> options
-(full path optional). The <option>-vobsubid</option> option is like
-<option>-sid</option> for DVDs, you can choose between subtitle tracks
-(languages) with it. In case that <option>-vobsubid</option> is omitted,
-<application>MPLayer</application> will try to use the languages given by the
-<option>-slang</option> option and fall back to the <systemitem>langidx</systemitem>
-in the <filename>.IDX</filename> file to set the subtitle language. If it fails,
-there will be no subtitles.
-</para>
-</formalpara>
-
-<formalpara>
-<title>Other subtitles</title>
-<para>
-The other formats consist of a single text file containing timing,
-placement and text information. Usage: If you have a file like
-<filename><replaceable>sample.txt</replaceable></filename>,
-you have to pass the option <option>-sub
-<replaceable>sample.txt</replaceable></option> (full path optional).
-</para>
-</formalpara>
-
-<variablelist>
-<title>Adjusting subtitle timing and placement:</title>
-<varlistentry>
-  <term><option>-subdelay <replaceable>sec</replaceable></option></term>
-  <listitem><simpara>
-    Delays subtitles by <option><replaceable>sec</replaceable></option> seconds.
-    Can be negative. The value is added to movie's time position counter.
-    </simpara></listitem>
-</varlistentry>
-<varlistentry>
-  <term><option>-subfps <replaceable>RATE</replaceable></option></term>
-  <listitem><simpara>
-    Specify frame/sec rate of subtitle file (float number).
-    </simpara></listitem>
-</varlistentry>
-<varlistentry>
-  <term><option>-subpos <replaceable>0-100</replaceable></option></term>
-  <listitem><simpara>
-    Specify the position of subtitles.
-    </simpara></listitem>
-</varlistentry>
-</variablelist>
-
-<para>
-If you experience a growing delay between the movie and the subtitles when
-using a MicroDVD subtitle file, most likely the framerate of the movie and
-the subtitle file are different. Please note that the MicroDVD subtitle
-format uses absolute frame numbers for its timing, but there is no fps
-information in it, and therefore the <option>-subfps</option> option should
-be used with this format. If you like to solve this problem permanently,
-you have to manually convert the subtitle file framerate.
-<application>MPlayer</application> can do this
-conversion for you:
-
-<screen>mplayer -dumpmicrodvdsub -fps <replaceable>subtitles_fps</replaceable> -subfps <replaceable>avi_fps</replaceable> -sub <replaceable>subtitle_filename</replaceable> <replaceable>dummy.avi</replaceable></screen>
-</para>
-
-<para>
-About DVD subtitles, read the <link linkend="dvd">DVD</link> section.
-</para>
-</sect1>
-
-
 <sect1 id="control">
 <title>Control</title>
 
@@ -256,7 +135,7 @@ and a full list of available commands by running
 <command>mplayer -input cmdlist</command>.
 </para>
 
-<example id="input_control_file">
+<example>
 <title>A simple input control file</title>
 <programlisting>
 ##
@@ -473,8 +352,9 @@ uses, like automatically skipping over commercials in video files you watch.
 </para>
 
 <para>
-The EDL file format is pretty bare-bones. There is one command per line that
-indicates what to do (skip/mute) and when to do it (using pts in seconds).
+The EDL file format is pretty bare-bones. Once the EDL system has reached a
+certain level of maturity, an XML-based file format will probably be implemented
+(keeping backwards compatibility with previous EDL formats).
 </para>
 
 <sect2 id="edl_using">
@@ -508,10 +388,9 @@ reaches the times given in the file.
 
 <para>
 To create an EDL file to work from, use the <option>-edlout &lt;filename&gt;</option>
-flag. During playback, just hit <keycap>i</keycap> to mark the beginning and 
-end of a skip block. A corresponding entry will be written to the file for
-that time. You can then go back and fine-tune the generated EDL file as well as
-change the default operation which is to skip the block described by each line.
+flag. During playback, when you want to mark the previous two seconds to skip over,
+hit <keycap>i</keycap>. A corresponding entry will be written to the file for
+that time. You can then go back and fine-tune the generated EDL file.
 </para>
 </sect2>
 
@@ -650,7 +529,7 @@ This section has yet to be written and cannot be completed until somebody
 provides sample files for us to test. If you have any matrix-encoded audio
 files, know where to find some, or have any information that could be helpful,
 please send a message to the
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-DOCS</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-DOCS</ulink>
 mailing list. Put "[matrix-encoded audio]" in the subject line.
 </para>
 <para>

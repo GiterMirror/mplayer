@@ -3,7 +3,7 @@ MPROOT=../..
 
 include $(MPROOT)/config.mak
 
-INCLUDE = -I$(MPROOT) -I$(MPROOT)/loader
+INCLUDE = -I$(MPROOT) -I$(MPROOT)/loader $(EXTRA_INC)
 CFLAGS  = $(OPTFLAGS) $(INCLUDE)
 
 .SUFFIXES: .c .cpp .o
@@ -17,9 +17,8 @@ all: netstream
 
 
 # FIXME: linking is a mess that should be fixed properly some day
-# it does not work with either GUI, LIVE555 or libavformat enabled
+# it does not work with either GUI, live.com or libavformat enabled
 DEPS = $(MPROOT)/libmpdemux/libmpdemux.a \
-	$(MPROOT)/stream/stream.a \
 	$(MPROOT)/libmpdvdkit2/libmpdvdkit.a \
 	$(MPROOT)/libmpcodecs/native/minilzo.o \
 	$(MPROOT)/libvo/aclib.o \
@@ -32,14 +31,21 @@ DEPS = $(MPROOT)/libmpdemux/libmpdemux.a \
 	$(MPROOT)/osdep/shmem.o \
 	$(MPROOT)/osdep/timer-*.o \
 	$(MPROOT)/osdep/strl.o \
+	$(VORBIS_LIB) \
+	$(CDPARANOIA_LIB) \
+	$(Z_LIB) \
+	$(GIF_LIB) \
+	$(SMBSUPPORT_LIB) \
+	$(LIVE_LIBS) \
+	$(ARCH_LIB) \
 	$(COMMON_LIBS) \
 	-lm \
 
 ifeq ($(TARGET_WIN32),yes)
-DEPS += $(MPROOT)/osdep/glob-win.o -lwsock32
+DEPS += $(MPROOT)/osdep/glob-win.o $(WIN32_LIB) -lwsock32
 endif
 
-netstream: $(MPROOT)/libmpdemux/libmpdemux.a $(MPROOT)/stream/stream.a netstream.o
+netstream: $(MPROOT)/libmpdemux/libmpdemux.a netstream.o
 
 	$(CC) $(CFLAGS) netstream.o -o netstream $(DEPS)
 

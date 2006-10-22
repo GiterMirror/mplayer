@@ -30,7 +30,7 @@ def parse(filename):
     return r
 
 def compare(base, other, show_missing=False):
-    r = re.compile('%[^diouxXeEfFgGaAcspn%]*[diouxXeEfFgGaAcspn%]')
+    r = re.compile('%[^diouxXeEfFgGaAcsPn%]*[diouxXeEfFgGaAcsPn%]')
     missing = []
     for key in base:
         if key not in other:

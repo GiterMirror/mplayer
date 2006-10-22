@@ -7,6 +7,8 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+#ifdef HAVE_OGGTHEORA
+
 #include "vd_internal.h"
 
 static vd_info_t info = {
@@ -64,7 +66,7 @@ static int init(sh_video_t *sh){
     /* this is not a loop, just a context, from which we can break on error */
     do
     {
-       context = calloc (sizeof (theora_struct_t), 1);
+       context = (theora_struct_t *)calloc (sizeof (theora_struct_t), 1);
        sh->context = context;
        if (!context)
 	  break;
@@ -142,6 +144,7 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags)
    ogg_packet op;
    yuv_buffer yuv;
    mp_image_t* mpi;
+   int i;
 
    memset (&op, 0, sizeof (op));
    op.bytes = len;
@@ -176,3 +179,5 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags)
    
     return mpi;
 }
+
+#endif

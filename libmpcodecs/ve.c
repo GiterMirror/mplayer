@@ -9,6 +9,7 @@
 #include "mp_image.h"
 #include "vf.h"
 
+extern vf_info_t ve_info_divx4;
 extern vf_info_t ve_info_lavc;
 extern vf_info_t ve_info_vfw;
 extern vf_info_t ve_info_raw;
@@ -19,6 +20,9 @@ extern vf_info_t ve_info_nuv;
 extern vf_info_t ve_info_x264;
 
 static vf_info_t* encoder_list[]={
+#ifdef HAVE_DIVX4ENCORE
+    &ve_info_divx4,
+#endif
 #ifdef USE_LIBAVCODEC
     &ve_info_lavc,
 #endif
@@ -42,7 +46,7 @@ static vf_info_t* encoder_list[]={
     NULL
 };
 
-vf_instance_t* vf_open_encoder(vf_instance_t* next, const char *name, char *args){
+vf_instance_t* vf_open_encoder(vf_instance_t* next, char *name, char *args){
     char* vf_args[] = { "_oldargs_", args, NULL };
     return vf_open_plugin(encoder_list,next,name,vf_args);
 }

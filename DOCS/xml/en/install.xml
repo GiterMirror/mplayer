@@ -27,17 +27,28 @@ You need a fairly recent system. On Linux, 2.4.x kernels are recommended.
 
 <itemizedlist>
 <listitem><para>
-  <emphasis role="bold">binutils</emphasis> - Recommended version is <emphasis role="bold">2.11.x</emphasis>.
+  <emphasis role="bold">binutils</emphasis> - suggested version is <emphasis role="bold">2.11.x</emphasis>.
   This program is responsible for generating MMX/ 3DNow!/etc instructions,
   thus very important.
 </para></listitem>
 <listitem><para>
-  <emphasis role="bold">gcc</emphasis> - Recommended versions are 2.95
-  and 3.3+. 2.96 and 3.0.x are known to generate faulty code, 3.1 and
-  3.2 also had problems. On PowerPC, use 4.x+.
+  <emphasis role="bold">gcc</emphasis> - suggested versions are: <emphasis role="bold">2.95.3</emphasis>
+  (maybe <emphasis role="bold">2.95.4</emphasis>) and <emphasis role="bold">3.2+</emphasis>.
+  <emphasis role="bold">Never</emphasis> use 2.96 or 3.0.x! They generate faulty code for
+  <application>MPlayer</application>. If you decide to change gcc from
+  2.96, then don't decide in favor of 3.x just because it's newer! Early
+  releases of 3.x were even more buggy than 2.96. So downgrade to 2.95.x
+  (downgrade <systemitem class="library">libstdc++</systemitem> too, other
+  programs may need it) or don't up/downgrade at all (but in this case, be
+  prepared for runtime problems). If you vote for 3.x, try to use the
+  latest version, early releases had various bugs, so be sure you use at
+  least 3.1, it's tested and working. For detailed information about gcc 2.96's
+  bugs (that are still NOT fixed, they have been WORKED AROUND in
+  <application>MPlayer</application>!),see the <link linkend="gcc-296">gcc 2.96</link>
+  section and the <xref linkend="faq"/>.
   </para></listitem>
 <listitem><para>
-  <emphasis role="bold">XFree86</emphasis> - Recommended version is <emphasis role="bold">always the
+  <emphasis role="bold">XFree86</emphasis> - suggested version is <emphasis role="bold">always the
   newest</emphasis> (4.3). Normally, everyone wants this, as starting
   with XFree86 4.0.2, it contains the <link linkend="xv">XVideo</link>
   extension (somewhere referred to as <emphasis role="bold">Xv</emphasis>)
@@ -48,13 +59,9 @@ You need a fairly recent system. On Linux, 2.4.x kernels are recommended.
   For some video cards you don't need XFree86. See list below.
   </para></listitem>
 <listitem><para>
-  <emphasis role="bold">make</emphasis> - Recommended version is
+  <emphasis role="bold">make</emphasis> - suggested version is
   <emphasis role="bold">always the newest</emphasis> (at least 3.79.x). This
   usually isn't important.
-  </para></listitem>
-<listitem><para>
-  <emphasis role="bold">FreeType</emphasis> 2.0.9 or later is required
-  to have a font for the OSD and subtitles.
   </para></listitem>
 <listitem><para>
   <emphasis role="bold">SDL</emphasis> - it's not mandatory, but can help in
@@ -74,7 +81,7 @@ You need a fairly recent system. On Linux, 2.4.x kernels are recommended.
   </para></listitem>
 <listitem><para>
   <emphasis role="bold">lame</emphasis> - recommended, needed for encoding MP3 audio with
-  <application>MEncoder</application>, recommended version is
+  <application>MEncoder</application>, suggested version is
   <emphasis>always the newest</emphasis> (at least 3.90).
   </para></listitem>
 <listitem><para>
@@ -99,6 +106,10 @@ You need a fairly recent system. On Linux, 2.4.x kernels are recommended.
   <emphasis role="bold">cdparanoia</emphasis> - optional, for CDDA support
   </para></listitem>
 <listitem><para>
+  <emphasis role="bold">libfreetype</emphasis> - optional, for TTF fonts
+  support. At least 2.0.9 is required.
+  </para></listitem>
+<listitem><para>
   <emphasis role="bold">libxmms</emphasis> - optional, for XMMS input plugin
   support. At least 1.2.7 is required.
   </para></listitem>
@@ -118,6 +129,132 @@ You need a fairly recent system. On Linux, 2.4.x kernels are recommended.
   (e.g. <filename>/usr/local/lib</filename>) or use the
   <option>--with-bio2jack=DIR</option> switch to tell
   <filename>./configure</filename> where that file is.
+  </para></listitem>
+</itemizedlist>
+</sect1>
+
+
+<sect1 id="installation_codecs">
+<title>Codecs</title>
+
+<itemizedlist>
+<listitem><para>
+  <emphasis role="bold"><systemitem class="library">libavcodec</systemitem></emphasis>:
+  This codec package is capable
+  of decoding H.263/MJPEG/RV10/DivX3/DivX4/DivX5/MP41/MP42/WMV1/WMV2/SVQ1/SVQ3 encoded video
+  streams and WMA (Windows Media Audio) v1/v2 audio streams, on multiple
+  platforms. It is also known to be the fastest for this task. See
+  <link linkend="ffmpeg">FFmpeg</link> section for details. Features:
+  <itemizedlist>
+  <listitem><simpara>
+    gain decoding of videos mentioned above, on non-x86 machines
+    </simpara></listitem>
+  <listitem><simpara>
+    encoding with most of the mentioned codecs
+    </simpara></listitem>
+  <listitem><simpara>
+    this codec is the <emphasis role="bold">fastest codec available</emphasis> for
+    DivX/3/4/5 and other MPEG-4 types. Recommended!
+    </simpara></listitem>
+  </itemizedlist>
+  </para></listitem>
+<listitem><para>
+  <emphasis role="bold">Win32 codecs</emphasis>: If you plan to use
+  <application>MPlayer</application> on x86 architecture, you will possibly need
+  them. Download a codec package from our
+  <ulink url="http://www.mplayerhq.hu/design7/codecs.html">codecs page</ulink>
+  and put the codecs in <filename class="directory">/usr/local/lib/codecs</filename>
+  <emphasis role="bold">BEFORE</emphasis> compiling <application>MPlayer</application>,
+  otherwise no Win32 support will be compiled!
+  <note><para>The avifile project has similar codecs package, but it
+  differs from ours, so if you want to use all supported codecs, then use
+  our package (do not worry, avifile works with it without problems).</para>
+  </note>
+  Features:
+  <itemizedlist>
+  <listitem><simpara>
+    you need this if you want to play or encode for example movies recorded
+    with various hardware compressors, like tuner cards, digital cameras
+    (example: DV, ATI VCR, MJPEG)
+    </simpara></listitem>
+  <listitem><simpara>
+    needed if you want to play <emphasis role="bold">WMV9/WMA9 movies</emphasis>.
+   </simpara></listitem>
+  <listitem><simpara>
+    Not needed for old ASF's with MP41 or MP42 video (though VoxWare audio is
+    frequent for these files - it's done by the Win32 codec), or WMV7. Also not
+    needed for WMA (Windows Media Audio),
+    <systemitem class="library">libavcodec</systemitem> has open source decoder
+    for that.
+    </simpara></listitem>
+  </itemizedlist>
+  </para></listitem>
+<listitem><para>
+  <emphasis role="bold">QuickTime codecs</emphasis>: on x86 platforms these
+  codecs can be used to decode RPZA, and other QuickTime video,
+  and QDesign audio streams. Installation instructions can be found in the
+  <link linkend="sorenson">Sorenson video codec</link> section.
+  </para></listitem>
+<listitem><para>
+  <emphasis role="bold">DivX4/DivX5</emphasis>: information about this codec is
+  available in the <link linkend="divx4-5">DivX4/DivX5</link> section. You possibly
+  don't want this codec as
+  <emphasis role="bold"><systemitem class="library">libavcodec</systemitem></emphasis>
+  (see above) is much faster and has better quality than this, for both decoding
+  and encoding. Features:
+  <itemizedlist>
+  <listitem><simpara>
+    one pass or two pass encoding with
+    <link linkend="mencoder"><application>MEncoder</application></link>
+    </simpara></listitem>
+  <listitem><simpara>
+    can play old <emphasis role="bold">DivX3</emphasis> movies much faster than
+    the Win32 DLL but slower than
+    <emphasis role="bold"><systemitem class="library">libavcodec</systemitem></emphasis>!
+    </simpara></listitem>
+  <listitem><simpara>
+    it's closed-source, and only a x86 version is available.
+    </simpara></listitem>
+  </itemizedlist>
+  </para></listitem>
+<listitem><para>
+  <emphasis role="bold">XviD</emphasis>: Open source encoding alternative to
+  DivX4Linux. Features:
+  <itemizedlist>
+  <listitem><simpara>
+    one pass or two pass encoding with
+    <link linkend="mencoder"><application>MEncoder</application></link>
+    </simpara></listitem>
+  <listitem><simpara>
+    it's open-source, so it's multiplatform.
+    </simpara></listitem>
+  <listitem><simpara>
+    it's about 2 times faster than divX4 when encoding - about the same
+    quality
+    </simpara></listitem>
+  </itemizedlist>
+  </para></listitem>
+<listitem><para>
+  The <emphasis role="bold"><link linkend="xanim">XAnim codecs</link></emphasis>
+  are the best (full screen, hardware YUV zoom) for decoding
+  <emphasis role="bold">3ivx</emphasis> and Indeo 3/4/5 movies, and some old
+  formats. And they are multiplatform, so this is the only way to play Indeo on
+  non-x86 platforms (well, apart from using XAnim:). But for example Cinepak movies
+  are best played with <application>MPlayer</application>'s own Cinepak decoder!
+  </para></listitem>
+<listitem><para>
+  For <emphasis role="bold">Ogg Vorbis</emphasis> audio decoding you need to
+  install <systemitem class="library">libvorbis</systemitem> properly.
+  You can get binary packages and source code from the
+  <ulink url="http://www.vorbis.com/download.psp">Ogg Vorbis site</ulink>.
+  </para></listitem>
+<listitem><para>
+  <application>MPlayer</application> can use the libraries of RealPlayer 8
+  or RealONE to play files with
+  <emphasis role="bold">RealVideo 3.0 and 4.0</emphasis>
+  video, and Sipro/Cook audio. See the
+  <link linkend="realmedia">RealMedia file format</link>
+  section for installation instructions and more information.
   </para></listitem>
 </itemizedlist>
 </sect1>
@@ -159,7 +296,7 @@ zooming), thus fullscreen is nice and very fast.
   <link linkend="tdfxfb">tdfxfb</link> section in order to gain big speedup.
   It is important to do these steps <emphasis role="bold">before</emphasis>
   compiling <application>MPlayer</application>, otherwise no 3Dfx support will be
-  built.
+  built. Also see the <link linkend="tvout-voodoo">3dfx TV-out</link> section.
   If you use X, use at least <emphasis role="bold">4.2.0</emphasis>, as 3dfx Xv
   driver was broken in 4.1.0, and earlier releases.
   </para></listitem>
@@ -319,11 +456,6 @@ it works with the following drivers:
   read the <link linkend="tv-input">TV input</link> section.
   </para></listitem>
 <listitem><para>
-  If you have a V4L compatible <emphasis role="bold">radio tuner</emphasis> card,
-  and wish to listen and capture sound with <application>MPlayer</application>,
-  read the <link linkend="radio">radio</link> section.
-  </para></listitem>
-<listitem><para>
   There is a neat <emphasis role="bold">OSD Menu</emphasis> support ready to be
   used. Check the <link linkend="subosd">OSD menu</link> section.
   </para></listitem>
@@ -428,79 +560,297 @@ directory.
 
 <!-- ********** -->
 
-<sect1 id="fonts-osd">
-<title>Fonts and OSD</title>
+<sect1 id="subosd">
+<title>Subtitles and OSD</title>
 
 <para>
-You need to tell <application>MPlayer</application> which font to use to
-enjoy OSD and subtitles. Any TrueType font or special bitmap fonts will
-work. However, TrueType fonts are recommended as they look far better,
-can be properly scaled to the movie size and cope better with different
-encodings.
-</para>
-
-
-<sect2 id="truetype-fonts">
-<title>TrueType fonts</title>
-
-<para>
-There are two ways to get TrueType fonts to work. The first is to pass
-the <option>-font</option> option to specify a TrueType font file on
-the command line. This option will be a good candidate to put in your
-configuration file (see the manual page for details).
-The second is to create a symlink called <filename>subfont.ttf</filename>
-to the font file of your choice. Either
-<screen>ln -s <replaceable>/path/to/sample_font.ttf</replaceable> ~/.mplayer/subfont.ttf</screen>
-for each user individually or a system-wide one:
-<screen>ln -s <replaceable>/path/to/sample_font.ttf</replaceable> $PREFIX/share/mplayer/subfont.ttf</screen>
+<application>MPlayer</application> can display subtitles along with movie files.
+Currently the following formats are supported:
+<itemizedlist>
+<listitem><para>VOBsub</para></listitem>
+<listitem><para>OGM</para></listitem>
+<listitem><para>CC (closed caption)</para></listitem>
+<listitem><para>MicroDVD</para></listitem>
+<listitem><para>SubRip</para></listitem>
+<listitem><para>SubViewer</para></listitem>
+<listitem><para>Sami</para></listitem>
+<listitem><para>VPlayer</para></listitem>
+<listitem><para>RT</para></listitem>
+<listitem><para>SSA</para></listitem>
+<listitem><para>PJS (Phoenix Japanimation Society)</para></listitem>
+<listitem><para><link linkend="mpsub">MPsub</link></para></listitem>
+<listitem><para>AQTitle</para></listitem>
+<listitem><para><ulink url="http://unicorn.us.com/jacosub/">JACOsub</ulink></para></listitem>
+</itemizedlist>
 </para>
 
 <para>
-If <application>MPlayer</application> was compiled with
-<systemitem class="library">fontconfig</systemitem> support, the above methods
-won't work, instead <option>-font</option> expects a
-<systemitem class="library">fontconfig</systemitem> font name
-and defaults to the sans-serif font. To get a list of fonts known to
-<systemitem class="library">fontconfig</systemitem>,
-use <command>fc-list</command>. Example:
-
-<screen>mplayer -font <replaceable>'Bitstream Vera Sans'</replaceable> <replaceable>anime.mkv</replaceable></screen>
+<application>MPlayer</application> can dump the previously listed subtitle formats
+(<emphasis role="bold">except the three first</emphasis>) into the following
+destination formats, with the given options:
+<itemizedlist>
+<listitem><para>MPsub: <option>-dumpmpsub</option></para></listitem>
+<listitem><para>SubRip: <option>-dumpsrtsub</option></para></listitem>
+<listitem><para>MicroDVD: <option>-dumpmicrodvdsub</option></para></listitem>
+<listitem><para>JACOsub: <option>-dumpjacosub</option></para></listitem>
+<listitem><para>Sami: <option>-dumpsami</option></para></listitem>
+</itemizedlist>
 </para>
 
+<para>
+<application>MEncoder</application> can dump DVD subtitles into
+<link linkend="menc-feat-extractsub">VOBsub</link> format.
+</para>
+
+<para>
+The command line options differ slightly for the different formats:
+</para>
+
+<formalpara>
+<title>VOBsub subtitles</title>
+<para>
+VOBsub subtitles consist of a big (some megabytes) <filename>.SUB</filename> file,
+and optional <filename>.IDX</filename> and/or <filename>.IFO</filename>
+files.  If you have files like
+<filename><replaceable>sample.sub</replaceable></filename>,
+<filename><replaceable>sample.ifo</replaceable></filename> (optional),
+<filename><replaceable>sample.idx</replaceable></filename> - you have to pass
+<application>MPlayer</application> the <option>-vobsub sample
+[-vobsubid <replaceable>id</replaceable>]</option> options
+(full path optional). The <option>-vobsubid</option> option is like
+<option>-sid</option> for DVDs, you can choose between subtitle tracks
+(languages) with it. In case that <option>-vobsubid</option> is omitted,
+<application>MPLayer</application> will try to use the languages given by the
+<option>-slang</option> option and fall back to the <systemitem>langidx</systemitem>
+in the <filename>.IDX</filename> file to set the subtitle language. If it fails,
+there will be no subtitles.
+</para>
+</formalpara>
+
+<formalpara>
+<title>Other subtitles</title>
+<para>
+The other formats consist of a single text file containing timing,
+placement and text information. Usage: If you have a file like
+<filename><replaceable>sample.txt</replaceable></filename>,
+you have to pass the option <option>-sub
+<replaceable>sample.txt</replaceable></option> (full path optional).
+</para>
+</formalpara>
+
+<variablelist>
+<title>Adjusting subtitle timing and placement:</title>
+<varlistentry>
+  <term><option>-subdelay <replaceable>sec</replaceable></option></term>
+  <listitem><simpara>
+    Delays subtitles by <option><replaceable>sec</replaceable></option> seconds.
+    Can be negative. The value is added to movie's time position counter.
+    </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-subfps <replaceable>RATE</replaceable></option></term>
+  <listitem><simpara>
+    Specify frame/sec rate of subtitle file (float number).
+    </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-subpos <replaceable>0-100</replaceable></option></term>
+  <listitem><simpara>
+    Specify the position of subtitles.
+    </simpara></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+If you experience a growing delay between the movie and the subtitles when
+using a MicroDVD subtitle file, most likely the framerate of the movie and
+the subtitle file are different. Please note that the MicroDVD subtitle
+format uses absolute frame numbers for its timing, but there is no fps
+information in it, and therefore the <option>-subfps</option> option should
+be used with this format. If you like to solve this problem permanently,
+you have to manually convert the subtitle file framerate.
+<application>MPlayer</application> can do this
+conversion for you:
+
+<screen>mplayer -dumpmicrodvdsub -fps <replaceable>subtitles_fps</replaceable> -subfps <replaceable>avi_fps</replaceable> -sub <replaceable>subtitle_filename</replaceable> <replaceable>dummy.avi</replaceable></screen>
+</para>
+
+<para>
+About DVD subtitles, read the <link linkend="dvd">DVD</link> section.
+</para>
+
+
+<sect2 id="mpsub">
+<title><application>MPlayer</application>'s own subtitle format (MPsub)</title>
+
+<para>
+<application>MPlayer</application> introduces a new subtitle format called
+<emphasis role="bold">MPsub</emphasis>. It was designed by Gabucino. Basically
+its main feature is being <emphasis>dynamically</emphasis> time-based (although
+it has frame-based mode too).  Example (from <ulink
+url="../../tech/mpsub.sub">DOCS/tech/mpsub.sub</ulink>):
+<programlisting>
+FORMAT=TIME
+# first number  : wait this much after previous subtitle disappeared
+# second number : display the current subtitle for this many seconds
+
+15 3
+A long long, time ago...
+
+0 3
+in a galaxy far away...
+
+0 3
+Naboo was under an attack.<!--
+--></programlisting>
+</para>
+
+<para>
+So you see, the main goal was to <emphasis role="bold">make subtitle
+editing/timing/joining/cutting easy</emphasis>. And, if you - say - get an
+SSA subtitle but it's badly timed/delayed to your version of the movie, you
+simply do a
+<screen>mplayer <replaceable>dummy.avi</replaceable> -sub source.ssa -dumpmpsub</screen>
+A <filename>dump.mpsub</filename> file will be created in the
+current directory, which will contain the source subtitle's text, but in
+<emphasis role="bold">MPsub</emphasis> format. Then you can freely add/subtract
+seconds to/from the subtitle.
+</para>
+
+<para>
+Subtitles are displayed with a technique called <emphasis role="bold">'OSD',
+On Screen Display</emphasis>. OSD is used to display current time, volume bar,
+seek bar etc.
+</para>
 </sect2>
 
 
-<sect2 id="bitmap-fonts">
-<title>bitmap fonts</title>
+<sect2 id="mpsub-install">
+<title>Installing OSD and subtitles</title>
 
 <para>
-If for some reason you wish or need to employ bitmap fonts, download a set
-from our homepage. You can choose between various
-<ulink url="http://www.mplayerhq.hu/MPlayer/releases/fonts/">ISO fonts</ulink>
-and some sets of fonts
-<ulink url="http://www.mplayerhq.hu/MPlayer/contrib/fonts/">contributed by users</ulink>
-in various encodings.
+You need an <application>MPlayer</application> font package to be able to use
+OSD/SUB feature. There are many ways to get it:
 </para>
 
+<itemizedlist>
+<listitem><para>
+  Use the font generator tool at <filename
+  class="directory">TOOLS/subfont-c</filename>. It's a complete tool to
+  convert from TTF/Type1/etc font to mplayer font pkg (read
+  <filename>TOOLS/subfont-c/README</filename> for details).
+  </para></listitem>
+<listitem><para>
+  Use the font generator <application>GIMP</application> plugin at <filename
+  class="directory">TOOLS/subfont-GIMP</filename> (note: you must have HSI
+  RAW plugin too, see <ulink url="http://realtime.ssu.ac.kr/~lethean/index.php?pagename=MplayerKoreanFonts" />).
+ </para></listitem>
+<listitem><para>
+  using a TrueType (TTF) font, by the means of the <systemitem class="library">freetype</systemitem>
+  library. Version 2.0.9 or greater is mandatory! Then you have two methods:
+  <itemizedlist>
+    <listitem><para>
+      use the <option>-font <replaceable>/path/to/sample_font.ttf</replaceable></option>
+      option to specify a TrueType font file on every occasion
+      </para></listitem>
+    <listitem><para>
+      create a symlink:
+      <screen>ln -s <replaceable>/path/to/sample_font.ttf</replaceable> ~/.mplayer/subfont.ttf</screen>
+      </para></listitem>
+      </itemizedlist>
+  If <application>MPlayer</application> was compiled with
+  <systemitem class="library">fontconfig</systemitem> support, the above methods
+  won't work, instead the <option>-font</option> expects a
+  <systemitem class="library">fontconfig</systemitem> font name
+  and defaults to the sans-serif font. To get a list of fonts known to
+  <systemitem class="library">fontconfig</systemitem>,
+  use <command>fc-list</command>. Example: <option>-font
+  <replaceable>'Bitstream Vera Sans'</replaceable></option>
+  </para></listitem>
+<listitem><para>
+  Download ready-to-use font packages from <application>MPlayer</application>
+  site. Note: currently available fonts are limited for ISO 8859-1/2 support,
+  but there are some other (including Korean, Russian, ISO 8859-8 etc) fonts at
+  contrib/font section of FTP, made by users.
+  </para><para>
+  <!-- FIXME: this para should be before the list -->
+  Font should have appropriate <filename>font.desc</filename> file which
+  maps unicode font positions to the actual code page of the subtitles
+  text. Other solution is to have subtitles encoded in UTF-8 encoding and
+  use <option>-utf8</option> option or just name the subtitles file
+  <filename>&lt;video_name&gt;.utf</filename> and have it in the same dir
+  as the video file. Recoding from different codepages to UTF-8 could be
+  done by using <command>konwert</command> or <command>iconv</command> programs.
+  </para><para>
+
+  <table>
+  <title>Some URLs</title>
+  <tgroup cols="2">
+  <thead>
+    <row><entry>URL</entry><entry>Comment</entry></row>
+  </thead>
+  <tbody>
+  <row><entry>
+    <ulink url="ftp://ftp.mplayerhq.hu/MPlayer/releases/fonts/"></ulink>
+    </entry><entry>
+    ISO fonts
+    </entry></row>
+  <row><entry>
+    <ulink url="ftp://ftp.mplayerhq.hu/MPlayer/contrib/fonts/"></ulink>
+    </entry><entry>
+    various fonts by users
+    </entry></row>
+  <row><entry>
+    <ulink url="http://realtime.ssu.ac.kr/~lethean/index.php?pagename=MplayerKoreanFonts"></ulink>
+    </entry><entry>
+    Korean fonts and RAW plugin
+    </entry></row>
+  </tbody>
+  </tgroup>
+  </table>
+
+  </para></listitem>
+</itemizedlist>
 <para>
-Uncompress the file you downloaded to
-<filename class="directory">~/.mplayer</filename> or
-<filename class="directory">$PREFIX/share/mplayer</filename>.
-Then rename or symlink one of the extracted directories to
-<filename class="directory">font</filename>, for example:
+If you chose non-TTF fonts, UNZIP the file you downloaded to <filename
+class="directory">~/.mplayer</filename> or <filename
+class="directory">$PREFIX/share/mplayer</filename>. Then rename or symlink
+one of the extracted directories to <filename class="directory">font</filename>,
+for example:
+
 <screen>ln -s <replaceable>~/.mplayer/arial-24</replaceable> ~/.mplayer/font</screen>
-<screen>ln -s <replaceable>$PREFIX/share/mplayer/arial-24</replaceable> $PREFIX/share/mplayer/font</screen>
+
+Now you have to see a timer at the upper left corner of the movie (switch
+it off with the <keycap>o</keycap> key).
 </para>
 
 <para>
-Fonts should have an appropriate <filename>font.desc</filename> file
-which maps unicode font positions to the actual code page of the
-subtitle text. Another solution is to have UTF-8-encoded subtitles
-and use the <option>-utf8</option> option or just name the subtitles
-file <filename>&lt;video_name&gt;.utf</filename> and have it in the
-same directory as the video file.
+(subtitles are <emphasis>always enabled</emphasis>, for disabling them please
+read the man page)
 </para>
 
+<para>
+OSD has 4 states (switch with <keycap>o</keycap>):
+
+<orderedlist>
+<listitem><simpara>
+  volume bar + seek bar (default)
+  </simpara></listitem>
+<listitem><simpara>
+  volume bar + seek bar + timer + file position percentage on seeking
+  </simpara></listitem>
+<listitem><simpara>
+  volume bar + seek bar + timer + total duration of the media
+  </simpara></listitem>
+<listitem><simpara>
+  subtitles only
+  </simpara></listitem>
+</orderedlist>
+
+You can change default behaviour by setting <varname>osdlevel</varname>
+variable in config file, or the <option>-osdlevel</option> command line option.
+
+</para>
 </sect2>
 
 
@@ -566,22 +916,29 @@ There are three timing methods in <application>MPlayer</application>.
   </simpara></listitem>
 <listitem><para>
 <emphasis role="bold">The new timer</emphasis> code uses the RTC (RealTime Clock)
-  for this task, because it has precise 1ms timers. The <option>-rtc</option>
-  option enables it, but a properly set up kernel is required.
+  for this task, because it has precise 1ms timers. It is automagically enabled
+  when available, but requires root privileges, a <emphasis>setuid root</emphasis>
+  <application>MPlayer</application> binary or a properly set up kernel.
   If you are running kernel 2.4.19pre8 or later you can adjust the maximum RTC
   frequency for normal users through the <systemitem class="systemname">/proc
-  </systemitem> filesystem. Use one of the following two commands to
+  </systemitem> filesystem. Use this command to
   enable RTC for normal users:
   <screen>echo 1024 &gt; /proc/sys/dev/rtc/max-user-freq</screen>
-  <screen>sysctl dev/rtc/max-user-freq=1024</screen>
-  You can make this setting permanent by adding the latter to
-  <filename>/etc/sysctl.conf</filename>.
-  </para>
-  <para>
+  If you do not have such a new kernel, you can also change one line in
+  <filename>drivers/char/rtc.c</filename> and recompile your kernel.
+  Find the section that reads
+  <programlisting>
+       * We don't really want Joe User enabling more
+       * than 64Hz of interrupts on a multi-user machine.
+       */
+      if ((rtc_freq &gt; 64) &amp;&amp; (!capable(CAP_SYS_RESOURCE)))
+   </programlisting>
+   and change the 64 to 1024. You should really know what you are doing, though.
    You can see the new timer's efficiency in the status line.
    The power management functions of some notebook BIOSes with speedstep CPUs
    interact badly with RTC. Audio and video may get out of sync. Plugging the
    external power connector in before you power up your notebook seems to help.
+   You can always turn off RTC support with the <option>-nortc</option> option.
    In some hardware combinations (confirmed during usage of non-DMA DVD drive
    on an ALi1541 board) usage of the RTC timer causes skippy playback. It's
    recommended to use the third method in these cases.
@@ -592,6 +949,10 @@ There are three timing methods in <application>MPlayer</application>.
   doesn't use RTC. On the other hand, it requires more CPU.
   </simpara></listitem>
 </itemizedlist>
+<note><para><emphasis role="bold">NEVER install a setuid root
+<application>MPlayer</application> binary on a multiuser system!</emphasis>
+It's a clear way for everyone to become root.
+</para></note>
 </para>
 </sect1>
 

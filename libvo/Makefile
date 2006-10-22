@@ -1,10 +1,12 @@
 
-include ../config.mak
+include config.mak
 
 LIBNAME = libvo.a
 
 SRCS=aclib.c \
      aspect.c \
+     font_load.c \
+     font_load_ft.c \
      geometry.c \
      osd.c \
      spuenc.c \
@@ -13,7 +15,7 @@ SRCS=aclib.c \
      vo_mpegpes.c \
      vo_null.c \
      vo_yuv4mpeg.c \
-     $(VO_SRCS) \
+     $(OPTIONAL_SRCS) \
 
 LIBAV_INC =
 ifeq ($(CONFIG_LIBAVUTIL),yes)
@@ -23,14 +25,6 @@ endif
 OBJS_TEMP=$(basename $(SRCS))
 OBJS=$(OBJS_TEMP:%=%.o)
 
-ifeq ($(BITMAP_FONT),yes)
-SRCS += font_load.c
-endif
-
-ifeq ($(FREETYPE),yes)
-SRCS += font_load_ft.c
-endif
-
 ifeq ($(VIDIX),yes)
 SRCS += vosub_vidix.c
 endif
@@ -39,8 +33,15 @@ ifeq ($(EXTERNAL_VIDIX),yes)
 SRCS += vosub_vidix.c
 endif
 
-INCLUDE = -I. -I.. -I../osdep $(LIBAV_INC)
-CFLAGS  = $(INCLUDE) $(OPTFLAGS) -DMPG12PLAY
+CFLAGS  = $(OPTFLAGS) -I. -I.. -I../osdep \
+          $(LIBAV_INC) \
+          $(FREETYPE_INC) \
+          $(SDL_INC) \
+          $(X11_INC) \
+          $(EXTRA_INC) \
+          $(DXR2_INC) \
+          $(DIRECTFB_INC) \
+          -DMPG12PLAY \
 
 #CFLAGS += -Wall
 
@@ -57,6 +58,9 @@ CFLAGS  = $(INCLUDE) $(OPTFLAGS) -DMPG12PLAY
 $(LIBNAME):     $(OBJS)
 	$(AR) r $(LIBNAME) $(OBJS)
 	$(RANLIB) $(LIBNAME)
+
+vo_mpegpes.o: vo_mpegpes.c
+	$(CC) -c $(CFLAGS) $(DVB_INC) -o $@ $<
 
 all:    $(LIBNAME)
 

@@ -17,7 +17,7 @@
 #include "../libvo/x11_common.h"
 #include "../libvo/fastmemcpy.h"
 
-#include "../stream/stream.h"
+#include "../libmpdemux/stream.h"
 #include "../mixer.h"
 #include "../libvo/sub.h"
 #include "../mplayer.h"
@@ -242,7 +242,7 @@ void Render( wsTWindow * window,wItem * Items,int nrItems,char * db,int size )
 {
  wItem    * item;
  txSample * image = NULL;
- int        i;
+ int        i, type;
 
  image_buffer=db;
  image_width=window->Width;

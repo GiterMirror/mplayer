@@ -51,8 +51,6 @@ static int use_sleep;
 static int first_frame;//draw colorkey on first frame
 static int use_queue;
 static int xv_port_request = 0;
-static int bob_deinterlace;
-static int top_field_first;
 
 static int image_width,image_height;
 static uint32_t  drwX,drwY;
@@ -347,7 +345,6 @@ xvmc_render_state_t * rndr;
 // the surface have passed vf system without been skiped, it will be displayed
    rndr->state |= MP_XVMC_STATE_DISPLAY_PENDING;
    p_render_surface_to_show = rndr;
-   top_field_first = mpi->fields & MP_IMGFIELD_TOP_FIRST;
    return VO_TRUE;
 }
 
@@ -366,7 +363,6 @@ opt_t subopts [] =
   {  "benchmark", OPT_ARG_BOOL, &benchmark,       NULL },
   {  "sleep",     OPT_ARG_BOOL, &use_sleep,       NULL },
   {  "queue",     OPT_ARG_BOOL, &use_queue,       NULL },
-  {  "bobdeint",  OPT_ARG_BOOL, &bob_deinterlace, NULL },
   {  NULL }
 };
 
@@ -404,7 +400,6 @@ opt_t subopts [] =
    benchmark = 0; //disable PutImageto allow faster display than screen refresh
    use_sleep = 0;
    use_queue = 0;
-   bob_deinterlace = 0;
 
    /* parse suboptions */
    if ( subopt_parse( arg, subopts ) != 0 )
@@ -706,7 +701,6 @@ found_subpic:
          XSetStandardProperties(mDisplay, vo_window, hello, hello, None, NULL, 0, &hint);
          XSetWMNormalHints( mDisplay,vo_window,&hint );
 	 XMapWindow(mDisplay, vo_window);
-	 vo_x11_nofs_sizepos(hint.x, hint.y, hint.width, hint.height);
 	 if ( flags&VOFLAG_FULLSCREEN ) vo_x11_fullscreen();
 	 else {
 	    vo_x11_sizehint( hint.x, hint.y, hint.width, hint.height,0 );
@@ -714,7 +708,7 @@ found_subpic:
       } else {
 	// vo_fs set means we were already at fullscreen
 	 vo_x11_sizehint( hint.x, hint.y, hint.width, hint.height,0 );
-	 vo_x11_nofs_sizepos(hint.x, hint.y, hint.width, hint.height);
+	 if ( !vo_fs ) XMoveResizeWindow( mDisplay,vo_window,hint.x,hint.y,hint.width,hint.height );
 	 if ( flags&VOFLAG_FULLSCREEN && !vo_fs ) vo_x11_fullscreen(); // handle -fs on non-first file
       }
 
@@ -784,7 +778,7 @@ static void init_osd_yuv_pal(){
 
       snum = subpicture.num_palette_entries;
       seb = subpicture.entry_bytes;
-      palette = malloc(snum*seb);//check fail
+      palette = (char*)malloc(snum*seb);//check fail
       if(palette == NULL) return;
       for(i=0; i<snum; i++){
          // 0-black max-white the other are gradients
@@ -1019,7 +1013,6 @@ int status,rez;
 static void put_xvmc_image(xvmc_render_state_t * p_render_surface, int draw_ck){
 int rez;
 int clipX,clipY,clipW,clipH;
-int i;
 
    if(p_render_surface == NULL)
       return;
@@ -1035,18 +1028,14 @@ int i;
    if(benchmark)
       return;
 
-   for (i = 1; i <= bob_deinterlace + 1; i++) {
-   int field = top_field_first ? i : i ^ 3;
    rez = XvMCPutSurface(mDisplay, p_render_surface->p_surface, 
                         vo_window,
                         0, 0, image_width, image_height,
                         clipX, clipY, clipW, clipH,
-                        bob_deinterlace ? field : 3);
-                        //p_render_surface_to_show->display_flags);
+                        3);//p_render_surface_to_show->display_flags);
    if(rez != Success){
       printf("vo_xvmc: PutSurface failer, critical error %d!\n",rez);
       assert(0);
-   }
    }
    XFlush(mDisplay);
 }

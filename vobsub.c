@@ -1071,7 +1071,7 @@ vobsub_open(const char *const name,const char *const ifo,const int force,void** 
 	vob->spu_streams_current = 0;
 	vob->delay = 0;
 	vob->forced_subs=0;
-	buf = malloc(strlen(name) + 5);
+	buf = malloc((strlen(name) + 5) * sizeof(char));
 	if (buf) {
 	    rar_stream_t *fd;
 	    mpeg_t *mpg;
@@ -1353,6 +1353,9 @@ vobsub_out_open(const char *basename, const unsigned int *palette,
     filename = malloc(strlen(basename) + 5);
     if (filename) {
 	result = malloc(sizeof(vobsub_out_t));
+	result->fsub = NULL;
+	result->fidx = NULL;
+	result->aid = 0;
 	if (result) {
 	    result->aid = index;
 	    strcpy(filename, basename);

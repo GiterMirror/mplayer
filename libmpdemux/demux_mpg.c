@@ -106,13 +106,12 @@ static int parse_psm(demuxer_t *demux, int len) {
 static demuxer_t* demux_mpg_open(demuxer_t* demuxer) {
   stream_t *s = demuxer->stream;
   off_t pos = stream_tell(s);
-  off_t end_seq_start;
+  off_t end_seq_start = demuxer->movi_end-TIMESTAMP_PROBE_LEN;
   float half_pts = 0.0;
   mpg_demuxer_t* mpg_d;
 
   if (!ds_fill_buffer(demuxer->video)) return 0;
-  end_seq_start = demuxer->movi_end-TIMESTAMP_PROBE_LEN;
-  mpg_d = calloc(1,sizeof(mpg_demuxer_t));
+  mpg_d = (mpg_demuxer_t*)calloc(1,sizeof(mpg_demuxer_t));
   demuxer->priv = mpg_d;
   mpg_d->final_pts = 0.0;
   mpg_d->has_valid_timestamps = 1;
@@ -137,7 +136,6 @@ static demuxer_t* demux_mpg_open(demuxer_t* demuxer) {
     }
     ds_free_packs(demuxer->audio);
     ds_free_packs(demuxer->video);
-    ds_free_packs(demuxer->sub);
     demuxer->stream->eof=0; // clear eof flag
     demuxer->video->eof=0;
     demuxer->audio->eof=0;
@@ -248,6 +246,9 @@ static int demux_mpg_read_packet(demuxer_t *demux,int id){
     int pts_flags;
     int hdrlen;
     // System-2 (.VOB) stream:
+    if((c>>4)&3) {
+        mp_msg(MSGT_DEMUX,MSGL_WARN,MSGTR_EncryptedVOB);
+    }
     c=stream_read_char(demux->stream); pts_flags=c>>6;
     c=stream_read_char(demux->stream); hdrlen=c;
     len-=2;
@@ -578,7 +579,7 @@ static int demux_mpg_gxf_fill_buffer(demuxer_t *demux, demux_stream_t *ds) {
       state = state << 8 | buf[pos];
       if (unlikely((state | 3) == 0x1bf))
         pos = find_end(&buf, pos, demux->stream);
-    } while (++pos < 0);
+    } while (++pos);
     demux->priv = (void *)state;
     len = buf - pack->buffer;
   }
@@ -597,11 +598,6 @@ int ret=0;
 // System stream
 do{
   demux->filepos=stream_tell(demux->stream);
-#if 1
-  //lame workaround: this is needed to show the progress bar when playing dvdnav://
-  //(ths poor guy doesn't know teh length of the stream at startup)
-  demux->movi_end = demux->stream->end_pos;
-#endif
   head=stream_read_dword(demux->stream);
   if((head&0xFFFFFF00)!=0x100){
    // sync...
@@ -792,7 +788,6 @@ void demux_seek_mpg(demuxer_t *demuxer,float rel_seek_secs,float audio_delay, in
         newpos += (newpts - mpg_d->last_pts) * (newpos - oldpos) / (mpg_d->last_pts - oldpts);
         ds_free_packs(d_audio);
         ds_free_packs(d_video);
-        ds_free_packs(demuxer->sub);
         demuxer->stream->eof=0; // clear eof flag
         d_video->eof=0;
         d_audio->eof=0;
@@ -801,6 +796,8 @@ void demux_seek_mpg(demuxer_t *demuxer,float rel_seek_secs,float audio_delay, in
 }
 
 int demux_mpg_control(demuxer_t *demuxer,int cmd, void *arg){
+    demux_stream_t *d_video=demuxer->video;
+    sh_video_t *sh_video=d_video->sh;
     mpg_demuxer_t *mpg_d=(mpg_demuxer_t*)demuxer->priv;
     int msec = 0;
 
@@ -841,14 +838,18 @@ int demux_mpg_control(demuxer_t *demuxer,int cmd, void *arg){
               for (i = 0; i < mpg_d->num_a_streams; i++) {
                 if (d_audio->id == mpg_d->a_stream_ids[i]) break;
               }
+              do {
                 i = (i+1) % mpg_d->num_a_streams;
                 sh_a = (sh_audio_t*)demuxer->a_streams[mpg_d->a_stream_ids[i]];
+              } while (sh_a->format != sh_audio->format);
               }
               else {
                 for (i = 0; i < mpg_d->num_a_streams; i++)
                   if (*((int*)arg) == mpg_d->a_stream_ids[i]) break;
                 if (i < mpg_d->num_a_streams)
                   sh_a = (sh_audio_t*)demuxer->a_streams[*((int*)arg)];
+                if (sh_a->format != sh_audio->format)
+                  i = mpg_d->num_a_streams;
               }
               if (i < mpg_d->num_a_streams && d_audio->id != mpg_d->a_stream_ids[i]) {
                 d_audio->id = mpg_d->a_stream_ids[i];

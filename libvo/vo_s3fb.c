@@ -39,20 +39,14 @@ static vo_info_t info =
 
 LIBVO_EXTERN(s3fb)
 
-typedef struct vga_type {
-  int cr38, cr39, cr53;
-  unsigned char *mmio;
-} vga_t;
-
-static vga_t *v = NULL;
-static int fd = -1;
-static struct fb_fix_screeninfo fb_finfo;
-static struct fb_var_screeninfo fb_vinfo;
-static uint32_t in_width, in_height, in_format, in_depth, in_s3_format,
+     static int fd = -1;
+     static struct fb_fix_screeninfo fb_finfo;
+     static struct fb_var_screeninfo fb_vinfo;
+     static uint32_t in_width, in_height, in_format, in_depth, in_s3_format,
   screenwidth, screenheight, screendepth, screenstride,
   vidwidth, vidheight, vidx, vidy, page, offset, sreg;
-static char *inpage, *inpage0, *smem = NULL;
-static void (*alpha_func)();
+     static char *inpage, *inpage0, *smem = NULL;
+     static void (*alpha_func)();
 
 static void clear_screen();
 
@@ -86,7 +80,12 @@ static void clear_screen();
 #define S3V_MMIO_REGSIZE           0x8000  /* 32KB */
 #define S3_NEWMMIO_VGABASE      (S3_NEWMMIO_REGBASE + 0x8000)
 
-#define OUTREG(mmreg, value) *(unsigned int *)(&v->mmio[mmreg]) = value
+#define OUTREG(mmreg, value) *(unsigned int *)(&v.mmio[mmreg]) = value
+
+typedef struct vga_type {
+  int cr38, cr39, cr53;
+  unsigned char *mmio;
+} vga_t;
 
 int readcrtc(int reg) {
   outb(reg, 0x3d4);
@@ -98,52 +97,36 @@ void writecrtc(int reg, int value) {
   outb(value, 0x3d5);   
 }
 
-// enable S3 registers
-int enable() {
+int enable(vga_t *v) {
   int fd;
 
-  if (v)
-    return 1;
-  errno = 0;
-  v = malloc(sizeof(vga_t));
-  if (v) {
-    if (ioperm(0x3d4, 2, 1) == 0) {
-      fd = open("/dev/mem", O_RDWR);
-      if (fd != -1) {
-        v->mmio = mmap(0, S3_NEWMMIO_REGSIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd,
+  // enable registers
+  if (iopl(3) != 0)
+    return 0;
+  v->cr38 = readcrtc(0x38);
+  v->cr39 = readcrtc(0x39);
+  v->cr53 = readcrtc(0x53);
+  writecrtc(0x38, 0x48);
+  writecrtc(0x39, 0xa5);
+  writecrtc(0x53, 0x08);
+  fd = open("/dev/mem", O_RDWR);
+  v->mmio = mmap(0, S3_NEWMMIO_REGSIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd,
                  S3_MEMBASE + S3_NEWMMIO_REGBASE);
-        close(fd);
-        if (v->mmio != MAP_FAILED) {
-          v->cr38 = readcrtc(0x38);
-          v->cr39 = readcrtc(0x39);
-          v->cr53 = readcrtc(0x53);
-          writecrtc(0x38, 0x48);
-          writecrtc(0x39, 0xa5);
-          writecrtc(0x53, 0x08);
-          return 1;
-	}
-      }
-      iopl(0);
-    }
-    free(v);
-    v = NULL;
-  }
+  close(fd);
+  return 1;
 }
 
-void disable() {
-  if (v) {
-    writecrtc(0x53, v->cr53);
-    writecrtc(0x39, v->cr39);
-    writecrtc(0x38, v->cr38);
-    ioperm(0x3d4, 2, 0);
-    munmap(v->mmio, S3_NEWMMIO_REGSIZE);
-    free(v);
-    v = NULL;
-  }
+void disable(vga_t *v) {
+  writecrtc(0x53, v->cr53);
+  writecrtc(0x39, v->cr39);
+  writecrtc(0x38, v->cr38);
+  iopl(0);
+  munmap(v->mmio, S3_NEWMMIO_REGSIZE);
 }
 
 int yuv_on(int format, int src_w, int src_h, int dst_x, int dst_y, int dst_w, int dst_h, int crop, int xres, int yres, int line_length, int offset) {
   int tmp, pitch, start, src_wc, src_hc, bpp;
+  vga_t v;
 
   if (format == 0 || format == 7)
     bpp = 4;
@@ -157,7 +140,7 @@ int yuv_on(int format, int src_w, int src_h, int dst_x, int dst_y, int dst_w, in
   pitch = src_w * bpp;
    
   // video card memory layout:
-  // 0-n: visible screen memory, n = width * height * bytes per pixel
+  // 0-n: visable screen memory, n = width * height * bytes per pixel
   // n-m: scaler source memory, n is aligned to a page boundary
   // m+: scaler source memory for multiple buffers
 
@@ -167,6 +150,9 @@ int yuv_on(int format, int src_w, int src_h, int dst_x, int dst_y, int dst_w, in
    
   // start is the top left viewable scaler input pixel
   start = offset + crop * pitch + crop * bpp;
+   
+  if (!enable(&v))
+    return 0;
    
   OUTREG(COL_CHROMA_KEY_CONTROL_REG, 0x47000000);
   OUTREG(CHROMA_KEY_UPPER_BOUND_REG, 0x0);
@@ -205,13 +191,19 @@ int yuv_on(int format, int src_w, int src_h, int dst_x, int dst_y, int dst_w, in
   writecrtc(0x93, (pitch + 7) / 8);
    
   writecrtc(0x67, readcrtc(0x67) | 0x4);
+
+  disable(&v);
    
   return offset;
 }
 
 void yuv_off() {
+  vga_t v;
+
+  enable(&v);
+
   writecrtc(0x67, readcrtc(0x67) & ~0xc);
-  memset(v->mmio + 0x8180, 0, 0x80);
+  memset(v.mmio + 0x8180, 0, 0x80);
   OUTREG(0x81b8, 0x900);
   OUTREG(0x81bc, 0x900);
   OUTREG(0x81c8, 0x900);
@@ -221,6 +213,7 @@ void yuv_off() {
   OUTREG(0x81fc, 0x00010001);
   writecrtc(0x92, 0);
   writecrtc(0x93, 0);
+  disable(&v);
 }
 
 static int preinit(const char *arg)
@@ -270,7 +263,7 @@ static int preinit(const char *arg)
   smem = mmap(0, fb_finfo.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   sreg = fb_finfo.smem_start;
 
-  if(smem == (void *)-1) {
+  if((long)smem == -1) {
     mp_msg(MSGT_VO, MSGL_FATAL, "s3fb: Couldn't map memory areas: %s\n", strerror(errno));
     smem = NULL;
     close(fd);
@@ -278,17 +271,9 @@ static int preinit(const char *arg)
     return -1;
   }
 
-  if (!enable()) {
-    mp_msg(MSGT_VO, MSGL_FATAL, "s3fb: Couldn't map S3 registers: %s\n", strerror(errno));
-    close(fd);
-    fd = -1;
-    return -1;
-  }
-
-  return 0; // Success
+  return 0;
 }
 
-/* And close our mess */
 static void uninit(void)
 {
   if (inpage0) {
@@ -297,12 +282,11 @@ static void uninit(void)
     inpage0 = NULL;
   }
    
+  /* And close our mess */
   if(smem) {
     munmap(smem, fb_finfo.smem_len);
     smem = NULL;
   }
-   
-  disable();
 
   if(fd != -1) {
     close(fd);

@@ -21,7 +21,7 @@ Requirements:
   package(s) installed.
 - To compile MPlayer with X11 support, you need to have the X Window System
   development packages (like for XFree86 or X.Org) installed.
-- For the GUI you need the libpng and GTK development packages.
+- For the GUI you need the libpng and GTK 1.2 development packages.
 
 
 Before you start...
@@ -30,6 +30,14 @@ which driver to use with your video card to get the best quality and
 performance. Most cards require special drivers not included with XFree86 to
 drive their 2-D video acceleration features like YUV and scaling.
 
+A quick and incomplete list of recommendations:
+- ATI cards: Get the GATOS drivers for X11/Xv or use VIDIX.
+- Matrox G200/G4x0/G550: Compile and use mga_vid for Linux, on BSD use VIDIX.
+- 3dfx Voodoo3/Banshee: Get XFree86 4.2.0+ for Xv or use the tdfxfb driver.
+- nVidia cards: Get the X11 driver from www.nvidia.com for Xv support.
+- NeoMagic cards: Get an Xv capable driver from our homepage as described in
+  DOCS/HTML/en/video.html.
+
 Without accelerated video even an 800MHz P3 may be too slow to play DVDs.
 
 
@@ -37,15 +45,16 @@ ______________________
 STEP0: Getting MPlayer
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Official releases and Subversion snapshots, as well as binary codec packages
-and a number of different skins for the GUI are available from the download
-section of our homepage at
+Official releases and Subversion snapshots, as well as fonts for the OSD, codec
+packages and a number of different skins for the GUI are available from the
+download section of our homepage at
 
   http://www.mplayerhq.hu/dload.html
 
-The GUI needs at least one skin and codec packages add support for some more
-video and audio formats. MPlayer does not come with any of these by default,
-you have to download and install them separately.
+A set of fonts is necessary for the OSD and subtitles unless you are using
+TrueType fonts, the GUI needs at least one skin and codec packages add support
+for some more video and audio formats. MPlayer does not come with any of these
+by default, you have to download and install them separately.
 
 You can also get MPlayer via Subversion. Issue the following commands to get
 the latest sources:
@@ -65,12 +74,12 @@ _______________________________
 STEP1: Installing Binary Codecs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MPlayer has builtin support for the most common audio and video formats, but
-for some external binary codecs are required. Examples include newer RealVideo
-variants and a couple of uncommon formats. This step is not mandatory, but
-recommended for getting MPlayer to play a broader range of formats. Please
-note that binary codecs only work on the platform they were compiled for.
-We provide packages for x86 and PowerPC.
+MPlayer has builtin support for the most common audio and video
+formats, but some formats require external codecs. Examples include Real, Indeo
+and QuickTime audio formats. Support for Windows Media formats except WMV9
+exists but still has some bugs, your mileage may vary. This step is not
+mandatory, but recommended for getting MPlayer to play a broader range of
+formats. Please note that most codecs only work on Intel x86 compatible PCs.
 
 Unpack the codecs archives and put the contents in a directory where MPlayer
 will find them. The default directory is /usr/local/lib/codecs/ (it used to be
@@ -147,15 +156,17 @@ To clean up the source tree run the following command:
 
   fakeroot debian/rules clean
 
-______________________________________
-STEP4: Choose an onscreen display font
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+____________________________________________
+STEP4: Installing the onscreen display fonts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use any TrueType font installed on your system. Just pass '-font
-/path/to/font.ttf' on the command line or add 'font=/path/to/font.ttf' to
-your configuration file. The manual page has more details. Alternatively
-you can create a symbolic link from either ~/.mplayer/subfont.ttf or
-/usr/local/share/mplayer/subfont.ttf to your TrueType font.
+Unpack the archive and choose one of the available font sizes. Then copy the
+font files of the corresponding size into /usr/local/share/mplayer/font/ or
+~/.mplayer/font/ (or whatever you set with './configure --datadir=DIR').
+
+Alternatively you can use a TrueType font installed on your system. Just
+make a symbolic link from either /usr/local/share/mplayer/subfont.ttf or
+~/.mplayer/subfont.ttf to your TrueType font.
 
 
 ____________________________

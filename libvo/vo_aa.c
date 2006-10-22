@@ -27,7 +27,7 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 #include "aspect.h"
-#include "libswscale/swscale.h"
+#include "postproc/swscale.h"
 #include "libmpcodecs/vf_scale.h"
 #include "font_load.h"
 #include "sub.h"
@@ -136,8 +136,8 @@ resize(void){
 
 }
 
-static void
-osdmessage(int duration, int deko, const char *fmt, ...)
+void
+osdmessage(int duration, int deko, char *fmt, ...)
 {
     /*
      * for outputting a centered string at the bottom
@@ -163,8 +163,8 @@ osdmessage(int duration, int deko, const char *fmt, ...)
     posbar[0]='\0';
 }
 
-static void
-osdpercent(int duration, int deko, int min, int max, int val, const char * desc, const char * unit)
+void
+osdpercent(int duration, int deko, int min, int max, int val, char * desc, char * unit)
 {
     /*
      * prints a bar for setting values
@@ -190,7 +190,7 @@ osdpercent(int duration, int deko, int min, int max, int val, const char * desc,
  
 }
 
-static void
+void
 printosdtext(void)
 {
   if(osd_text_length > 0 && !vo_osd_text) {
@@ -220,7 +220,7 @@ printosdtext(void)
   }
 }
 
-static void
+void
 printosdprogbar(void){
     /* print mplayer osd-progbar */
     if (vo_osd_progbar_type!=-1){
@@ -574,7 +574,7 @@ draw_osd(void){
 #endif
 }
 
-static int
+int
 getcolor(char * s){
     int i;
     char * rest;

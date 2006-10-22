@@ -17,7 +17,9 @@ extern char *fb_mode_cfgfile;
 extern char *fb_mode_name;
 #endif
 #ifdef HAVE_DIRECTFB
+#if DIRECTFBVERSION > 912
 extern char *dfb_params;
+#endif
 #endif
 #ifdef USE_FAKE_MONO
 extern int fakemono; // defined in dec_audio.c
@@ -87,8 +89,16 @@ extern int enqueue;
 extern int guiWinID;
 #endif
 
+#ifdef HAVE_ODIVX_POSTPROCESS
+extern int use_old_pp;
+#endif
+
 #ifdef HAVE_XINERAMA
 extern int xinerama_screen;
+#endif
+
+#ifdef HAVE_RTC
+extern int nortc;
 #endif
 
 /* from libvo/aspect.c */
@@ -99,8 +109,6 @@ extern int sws_flags;
 extern int readPPOpt(void *conf, char *arg);
 extern void revertPPOpt(void *conf, char* opt);
 extern char* pp_help;
-extern int enable_mouse_movements;
-extern int use_filedir_conf;
 
 m_option_t vd_conf[]={
 	{"help", "Use MPlayer with an appropriate video file instead of live partners to avoid vd.\n", CONF_TYPE_PRINT, CONF_NOCFG|CONF_GLOBAL, 0, 0, NULL},
@@ -278,8 +286,6 @@ m_option_t mplayer_opts[]={
 
 //---------------------- mplayer-only options ------------------------
 
-	{"use-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
-	{"use-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
 #ifdef CRASH_DEBUG
 	{"crash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
 	{"nocrash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
@@ -327,8 +333,9 @@ m_option_t mplayer_opts[]={
 	{"lircconf", &lirc_configfile, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
 #endif
 
-	{"gui", "The -gui option will only work as first commandline argument.\n", CONF_TYPE_PRINT, 0, 0, 0, (void *)1},
-	{"nogui", "The -nogui option will only work as first commandline argument.\n", CONF_TYPE_PRINT, 0, 0, 0, (void *)1},
+	{"gui", "Please remove gui=yes from your config file. Run gmplayer if you want the GUI.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+//	{"gui", &use_gui, CONF_TYPE_FLAG, CONF_GLOBAL|CONF_NOCMD, 0, 1, NULL},
+//	{"nogui", &use_gui, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
       
 #ifdef HAVE_NEW_GUI
 	{"skin", &skinName, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
@@ -342,8 +349,6 @@ m_option_t mplayer_opts[]={
 	{"playlist", NULL, CONF_TYPE_STRING, 0, 0, 0, NULL},
 
 	// a-v sync stuff:
-        {"correct-pts", &correct_pts, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-        {"no-correct-pts", &correct_pts, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"noautosync", &autosync, CONF_TYPE_FLAG, 0, 0, -1, NULL},
 	{"autosync", &autosync, CONF_TYPE_INT, CONF_RANGE, 0, 10000, NULL},
 //	{"dapsync", &dapsync, CONF_TYPE_FLAG, 0, 0, 1, NULL},
@@ -368,15 +373,13 @@ m_option_t mplayer_opts[]={
 	{"key-fifo-size", &key_fifo_size, CONF_TYPE_INT, CONF_RANGE, 2, 65000, NULL},
 	{"noconsolecontrols", &noconsolecontrols, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
 	{"consolecontrols", &noconsolecontrols, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 0, NULL},
-	{"mouse-movements", &enable_mouse_movements, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
-	{"nomouse-movements", &enable_mouse_movements, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 0, NULL},
 
 #define MAIN_CONF
 #include "cfg-common.h"
 #undef MAIN_CONF
         
 	{"list-properties", &list_properties, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
-	{"identify", &mp_msg_levels[MSGT_IDENTIFY], CONF_TYPE_FLAG, CONF_GLOBAL, 0, MSGL_V, NULL},
+	{"identify", &mp_msg_levels[MSGT_IDENTIFY], CONF_TYPE_FLAG, CONF_GLOBAL, 0, MSGL_INFO, NULL},
 	{"-help", help_text, CONF_TYPE_PRINT, CONF_NOCFG|CONF_GLOBAL, 0, 0, NULL},
 	{"help", help_text, CONF_TYPE_PRINT, CONF_NOCFG|CONF_GLOBAL, 0, 0, NULL},
 	{"h", help_text, CONF_TYPE_PRINT, CONF_NOCFG|CONF_GLOBAL, 0, 0, NULL},

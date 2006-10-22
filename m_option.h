@@ -28,7 +28,6 @@ extern m_option_type_t m_option_type_double;
 extern m_option_type_t m_option_type_string;
 extern m_option_type_t m_option_type_string_list;
 extern m_option_type_t m_option_type_position;
-extern m_option_type_t m_option_type_time_size;
 
 extern m_option_type_t m_option_type_print;
 extern m_option_type_t m_option_type_print_indirect;
@@ -59,14 +58,6 @@ typedef m_opt_default_func_t cfg_default_func_t;
 typedef m_opt_func_full_t cfg_func_arg_param_t;
 typedef m_opt_func_param_t cfg_func_param_t;
 typedef m_opt_func_t cfg_func_t;
-
-#define END_AT_NONE   0
-#define END_AT_TIME   1
-#define END_AT_SIZE   2
-typedef struct {
-  double pos;
-  int type;
-} m_time_size_t;
 
 /// Extra definition needed for \ref m_option_type_obj_settings_list options.
 typedef struct {
@@ -168,7 +159,6 @@ extern m_obj_params_t m_span_params_def;
 #define CONF_TYPE_OBJ_PRESETS	(&m_option_type_obj_presets)
 #define CONF_TYPE_CUSTOM_URL	(&m_option_type_custom_url)
 #define CONF_TYPE_OBJ_PARAMS	(&m_option_type_obj_params)
-#define CONF_TYPE_TIME_SIZE	(&m_option_type_time_size)
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -449,7 +439,7 @@ struct m_option {
  *  \param name Name of the option.
  *  \return The matching option or NULL.
  */
-m_option_t* m_option_list_find(m_option_t* list,const char* name);
+m_option_t* m_option_list_find(m_option_t* list,char* name);
 
 /// Helper to parse options, see \ref m_option_type::parse.
 inline static int

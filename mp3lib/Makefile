@@ -1,30 +1,27 @@
 
 include ../config.mak
 
+SRCS = sr1.c
+OBJS = sr1.o
+# OBJS = $(SRCS:.c,.s=.o)
 ifeq ($(TARGET_ARCH_SGI_MIPS),yes)
 OPTFLAGS := $(OPTFLAGS:-O4=-O0)
 endif
-CFLAGS  = -I.. $(OPTFLAGS)
-
-SRCS = sr1.c
+CFLAGS  = -I.. $(OPTFLAGS) $(EXTRA_INC)
 ifeq ($(TARGET_ARCH_X86),yes)
 SRCS += decode_i586.c
-ifeq ($(TARGET_MMX),yes)
+OBJS += decode_i586.o
 SRCS += decode_MMX.c dct64_MMX.c tabinit_MMX.c
-endif
-ifeq ($(TARGET_3DNOW),yes)
+OBJS += decode_MMX.o dct64_MMX.o tabinit_MMX.o
 SRCS += dct36_3dnow.c dct64_3dnow.c
-endif
-ifeq ($(TARGET_3DNOWEX),yes)
+OBJS += dct36_3dnow.o dct64_3dnow.o
 SRCS += dct36_k7.c dct64_k7.c
-endif
-ifeq ($(TARGET_SSE),yes)
-SRCS += dct64_sse.c
-endif
+OBJS += dct36_k7.o dct64_k7.o
 endif
 ifeq ($(TARGET_ARCH_POWERPC),yes)
 ifeq ($(TARGET_ALTIVEC),yes)
 SRCS += dct64_altivec.c
+OBJS += dct64_altivec.o
 ifeq ($(TARGET_OS),Darwin)
 CFLAGS += -faltivec
 else
@@ -32,8 +29,6 @@ CFLAGS += -maltivec -mabi=altivec
 endif
 endif
 endif
-
-OBJS=$(SRCS:.c=.o)
 
 .SUFFIXES: .c .o
 

@@ -47,11 +47,6 @@
 /// is the default value wich is used for optional arguments
 
 static mp_cmd_t mp_cmds[] = {
-#ifdef USE_RADIO
-  { MP_CMD_RADIO_STEP_CHANNEL, "radio_step_channel", 1,  { { MP_CMD_ARG_INT ,{0}}, {-1,{0}} }},
-  { MP_CMD_RADIO_SET_CHANNEL, "radio_set_channel", 1, { { MP_CMD_ARG_STRING, {0}}, {-1,{0}}  }},
-  { MP_CMD_RADIO_SET_FREQ, "radio_set_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
-#endif
   { MP_CMD_SEEK, "seek", 1, { {MP_CMD_ARG_FLOAT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_EDL_MARK, "edl_mark", 0, { {-1,{0}} } },
   { MP_CMD_AUDIO_DELAY, "audio_delay", 1, { {MP_CMD_ARG_FLOAT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
@@ -90,20 +85,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_GET_PERCENT_POS, "get_percent_pos", 0, { {-1,{0}} } },
   { MP_CMD_GET_TIME_POS, "get_time_pos", 0, { {-1,{0}} } },
   { MP_CMD_GET_TIME_LENGTH, "get_time_length", 0, { {-1,{0}} } },
-  { MP_CMD_GET_FILENAME, "get_file_name", 0, { {-1,{0}} } },
-  { MP_CMD_GET_VIDEO_CODEC, "get_video_codec", 0, { {-1,{0}} } },
-  { MP_CMD_GET_VIDEO_BITRATE, "get_video_bitrate", 0, { {-1,{0}} } },
-  { MP_CMD_GET_VIDEO_RESOLUTION, "get_video_resolution", 0, { {-1,{0}} } },
-  { MP_CMD_GET_AUDIO_CODEC, "get_audio_codec", 0, { {-1,{0}} } },
-  { MP_CMD_GET_AUDIO_BITRATE, "get_audio_bitrate", 0, { {-1,{0}} } },
-  { MP_CMD_GET_AUDIO_SAMPLES, "get_audio_samples", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_TITLE, "get_meta_title", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_ARTIST, "get_meta_artist", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_ALBUM, "get_meta_album", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_YEAR, "get_meta_year", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_COMMENT, "get_meta_comment", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_TRACK, "get_meta_track", 0, { {-1,{0}} } },
-  { MP_CMD_GET_META_GENRE, "get_meta_genre", 0, { {-1,{0}} } },
   { MP_CMD_SWITCH_AUDIO, "switch_audio", 0, { { MP_CMD_ARG_INT,{-1} }, {-1,{0}} } },
 #ifdef USE_TV
   { MP_CMD_TV_STEP_CHANNEL, "tv_step_channel", 1,  { { MP_CMD_ARG_INT ,{0}}, {-1,{0}} }},
@@ -125,10 +106,9 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_SWITCH_RATIO, "switch_ratio", 0, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
   { MP_CMD_VO_FULLSCREEN, "vo_fullscreen", 0, { {MP_CMD_ARG_INT,{-1}}, {-1,{0}} } },
   { MP_CMD_VO_ONTOP, "vo_ontop", 0, { {MP_CMD_ARG_INT,{-1}}, {-1,{0}} } },
-  { MP_CMD_FILE_FILTER, "file_filter", 1, { { MP_CMD_ARG_INT, {0}}, {-1,{0}}}},
   { MP_CMD_VO_ROOTWIN, "vo_rootwin", 0, { {MP_CMD_ARG_INT,{-1}}, {-1,{0}} } },
   { MP_CMD_VO_BORDER, "vo_border", 0, { {MP_CMD_ARG_INT,{-1}}, {-1,{0}} } },
-  { MP_CMD_SCREENSHOT, "screenshot", 0, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
+  { MP_CMD_SCREENSHOT, "screenshot", 0, { {-1,{0}} } },
   { MP_CMD_PANSCAN, "panscan",1,  { {MP_CMD_ARG_FLOAT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_SWITCH_VSYNC, "switch_vsync", 0, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_LOADFILE, "loadfile", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
@@ -149,6 +129,7 @@ static mp_cmd_t mp_cmds[] = {
 
 #ifdef USE_DVDNAV
   { MP_CMD_DVDNAV, "dvdnav", 1, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
+  { MP_CMD_DVDNAV_EVENT, "dvdnav_event", 1, { { MP_CMD_ARG_VOID, {0}}, {-1, {0}} } },
 #endif
 
 #ifdef HAVE_MENU
@@ -164,9 +145,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_KEYDOWN_EVENTS, "key_down_event", 1, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_SET_PROPERTY, "set_property", 2, { {MP_CMD_ARG_STRING, {0}},  {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
   { MP_CMD_GET_PROPERTY, "get_property", 1, { {MP_CMD_ARG_STRING, {0}},  {-1,{0}} } },
-  
-  { MP_CMD_SEEK_CHAPTER, "seek_chapter", 1, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
-  { MP_CMD_SET_MOUSE_POS, "set_mouse_pos", 2, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   
   { 0, NULL, 0, {} }
 };
@@ -311,14 +289,12 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { {  MOUSE_BTN6, 0 }, "volume -1" },
   
 #ifdef USE_DVDNAV
-  { { KEY_KP8, 0 }, "dvdnav 1" },   // up
-  { { KEY_KP2, 0 }, "dvdnav 2" },   // down
-  { { KEY_KP4, 0 }, "dvdnav 3" },   // left
-  { { KEY_KP6, 0 }, "dvdnav 4" },   // right
-  { { KEY_KP5, 0 }, "dvdnav 5" },   // menu
-  { { KEY_KPENTER, 0 }, "dvdnav 6" },   // select
-  { { MOUSE_BTN0, 0 }, "dvdnav 8" },   //select
-  { { KEY_KP7, 0 }, "dvdnav 7" },   // previous menu
+  { { 'K', 0 }, "dvdnav 1" },   // up
+  { { 'J', 0 }, "dvdnav 2" },   // down
+  { { 'H', 0 }, "dvdnav 3" },   // left
+  { { 'L', 0 }, "dvdnav 4" },   // right
+  { { 'M', 0 }, "dvdnav 5" },   // menu
+  { { 'S', 0 }, "dvdnav 6" },   // select
 #endif
 
   { { KEY_RIGHT, 0 }, "seek 10" },
@@ -397,8 +373,7 @@ static mp_cmd_bind_t def_cmd_binds[] = {
 #endif
   { { 'T', 0 }, "vo_ontop" },
   { { 'f', 0 }, "vo_fullscreen" },
-  { { 's', 0 }, "screenshot 0" },
-  { { 'S', 0 }, "screenshot 1" },
+  { { 's', 0 }, "screenshot" },
   { { 'w', 0 }, "panscan -0.1" },
   { { 'e', 0 }, "panscan +0.1" },
 
@@ -417,9 +392,6 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { KEY_MUTE, 0 }, "mute" },
           
   { { KEY_CLOSE_WIN, 0 }, "quit" },
-  
-  { { '!', 0 }, "seek_chapter -1" },
-  { { '@', 0 }, "seek_chapter 1" },
 
   { { 0 }, NULL }
 };
@@ -659,7 +631,7 @@ mp_input_parse_cmd(char* str) {
 
   cmd_def = &mp_cmds[i];
 
-  cmd = calloc(1, sizeof(mp_cmd_t));
+  cmd = (mp_cmd_t*)calloc(1, sizeof(mp_cmd_t));
   cmd->id = cmd_def->id;
   cmd->name = strdup(cmd_def->name);
   cmd->pausing = pausing;
@@ -718,7 +690,7 @@ mp_input_parse_cmd(char* str) {
 	ptr2 = e + 1;
         l--;
       }
-      cmd->args[i].v.s = malloc(l+1);
+      cmd->args[i].v.s = (char*)malloc((l+1)*sizeof(char));
       strncpy(cmd->args[i].v.s,start,l);
       cmd->args[i].v.s[l] = '\0';
       if(term != ' ') ptr += l+2;
@@ -774,7 +746,7 @@ mp_input_read_cmd(mp_input_fd_t* mp_fd, char** ret) {
 
   // Allocate the buffer if it doesn't exist
   if(!mp_fd->buffer) {
-    mp_fd->buffer = malloc(MP_CMD_MAX_SIZE);
+    mp_fd->buffer = (char*)malloc(MP_CMD_MAX_SIZE*sizeof(char));
     mp_fd->pos = 0;
     mp_fd->size = MP_CMD_MAX_SIZE;
   } 
@@ -830,7 +802,7 @@ mp_input_read_cmd(mp_input_fd_t* mp_fd, char** ret) {
 
     // Not dropping : put the cmd in ret
     if( ! (mp_fd->flags & MP_FD_DROP)) {
-      (*ret) = malloc(l+1);
+      (*ret) = (char*)malloc((l+1)*sizeof(char));
       strncpy((*ret),mp_fd->buffer,l);
       (*ret)[l] = '\0';
     } else { // Remove the dropping flag
@@ -942,14 +914,11 @@ mp_input_read_key_code(int time) {
   fd_set fds;
   struct timeval tv,*time_val;
 #endif
-  int i,n=0,max_fd = 0, did_sleep = 0;
+  int i,n=0,max_fd = 0;
   static int last_loop = 0;
 
   if(num_key_fd == 0)
-  {
-    usec_sleep(time * 1000);
     return MP_INPUT_NOTHING;
-  }
 
 #ifndef HAVE_NO_POSIX_SELECT
   FD_ZERO(&fds);
@@ -971,6 +940,9 @@ mp_input_read_key_code(int time) {
     n++;
   }
 
+  if(num_key_fd == 0)
+    return MP_INPUT_NOTHING;
+
 #ifndef HAVE_NO_POSIX_SELECT
 // if we have fd's without MP_FD_NO_SELECT flag, call select():
 if(n>0){
@@ -990,7 +962,6 @@ if(n>0){
     }
     break;
   }
-  did_sleep = 1;
 
 }
 #endif
@@ -1013,7 +984,6 @@ if(n>0){
       code = getch2(time);
       if(code < 0)
 	code = MP_INPUT_NOTHING;
-      did_sleep = 1;
     }
     else
       code = ((mp_key_func_t)key_fds[i].read_func)(key_fds[i].fd);
@@ -1028,8 +998,6 @@ if(n>0){
       key_fds[i].flags |= MP_FD_DEAD;
     }
   }
-  if (!did_sleep)
-    usec_sleep(time * 1000);
   return MP_INPUT_NOTHING;
 }
     
@@ -1303,7 +1271,7 @@ mp_cmd_clone(mp_cmd_t* cmd) {
   assert(cmd != NULL);
 #endif
 
-  ret = malloc(sizeof(mp_cmd_t));
+  ret = (mp_cmd_t*)malloc(sizeof(mp_cmd_t));
   memcpy(ret,cmd,sizeof(mp_cmd_t));
   if(cmd->name)
     ret->name = strdup(cmd->name);
@@ -1590,7 +1558,7 @@ mp_input_parse_config(char *file) {
   return 0;
 }
 
-extern char *get_path(const char *filename);
+extern char *get_path(char *filename);
 
 void
 mp_input_init(int use_gui) {
@@ -1699,7 +1667,7 @@ static int mp_input_print_key_list(m_option_t* cfg) {
 static int mp_input_print_cmd_list(m_option_t* cfg) {
   mp_cmd_t *cmd;
   int i,j;
-  const char* type;
+  char* type;
 
   for(i = 0; (cmd = &mp_cmds[i])->name != NULL ; i++) {
     printf("%-20.20s",cmd->name);

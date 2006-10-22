@@ -6,6 +6,8 @@
 
 include config.mak
 
+PRG_CFG = codec-cfg
+
 LIBAV_INC =
 ifeq ($(CONFIG_LIBAVUTIL),yes)
 LIBAV_INC += -I./libavutil
@@ -13,10 +15,6 @@ endif
 ifeq ($(CONFIG_LIBAVCODEC),yes)
 LIBAV_INC += -I./libavcodec
 endif
-
-CFLAGS = $(OPTFLAGS) -I. $(LIBAV_INC)
-
-#CFLAGS += -Wall
 
 # Do not strip the binaries at installation
 ifeq ($(STRIPBINARIES),yes)
@@ -39,22 +37,17 @@ SRCS_COMMON = asxparser.c \
               subreader.c \
               vobsub.c \
 
-ifeq ($(UNRARLIB),yes)
-SRCS_COMMON += unrarlib.c
-endif
-
 SRCS_MENCODER = mencoder.c \
                 mp_msg-mencoder.c \
                 $(SRCS_COMMON) \
+                divx4_vbr.c \
                 libvo/aclib.c \
+                libvo/font_load.c \
+                libvo/font_load_ft.c \
                 libvo/osd.c \
                 libvo/sub.c \
                 parser-mecmd.c \
                 xvid_vbr.c \
-
-ifeq ($(BITMAP_FONT),yes)
-SRCS_MENCODER += libvo/font_load.c
-endif
 
 SRCS_MPLAYER = mplayer.c \
                m_property.c \
@@ -64,6 +57,10 @@ SRCS_MPLAYER = mplayer.c \
                parser-mpcmd.c \
                subopt-helper.c \
 
+ifeq ($(UNRARLIB),yes)
+SRCS_COMMON += unrarlib.c
+endif
+
 OBJS_MENCODER = $(SRCS_MENCODER:.c=.o)
 OBJS_MPLAYER = $(SRCS_MPLAYER:.c=.o)
 
@@ -71,14 +68,13 @@ VO_LIBS = $(AA_LIB) \
           $(X_LIB) \
           $(SDL_LIB) \
           $(GGI_LIB) \
+          $(MP1E_LIB) \
+          $(MLIB_LIB) \
           $(SVGA_LIB) \
           $(DIRECTFB_LIB) \
           $(CACA_LIB) \
 	  $(VESA_LIB) \
 
-ifeq ($(VIDIX),yes)
-VO_LIBS += vidix/libvidix.a
-endif
 ifeq ($(EXTERNAL_VIDIX),yes)
 VO_LIBS += $(EXTERNAL_VIDIX_LIB)
 endif
@@ -94,11 +90,11 @@ AO_LIBS = $(ARTS_LIB) \
 CODEC_LIBS = $(AV_LIB) \
              $(FAME_LIB) \
              $(MAD_LIB) \
-             $(LIBDV_LIB) \
              $(VORBIS_LIB) \
              $(THEORA_LIB) \
              $(FAAD_LIB) \
              $(LIBLZO_LIB) \
+             $(DECORE_LIB) \
              $(XVID_LIB) \
              $(DTS_LIB) \
              $(PNG_LIB) \
@@ -109,13 +105,47 @@ CODEC_LIBS = $(AV_LIB) \
              $(X264_LIB) \
              $(MUSEPACK_LIB) \
              $(SPEEX_LIB) \
-             $(NUT_LIB) \
 
-ifeq ($(LAVC_MP3LAME),yes)
-CODEC_LIBS += $(MP3LAME_LIB)
-endif
+COMMON_LIBS = libmpcodecs/libmpcodecs.a \
+              $(W32_LIB) \
+              $(DS_LIB) \
+              libaf/libaf.a \
+              libmpdemux/libmpdemux.a \
+              postproc/libswscale.a \
+              osdep/libosdep.a \
+              $(DVDREAD_LIB) \
+              $(CODEC_LIBS) \
+              $(FREETYPE_LIB) \
+              $(TERMCAP_LIB) \
+              $(CDPARANOIA_LIB) \
+              $(MPLAYER_NETWORK_LIB) \
+              $(LIBCDIO_LIB) \
+              $(WIN32_LIB) \
+              $(GIF_LIB) \
+              $(MACOSX_FRAMEWORKS) \
+              $(SMBSUPPORT_LIB) \
+              $(FRIBIDI_LIB) \
+              $(FONTCONFIG_LIB) \
+              $(ENCA_LIB) \
+
+CFLAGS = $(OPTFLAGS) -I. \
+         $(CACA_INC) \
+         $(CDPARANOIA_INC) \
+         $(DVB_INC) \
+         $(EXTRA_INC) \
+         $(FONTCONFIG_INC) \
+         $(FREETYPE_INC) \
+         $(FRIBIDI_INC) \
+         $(SDL_INC) \
+         $(X11_INC) \
+         $(XVID_INC) \
+         $(LIBAV_INC) \
+         $(LIBCDIO_INC) \
+
+#CFLAGS += -Wall
 
 ifeq ($(TOOLAME),yes)
+CFLAGS += $(TOOLAME_EXTRAFLAGS) 
 CODEC_LIBS += $(TOOLAME_LIB)
 endif
 
@@ -127,45 +157,15 @@ ifeq ($(FAAC),yes)
 CODEC_LIBS += $(FAAC_LIB)
 endif
 
-COMMON_LIBS = libmpcodecs/libmpcodecs.a \
-              $(W32_LIB) \
-              libaf/libaf.a \
-              libmpdemux/libmpdemux.a \
-              stream/stream.a \
-              libswscale/libswscale.a \
-              osdep/libosdep.a \
-              $(EXTRA_LIB)\
-              $(DVDREAD_LIB) \
-              $(DVDNAV_LIB) \
-              $(CODEC_LIBS) \
-              $(TERMCAP_LIB) \
-              $(CDPARANOIA_LIB) \
-              $(MPLAYER_NETWORK_LIB) \
-              $(LIBCDIO_LIB) \
-              $(WIN32_LIB) \
-              $(MLIB_LIB) \
-              $(GIF_LIB) \
-              $(MACOSX_FRAMEWORKS) \
-              $(SMBSUPPORT_LIB) \
-              $(FRIBIDI_LIB) \
-              $(ENCA_LIB) \
-              $(LIRC_LIB) \
-              $(LIRCC_LIB) \
-              $(ARCH_LIB) \
-              $(MATH_LIB) \
-              $(LIBC_LIB) \
-              $(EXTRALIBS) \
-
 PARTS = libmpdemux \
-        stream \
         libmpcodecs \
         libavutil \
         libavcodec \
         libpostproc \
         libavformat \
-        libswscale \
         libao2 \
         osdep \
+        postproc \
         input \
         libvo \
         libaf \
@@ -179,7 +179,7 @@ endif
 ifeq ($(LIBMPEG2),yes)
 PARTS += libmpeg2
 endif
-ifeq ($(FAAD_INTERNAL),yes)
+ifeq ($(INTERNAL_FAAD),yes)
 COMMON_LIBS += libfaad2/libfaad2.a 
 PARTS += libfaad2
 endif
@@ -191,6 +191,7 @@ PARTS += libfame
 endif
 ifeq ($(DVDKIT2),yes)
 PARTS += libmpdvdkit2
+else
 endif
 ifeq ($(GUI),yes)
 PARTS += Gui
@@ -201,7 +202,7 @@ endif
 ifeq ($(LIBMENU),yes)
 PARTS += libmenu
 endif
-ifeq ($(TREMOR_INTERNAL),yes)
+ifeq ($(TREMOR),yes)
 PARTS += tremor
 endif
 
@@ -211,13 +212,14 @@ ALL_PRG += $(PRG_MENCODER)
 endif
 
 COMMON_DEPS = $(W32_DEP) \
+              $(DS_DEP) \
+              $(MP1E_DEP) \
               $(AV_DEP) \
               libmpdemux/libmpdemux.a \
-              stream/stream.a \
               libmpcodecs/libmpcodecs.a \
               libao2/libao2.a \
               osdep/libosdep.a \
-              libswscale/libswscale.a \
+              postproc/libswscale.a \
               input/libinput.a \
               libvo/libvo.a \
               libaf/libaf.a \
@@ -234,10 +236,10 @@ ifeq ($(LIBMPEG2),yes)
 COMMON_DEPS += libmpeg2/libmpeg2.a
 COMMON_LIBS += libmpeg2/libmpeg2.a
 endif
-ifeq ($(FAAD_INTERNAL),yes)
+ifeq ($(INTERNAL_FAAD),yes)
 COMMON_DEPS += libfaad2/libfaad2.a
 endif
-ifeq ($(TREMOR_INTERNAL),yes)
+ifeq ($(TREMOR),yes)
 COMMON_DEPS += tremor/libvorbisidec.a
 COMMON_LIBS += tremor/libvorbisidec.a
 endif
@@ -250,20 +252,10 @@ endif
 ifeq ($(DVDKIT2),yes)
 COMMON_DEPS += libmpdvdkit2/libmpdvdkit.a
 endif
-ifeq ($(CONFIG_ASS),yes)
-COMMON_DEPS += libass/libass.a
-COMMON_LIBS += libass/libass.a
-PARTS += libass
-endif
-# FontConfig and FreeType need to come after ASS to avoid link failures on MinGW
-COMMON_LIBS += $(FONTCONFIG_LIB)
-ifeq ($(FREETYPE),yes)
-SRCS_MENCODER += libvo/font_load_ft.c
-COMMON_LIBS += $(FREETYPE_LIB)
-endif
+
 ifeq ($(GUI),yes)
 COMMON_DEPS += Gui/libgui.a
-GUI_LIBS = Gui/libgui.a $(GTK_LIBS)
+GUI_LIBS = Gui/libgui.a
 endif
 
 .SUFFIXES: .cc .c .o
@@ -287,14 +279,8 @@ loader/libloader.a:
 libfame/libfame.a:
 	$(MAKE) -C libfame
 
-libass/libass.a:
-	$(MAKE) -C libass
-
 libmpdemux/libmpdemux.a:
 	$(MAKE) -C libmpdemux
-
-stream/stream.a:
-	$(MAKE) -C stream
 
 libmpcodecs/libmpcodecs.a:
 	$(MAKE) -C libmpcodecs
@@ -316,9 +302,6 @@ libpostproc/libpostproc.a:
 
 libavformat/libavformat.a:
 	$(MAKE) -C libavformat LIBPREF=lib LIBSUF=.a
-
-libswscale/libswscale.a:
-	$(MAKE) -C libswscale LIBPREF=lib LIBSUF=.a
 
 libmpeg2/libmpeg2.a:
 	$(MAKE) -C libmpeg2
@@ -353,6 +336,9 @@ Gui/libgui.a:
 osdep/libosdep.a:
 	$(MAKE) -C osdep
 
+postproc/libswscale.a:
+	$(MAKE) -C postproc
+
 input/libinput.a:
 	$(MAKE) -C input
 
@@ -365,9 +351,17 @@ ifeq ($(LIBMENU),yes)
 MPLAYER_DEP += libmenu/libmenu.a
 MENU_LIBS = libmenu/libmenu.a
 PARTS += libmenu
+else
+MENU_LIBS =
 endif
 
 MENCODER_DEP = $(OBJS_MENCODER) $(COMMON_DEPS) libmpcodecs/libmpencoders.a
+
+ifeq ($(VIDIX),yes)
+VIDIX_LIBS = vidix/libvidix.a
+else
+VIDIX_LIBS =
+endif
 
 ifeq ($(TARGET_WIN32),yes)
 OBJS_MPLAYER += osdep/mplayer-rc.o
@@ -377,37 +371,75 @@ LIBS_MPLAYER = libvo/libvo.a \
                libao2/libao2.a \
                input/libinput.a \
                $(MENU_LIBS) \
+               $(VIDIX_LIBS) \
                $(GUI_LIBS) \
                $(COMMON_LIBS) \
+               $(GTK_LIBS) \
                $(VO_LIBS) \
                $(AO_LIBS) \
+               $(EXTRA_LIB)\
+               $(LIRC_LIB) \
+               $(LIRCC_LIB) \
                $(STATIC_LIB) \
+               $(ARCH_LIB) \
+               $(MATH_LIB) \
+               $(LIBC_LIB) \
 
 $(PRG):	$(MPLAYER_DEP)
+    ifeq ($(TARGET_WIN32),yes)
+	windres -o osdep/mplayer-rc.o osdep/mplayer.rc
+    endif
 	$(CC) $(CFLAGS) -o $(PRG) $(OBJS_MPLAYER) $(LIBS_MPLAYER)
+
+mplayer.exe.spec.c: libmpcodecs/libmpcodecs.a
+	winebuild -fPIC -o mplayer.exe.spec.c -exe mplayer.exe -mcui \
+	libmpcodecs/ad_qtaudio.o libmpcodecs/vd_qtvideo.o \
+	-L/usr/local/lib/wine -lkernel32
+
+mplayer.exe.so:	$(MPLAYER_DEP) mplayer.exe.spec.c
+	$(CC) $(CFLAGS) -Wall -shared \
+	-Wl,-rpath,/usr/local/lib -Wl,-Bsymbolic \
+	-o mplayer.exe.so $(OBJS_MPLAYER) mplayer.exe.spec.c \
+	libvo/libvo.a libao2/libao2.a $(MENU_LIBS) $(VIDIX_LIBS) \
+	$(GUI_LIBS) $(COMMON_LIBS) $(GTK_LIBS) $(VO_LIBS) \
+	$(AO_LIBS) $(EXTRA_LIB) $(LIRC_LIB) $(LIRCC_LIB) \
+	$(STATIC_LIB) $(ARCH_LIB) -lwine $(MATH_LIB) \
+
+mplayer_wine.so:	$(MPLAYER_DEP)
+	$(CC) $(CFLAGS) -shared -Wl,-Bsymbolic -o mplayer_wine.so \
+          mplayer_wine.spec.c $(OBJS_MPLAYER) libvo/libvo.a \
+	  libao2/libao2.a $(MENU_LIBS) $(VIDIX_LIBS) $(GUI_LIBS) \
+	  $(COMMON_LIBS) $(GTK_LIBS) $(VO_LIBS) $(AO_LIBS) \
+	  $(EXTRA_LIB) $(LIRC_LIB) $(LIRCC_LIB) $(STATIC_LIB) \
+	  -lwine $(ARCH_LIB) $(MATH_LIB) \
 
 ifeq ($(MENCODER),yes)
 LIBS_MENCODER = libmpcodecs/libmpencoders.a \
-                $(MP3LAME_LIB) \
+                $(ENCORE_LIB) \
                 $(COMMON_LIBS) \
+                $(EXTRA_LIB) \
+                $(MLIB_LIB) \
+                $(LIRC_LIB) \
+                $(LIRCC_LIB) \
+                $(ARCH_LIB) \
+                $(MATH_LIB) \
+                $(LIBC_LIB) \
 
 $(PRG_MENCODER): $(MENCODER_DEP)
 	$(CC) $(CFLAGS) -o $(PRG_MENCODER) $(OBJS_MENCODER) $(LIBS_MENCODER)
 endif
 
-osdep/mplayer-rc.o: osdep/mplayer.rc
-	windres -o $@ osdep/mplayer.rc
-
-codec-cfg: codec-cfg.c codec-cfg.h help_mp.h
-	$(HOST_CC) -I. -DCODECS2HTML codec-cfg.c -o $@
-
-codecs.conf.h: codec-cfg etc/codecs.conf
-	./codec-cfg ./etc/codecs.conf > $@
+codecs.conf.h: $(PRG_CFG) etc/codecs.conf
+	./$(PRG_CFG) ./etc/codecs.conf > $@
 
 codec-cfg.o: codecs.conf.h
 
 codecs2html: mp_msg.o
 	$(CC) -DCODECS2HTML codec-cfg.c mp_msg.o -o $@
+
+$(PRG_CFG): codec-cfg.c codec-cfg.h help_mp.h
+	$(HOST_CC) $(HOST_CFLAGS) -I. codec-cfg.c -o $(PRG_CFG) \
+	-DCODECS2HTML $(EXTRA_LIB) $(EXTRA_INC)
 
 install: $(ALL_PRG)
 ifeq ($(VIDIX),yes)
@@ -432,14 +464,18 @@ ifeq ($(MENCODER),yes)
 	$(INSTALL) -m 755 $(INSTALLSTRIP) $(PRG_MENCODER) $(BINDIR)/$(PRG_MENCODER)
 	for i in $(MAN_LANG); do \
 		if test "$$i" = en ; then \
-			cd $(MANDIR)/man1 && ln -sf mplayer.1 mencoder.1 ; \
+			ln -sf mplayer.1 $(MANDIR)/man1/mencoder.1 ; \
 		else \
-			cd $(MANDIR)/$$i/man1 && ln -sf mplayer.1 mencoder.1 ; \
+			ln -sf mplayer.1 $(MANDIR)/$$i/man1/mencoder.1 ; \
 		fi ; \
 	done
 endif
 	@$(INSTALL) -d $(DATADIR)
 	@$(INSTALL) -d $(DATADIR)/font
+	@if test ! -f $(DATADIR)/font/font.desc ; then \
+	echo "*** Download font at http://www.mplayerhq.hu/dload.html" ; \
+	echo "*** for OSD/Subtitles support and extract to $(DATADIR)/font/" ; \
+	fi
 ifeq ($(GUI),yes)
 	@$(INSTALL) -d $(DATADIR)/skins
 	@echo "*** Download skin(s) at http://www.mplayerhq.hu/dload.html"
@@ -470,34 +506,31 @@ ifeq ($(VIDIX),yes)
 endif
 	@echo "Uninstall completed"
 
-dirclean:
-	-rm -f *.o *.a *~
-
-clean: dirclean
-	@for a in $(PARTS); do $(MAKE) -C $$a clean; done
+clean:
+	-rm -f *.o *.a *~ codecs.conf.h
 
 distclean: clean doxygen_clean
+	-rm -f *~ $(PRG) $(PRG_MENCODER) $(PRG_CFG)
+	-rm -f .depend configure.log codecs.conf.h help_mp.h
 	@for a in $(PARTS); do $(MAKE) -C $$a distclean; done
-	-rm -f *~ $(PRG) $(PRG_MENCODER) codec-cfg codecs2html codecs.conf.h \
-          .depend configure.log config.mak config.h help_mp.h version.h
 
 strip:
 	strip -s $(ALL_PRG)
 
 dep:	depend
 
-depend: help_mp.h version.h
+depend: help_mp.h
 	$(CC) -MM $(CFLAGS) -DCODECS2HTML mplayer.c mencoder.c $(SRCS_MPLAYER) $(SRCS_MENCODER) 1>.depend
 	@for a in $(PARTS); do $(MAKE) -C $$a dep; done
 
-# ./configure must be rerun if it changed
+# ./configure must be run if it changed in CVS
 config.h: configure
 	@echo "############################################################"
 	@echo "####### Please run ./configure again - it's changed! #######"
 	@echo "############################################################"
 
-# rebuild at every config.h/config.mak/Makefile change:
-version.h: config.h config.mak Makefile
+# rebuild at every config.h/config.mak change:
+version.h:
 	./version.sh `$(CC) -dumpversion`
 
 doxygen:
@@ -521,6 +554,12 @@ ifneq ($(HELP_FILE),help/help_mp-en.h)
 	@help/help_diff.sh $(HELP_FILE) < help/help_mp-en.h >> help_mp.h
 endif
 
+# rebuild at every CVS update or config/makefile change:
+#ifneq ($(wildcard CVS/Entries),)
+#version.h: CVS/Entries
+#endif
+version.h: config.h config.mak Makefile
+
 # explicit dependencies to force version.h to be built even if .depend is missing
 mplayer.o mencoder.o vobsub.o: version.h
 
@@ -534,48 +573,37 @@ $(MPLAYER_DEP) $(MENCODER_DEP): help_mp.h
 # has changed. ideally this will be replaced with a single
 # nonrecursive makefile for the whole project.
 #
-# Now all directories are recursed by default because these rules do not
-# consider dependencies on files in other directories, while the recursively
-# invoked Makefiles do. Conditional recursion only to the directories with
-# changed files can be enabled by creating a file named ".norecurse" and
-# optionally giving it a timestamp in the past. Directories whose .a files
-# are newer than the timestamp and newer than other files in the directory
-# will not be recursed.
-.norecurse:
 
-libvo/libvo.a: .norecurse $(wildcard libvo/*.[ch])
-libao2/libao2.a: .norecurse $(wildcard libao2/*.[ch])
-osdep/libosdep.a: .norecurse $(wildcard osdep/*.[ch])
-input/libinput.a: .norecurse $(wildcard input/*.[ch])
+libvo/libvo.a: $(wildcard libvo/*.[ch])
+libao2/libao2.a: $(wildcard libao2/*.[ch])
+osdep/libosdep.a: $(wildcard osdep/*.[ch])
+input/libinput.a: $(wildcard input/*.[ch])
 
-libmenu/libmenu.a: .norecurse $(wildcard libmenu/*.[ch])
-libaf/libaf.a: .norecurse $(wildcard libaf/*.[ch])
-libmpdvdkit2/libmpdvdkit.a: .norecurse $(wildcard libmpdvdkit2/*.[ch])
+libmenu/libmenu.a: $(wildcard libmenu/*.[ch])
+libaf/libaf.a: $(wildcard libaf/*.[ch])
+libmpdvdkit2/libmpdvdkit.a: $(wildcard libmpdvdkit2/*.[ch])
 
-libmpdemux/libmpdemux.a: .norecurse $(wildcard libmpdemux/*.[ch] libmpdemux/*/*.[ch])
-stream/stream.a: .norecurse $(wildcard stream/*.[ch] stream/*/*.[ch])
-libmpcodecs/libmpcodecs.a: .norecurse $(wildcard libmpcodecs/*.[ch]) $(wildcard libmpcodecs/native/*.[ch])
-libmpcodecs/libmpencoders.a: .norecurse $(wildcard libmpcodecs/*.[ch])
+libmpdemux/libmpdemux.a: $(wildcard libmpdemux/*.[ch] libmpdemux/*/*.[ch])
+libmpcodecs/libmpcodecs.a: $(wildcard libmpcodecs/*.[ch]) $(wildcard libmpcodecs/native/*.[ch])
+libmpcodecs/libmpencoders.a: $(wildcard libmpcodecs/*.[ch])
 
-libavutil/libavutil.a: .norecurse $(wildcard libavutil/*.[ch])
-libavcodec/libavcodec.a: .norecurse $(wildcard libavcodec/*.[ch] libavcodec/*/*.[chS])
-libavformat/libavformat.a: .norecurse $(wildcard libavformat/*.[ch])
-libswscale/libswscale.a: .norecurse $(wildcard libswscale/*.[ch])
+libavutil/libavutil.a: $(wildcard libavutil/*.[ch])
+libavcodec/libavcodec.a: $(wildcard libavcodec/*.[ch] libavcodec/*/*.[chS])
+libavformat/libavformat.a: $(wildcard libavformat/*.[ch])
+postproc/libswscale.a: $(wildcard postproc/*.[ch])
 
-libmpeg2/libmpeg2.a: .norecurse $(wildcard libmpeg2/*.[ch])
-liba52/liba52.a: .norecurse $(wildcard liba52/*.[ch])
-mp3lib/libMP3.a: .norecurse $(wildcard mp3lib/*.[ch])
-libfaad2/libfaad2.a: .norecurse $(wildcard libfaad2/*.[ch] libfaad2/*/*.[ch])
+libmpeg2/libmpeg2.a: $(wildcard libmpeg2/*.[ch])
+liba52/liba52.a: $(wildcard liba52/*.[ch])
+mp3lib/libMP3.a: $(wildcard mp3lib/*.[ch])
+libfaad2/libfaad2.a: $(wildcard libfaad2/*.[ch] libfaad2/*/*.[ch])
 
-loader/libloader.a: .norecurse $(wildcard loader/*.[chSs])
-loader/dmo/libDMO_Filter.a: .norecurse $(wildcard loader/dmo/*.[ch])
-loader/dshow/libDS_Filter.a: .norecurse $(wildcard loader/dshow/*.[ch])
+loader/libloader.a: $(wildcard loader/*.[chSs])
+loader/dmo/libDMO_Filter.a: $(wildcard loader/dmo/*.[ch])
+loader/dshow/libDS_Filter.a: $(wildcard loader/dshow/*.[ch])
 
-libdha/libdha.so: .norecurse $(wildcard libdha/*.[ch])
-vidix/libvidix.a: .norecurse $(wildcard vidix/*.[ch])
-Gui/libgui.a: .norecurse $(wildcard Gui/*.[ch] Gui/*/*.[ch] Gui/*/*/*.[ch])
-
-libass/libass.a: .norecurse $(wildcard libass/*.[ch])
+libdha/libdha.so: $(wildcard libdha/*.[ch])
+vidix/libvidix.a: $(wildcard vidix/*.[ch])
+Gui/libgui.a: $(wildcard Gui/*.[ch] Gui/*/*.[ch] Gui/*/*/*.[ch])
 
 #
 # include dependency files if they exist

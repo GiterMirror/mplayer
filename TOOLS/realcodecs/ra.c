@@ -45,7 +45,7 @@ void loadSyms() {
 	if (!b_dlOpened) {
 		char *error;
 
-		fputs("opening dll...\n", stderr);
+		fputs("opening dll...\n");
 		handle = dlopen ("/usr/local/RealPlayer8/Codecs/realcook.so.6.0", RTLD_LAZY);
 		if (!handle) {
 			fputs (dlerror(), stderr);

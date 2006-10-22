@@ -20,7 +20,7 @@ play_tree_is_valid(play_tree_t* pt);
 
 play_tree_t*
 play_tree_new(void) {
-  play_tree_t* r = calloc(1,sizeof(play_tree_t));
+  play_tree_t* r = (play_tree_t*)calloc(1,sizeof(play_tree_t));
   if(r == NULL)
     mp_msg(MSGT_PLAYTREE,MSGL_ERR,"Can't allocate %d bytes of memory\n",sizeof(play_tree_t));
   r->entry_type = PLAY_TREE_ENTRY_NODE;
@@ -480,7 +480,7 @@ play_tree_iter_new(play_tree_t* pt,m_config_t* config) {
   if( ! play_tree_is_valid(pt))
     return NULL;
 
-  iter = calloc(1,sizeof(play_tree_iter_t));
+  iter = (play_tree_iter_t*)calloc(1,sizeof(play_tree_iter_t));
   if(! iter) {
       mp_msg(MSGT_PLAYTREE,MSGL_ERR,"Can't allocate new iterator (%d bytes of memory)\n",sizeof(play_tree_iter_t));
       return NULL;
@@ -758,6 +758,7 @@ play_tree_iter_down_step(play_tree_iter_t* iter, int d,int with_nodes) {
 
 char*
 play_tree_iter_get_file(play_tree_iter_t* iter, int d) {
+  char* entry;
 #ifdef MP_DEBUG
   assert(iter != NULL);
   assert(iter->tree->child == NULL);
@@ -829,7 +830,7 @@ play_tree_iter_new_copy(play_tree_iter_t* old) {
   assert(old != NULL);
 #endif
 
-  iter = malloc(sizeof(play_tree_iter_t));
+  iter = (play_tree_iter_t*)malloc(sizeof(play_tree_iter_t));
   if(iter == NULL) {
     mp_msg(MSGT_PLAYTREE,MSGL_ERR,"Can't allocate %d bytes of memory\n",sizeof(play_tree_iter_t));
     return NULL;
@@ -837,7 +838,7 @@ play_tree_iter_new_copy(play_tree_iter_t* old) {
 ;
   memcpy(iter,old,sizeof(play_tree_iter_t));
   if(old->status_stack) {
-    iter->status_stack = malloc(old->stack_size * sizeof(int));
+    iter->status_stack = (int*)malloc(old->stack_size * sizeof(int));
     if(iter->status_stack == NULL) {
       mp_msg(MSGT_PLAYTREE,MSGL_ERR,"Can't allocate %d bytes of memory\n",old->stack_size * sizeof(int));
       free(iter);

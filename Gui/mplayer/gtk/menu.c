@@ -14,9 +14,8 @@
 #include "../widgets.h"
 #include "app.h"
 
-#include "../../stream/stream.h"
+#include "../../libmpdemux/stream.h"
 #include "../../libmpdemux/demuxer.h"
-#include "../../libmpdemux/stheader.h"
 
 #include "../pixmaps/ab.xpm"
 #include "../pixmaps/half.xpm"
@@ -71,7 +70,7 @@ void ActivateMenuItem( int Item )
  mplEventHandling( Item & 0x0000ffff,Item >> 16 );
 }
 
-static GtkWidget * AddMenuCheckItem(GtkWidget *window1, const char * immagine_xpm, GtkWidget* Menu,const char* label, gboolean state, int Number)
+GtkWidget * AddMenuCheckItem(GtkWidget *window1, const char * immagine_xpm, GtkWidget* Menu,char* label, gboolean state, int Number)
 {
  GtkWidget * Label = NULL;
  GtkWidget * Pixmap = NULL;
@@ -104,7 +103,7 @@ static GtkWidget * AddMenuCheckItem(GtkWidget *window1, const char * immagine_xp
    
  return Item;
 }
-GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm,  GtkWidget * SubMenu,const char * label,int Number )
+GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm,  GtkWidget * SubMenu,char * label,int Number )
 {
  GtkWidget * Label = NULL;
  GtkWidget * Pixmap = NULL;
@@ -137,7 +136,7 @@ GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm,  GtkWidg
 }
 
 
-GtkWidget * AddSubMenu( GtkWidget *window1, const char * immagine_xpm, GtkWidget * Menu,const char * label )
+GtkWidget * AddSubMenu( GtkWidget *window1, const char * immagine_xpm, GtkWidget * Menu,char * label )
 {
  GtkWidget * Label = NULL;
  GtkWidget * Pixmap = NULL;
@@ -183,7 +182,7 @@ GtkWidget * AddSeparator( GtkWidget * Menu )
 typedef struct
 {
  int id;
- const char * name;
+ char * name;
 } Languages_t;
 
 #define lng( a,b ) ( (int)(a) * 256 + b )
@@ -370,7 +369,7 @@ static char * ChannelNumbers[] =
 	{ "","Stereo","","","","5.1" };
 #endif
 
-const char * GetLanguage( int language )
+char * GetLanguage( int language )
 {
  unsigned int i;
  for ( i=0;i<sizeof( Languages ) / sizeof( Languages_t );i++ )
@@ -551,10 +550,9 @@ GtkWidget * create_PopUpMenu( void )
       for ( i=0;i < MAX_A_STREAMS;i++ )
        if ( ((demuxer_t *)guiIntfStruct.demuxer)->a_streams[i] )
         {
-         int aid = ((sh_audio_t *)((demuxer_t *)guiIntfStruct.demuxer)->a_streams[i])->aid;
          char tmp[32];
-         snprintf( tmp,32,MSGTR_MENU_Track,aid );
-         AddMenuItem( window1, (const char*)empty_xpm, SubMenu,tmp,( aid << 16 ) + evSetAudio );
+         snprintf( tmp,32,MSGTR_MENU_Track,i );
+         AddMenuItem( window1, (const char*)empty_xpm, SubMenu,tmp,( i << 16 ) + evSetAudio );
         }
      }
 
@@ -567,10 +565,9 @@ GtkWidget * create_PopUpMenu( void )
       for ( i=0;i < MAX_V_STREAMS;i++ )
        if ( ((demuxer_t *)guiIntfStruct.demuxer)->v_streams[i] )
         {
-         int vid = ((sh_video_t *)((demuxer_t *)guiIntfStruct.demuxer)->v_streams[i])->vid;
          char tmp[32];
-         snprintf( tmp,32,MSGTR_MENU_Track,vid );
-         AddMenuItem( window1, (const char*)empty_xpm, SubMenu,tmp,( vid << 16 ) + evSetVideo );
+         snprintf( tmp,32,MSGTR_MENU_Track,i );
+         AddMenuItem( window1, (const char*)empty_xpm, SubMenu,tmp,( i << 16 ) + evSetVideo );
         }
      }
    }

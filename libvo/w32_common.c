@@ -58,8 +58,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	    vo_dwidth = r.right;
 	    vo_dheight = r.bottom;
 	    break;
-	case WM_WINDOWPOSCHANGING:
-            return 0;
 	case WM_CLOSE:
 	    mplayer_put_key(KEY_CLOSE_WIN);
 	    break;
@@ -232,7 +230,6 @@ static int createRenderingContext(void) {
     PIXELFORMATDESCRIPTOR pfd;
     RECT r;
     int pf;
-  if (WinID < 0) {
     int style = (vo_border && !vo_fs) ?
                 (WS_OVERLAPPEDWINDOW | WS_SIZEBOX) : WS_POPUP;
 
@@ -274,7 +271,6 @@ static int createRenderingContext(void) {
     r.bottom = r.top + vo_dheight;
     AdjustWindowRect(&r, style, 0);
     SetWindowPos(vo_window, layer, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
-  }
 
     memset(&pfd, 0, sizeof pfd);
     pfd.nSize = sizeof pfd;
@@ -301,8 +297,8 @@ int vo_w32_config(uint32_t width, uint32_t height, uint32_t flags) {
     o_dwidth = width;
     o_dheight = height;
 
-    prev_width = vo_dwidth = width;
-    prev_height = vo_dheight = height;
+    prev_width = width;
+    prev_height = height;
     prev_x = vo_dx;
     prev_y = vo_dy;
 

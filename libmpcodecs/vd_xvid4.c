@@ -17,7 +17,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
  *****************************************************************************/
 
@@ -30,6 +30,8 @@
 
 #include "config.h"
 #include "mp_msg.h"
+
+#ifdef HAVE_XVID4
 
 #include "vd_internal.h"
 #include "m_option.h"
@@ -174,7 +176,7 @@ static int init(sh_video_t *sh)
 		return(0);
 	}
 
-	p = malloc(sizeof(priv_t));
+	p = (priv_t*)malloc(sizeof(priv_t));
 	p->cs = cs;
 	p->hdl = dec_p.handle;
 	p->vo_initialized = 0;
@@ -388,6 +390,8 @@ static vd_info_t info =
 };
 
 LIBVD_EXTERN(xvid)
+
+#endif  /* HAVE_XVID4 */
 
 /* Please do not change that tag comment.
  * arch-tag: b7d654a5-76ea-4768-9713-2c791567fe7d mplayer xvid decoder module */

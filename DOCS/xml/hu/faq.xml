@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- synced with r20304 -->
+<!-- synced with r17707 -->
 <chapter id="faq" xreflabel="FAQ">
 <title>Gyakran ismételt kérdések</title>
 
@@ -25,7 +25,7 @@ Hogyan fordíthatom le az <application>MPlayer</application>t egy új nyelvre?
 <answer><para>
 Olvasd el a <ulink url="../../tech/translations.txt">fordítás HOGYAN</ulink>-t,
 az elmagyaráz mindent. További segítséget kaphatsz az
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer-translations</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer-translations</ulink>
 levelezési listán.
 </para></answer>
 </qandaentry>
@@ -49,9 +49,9 @@ Hogyan lehetek én is <application>MPlayer</application> fejlesztő?
 Mindig örömmel várjuk a programozókat és a dokumentáció készítőket. Olvasd el a
 <ulink url="../../tech/">technikai dokumentációt</ulink>
 hogy egy kicsit megértsd a dolgokat. Majd fel kell iratkoznod az
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
 levelezési listára és elkezdeni kódolni. Ha a dokumentáció készítésében szeretnél segíteni,
-csatlakozz az <ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>
+csatlakozz az <ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>
 levelezési listához!
 </para></answer>
 </qandaentry>
@@ -147,50 +147,6 @@ a <filename class="directory">/usr/X11</filename> és a
 léteznek-e (ez Mandrake rendszereken lehet probléma).
 </para></answer>
 </qandaentry>
-
-
-<qandaentry>
-<question><para>
-A Mac OS 10.3 alatti fordítás számos szerkesztési hibát okoz</para></question>
-<answer><para>
-A szerkesztési hiba, amit tapasztalhatsz, valószínűleg így néz ki:
-<screen>
-ld: Undefined symbols:
-_LLCStyleInfoCheckForOpenTypeTables referenced from QuartzCore expected to be defined in ApplicationServices
-_LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be defined in ApplicationServices
-</screen>
-A probléma, hogy az Apple fejlesztői 10.4-et használnak a szoftvereik
-fordításához és a 10.3 felhasználók felé történő terjesztéshez a
-Software Update-n keresztül.
-A nem definiált szimbólumok jelen vannak a Mac OS 10.4-ben,
-de nincsenek ott a 10.3-ban.
-Az egyik megoldás a QuickTime 7.0.1-re történő downgrade lehet.
-De van egy jobb is.
-</para><para>
-Szerezz be a <ulink url="http://rapidshare.de/files/20281171/CompatFrameworks.tgz.html">framework-ök régebbi másolatát</ulink>.
-Ez egy tömörített fájl, ami tartalmazza a QuickTime
-7.0.1 Framework-öt és a 10.3.9 QuartzCore Framework-öt.
-</para><para>
-Csomagold ki a fájlokat valahova a System könyvtáradon kívülre.
-(vagyis ne telepítsd ezen framework-öket a
-<filename class="directory">/System/Library/Frameworks</filename>
-könyvtáradba! A régebbi másolat csak a szerkesztési hibák ellen kell!)
-<screen>
-gunzip &lt; CompatFrameworks.tgz | tar xvf -
-</screen>
-A config.mak fájlba írd be
-<systemitem>-F/eleresi/ut/ahova/kicsomagoltad</systemitem>
-az <systemitem>OPTFLAGS</systemitem> változóhoz.
-Ha <application>X-Code</application>-ot használsz, egyszerűen kiválaszthatod
-ezeket a framework-öket a rendszer sajátjai helyett.
-</para><para>
-A keletkező <application>MPlayer</application> bináris a rendszeredbe
-telepített framework-öt fogja használni dinamikus link-ek segítségével,
-melyek futási időben kerülnek feloldásra.
-(Ezt leellenőrizheted a <systemitem>otool -l</systemitem> használatával).
-</para></answer>
-</qandaentry>
-
 </qandadiv>
 
 <qandadiv id="faq-general">
@@ -201,8 +157,7 @@ melyek futási időben kerülnek feloldásra.
 Van <application>MPlayer</application>rel foglalkozó levelezési lista?
 </para></question>
 <answer><para>
-Igen. Lásd a weboldal
-<ulink url="http://www.mplayerhq.hu/design7/mailing_lists.html">levelezési lista részét</ulink>!
+Igen. Lásd a <link linkend="mailinglists">levelezési listák</link> részt!
 </para></answer>
 </qandaentry>
 
@@ -233,8 +188,9 @@ Ha elindítom a lejátszást, ezt az üzenetet kapom, de látszólag minden rendben va
 <screen>Linux RTC init: ioctl (rtc_pie_on): Permission denied</screen>
 </para></question>
 <answer><para>
-Speciálisan beállított kernel kell az új időzítő kód használatához. A részletekért
-lásd az <link linkend="rtc">RTC</link> részt a dokumentációban.
+Rendszergazdai (root) jogok kellenek vagy speciálisan beállított kernel az új
+időzítő kód használatához. A részletekért lásd az <link linkend="rtc">RTC</link>
+részt a dokumentációban.
 </para></answer>
 </qandaentry>
 
@@ -319,7 +275,7 @@ történő lejátszás értékeit.
 </para></question>
 <answer><para>
 Töltsd le a bináris codeceket a
-<ulink url="http://www.mplayerhq.hu/design7/dload.html">letöltési oldalunkról</ulink>
+<ulink url="http://www.mplayerhq.hu/MPlayer/releases/codecs/">codec oldalunkról</ulink>
 és telepítsd.
 </para></answer>
 </qandaentry>
@@ -455,7 +411,7 @@ Gondjaim vannak a feliratok megjelenítésével, segítsetek!!
 </para></question>
 <answer><para>
 Győződj meg róla, hogy helyesen telepítetted a betűtípusokat. Fuss át a lépésein újra
-a <link linkend="fonts-osd">OSD és felirat</link> részben a telepítési fejezetben.
+a <link linkend="mpsub-install">OSD és felirat</link> részben a telepítési fejezetben.
 Ha TrueType betűtípusokat használsz, ellenőrizd, hogy van
 <systemitem class="library">FreeType</systemitem> függvénykönyvtárad telepítve.
 Ellenőrizheted még a feliratodat egy szövegszerkesztőben vagy másik lejátszóval.
@@ -553,7 +509,7 @@ fájlokat.
 <answer><para>
 A notebookod energia menedzselő / energia takarékoskodó rendszerének (BIOS, nem kernel)
 hatása. Dugd be a külső áramkábelt <emphasis role="bold">mielőtt</emphasis> bekapcsolod
-a notebookodat. Megnézheted, hogy a <ulink url="http://www.kernel.org/pub/linux/utils/kernel/cpufreq/cpufreq.html">cpufreq</ulink>
+a notebookodat. Megnézheted, hogy a <ulink url="http://www.brodo.de/cpufreq/">cpufreq</ulink>
 (SpeedStep interfész Linuxra) segít-e neked.
 </para></answer>
 </qandaentry>
@@ -782,21 +738,6 @@ neked magadnak kell megcsinálnod, de vigyázz, nagy fába vágod a fejszédet.
 
 <qandaentry>
 <question><para>
-Nem tudok egyetlen újabb DVD-t sem megnézni a Sony Pictures/BMG-től.
-</para></question>
-<answer><para>
-Ez normális; átvertek, egy szándékosan elrontott lemezt adtak el neked.
-Az egyetlen módszer ezen DVD-k lejátszására a hibás blokkok kikerülése
-az mpdvdkit2 helyett a DVDnav használatával.
-Ezt úgy teheted meg, hogy az MPlayert DVDnav támogatással fordítod le, majd
-a parancssori dvd:// dvdnav://-ra cseréled.
-A DVDnav nagyon nagy mértékben kizárja az mpdvdkit2-et, győződj meg róla, hogy
-a <option>--disable-mpdvdkit</option> opciót megadtad a configure-nak.
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
 Mi van a feliratokkal? Meg tudja őket jeleníteni az <application>MPlayer</application>?
 </para></question>
 <answer><para>
@@ -1003,30 +944,6 @@ mencoder <replaceable>input.avi</replaceable> -ovc copy -oac copy -o <replaceabl
 
 <qandaentry>
 <question><para>
-Hogyan tudom lementeni és elkódolni a hibás kezdetű VOB fájlt?
-</para></question>
-<answer><para>
-A fő probléma az  sérült VOB fájl elkódolásával, hogy
-<footnote id='fn-corrupted-files-or-copy-protection'><para>
-Bizonyos mértékig a DVD-ken használt másolásvédelem egyes fajtái
-is tekinthetőek a tartalom sérülésének.
-</para></footnote>
-nagyon nehéz lesz tökéletes A/V szinkronú kódolást készíteni.
-Az egyik megkerülő módszer a hibás rész egyszerű kivágása és csak a hibátlan
-rész kódolása.
-Először meg kell találnod, hogy hol kezdődik a hibátlan rész:
-<screen>
-mplayer <replaceable>bemenet.vob</replaceable> -sb <replaceable>kihagyando_bajtok_szama</replaceable>
-</screen>
-Ezután elkészítheted az új fájlt, ami csak a hibátlan részt tartalmazza:
-<screen>
-dd if=<replaceable>bemenet.vob</replaceable> of=<replaceable>vagott_kimenet.vob</replaceable> skip=1 ibs=<replaceable>kihagyando_bajtok_szama</replaceable>
-</screen>
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
 Nem tudok DVD feliratot kódolni az AVI fájlba!
 </para></question>
 <answer><para>
@@ -1049,43 +966,6 @@ Használd a <option>-chapter</option> kapcsolót pontosan, például: <option>-chapt
 </para></question>
 <answer><para>
 Nem, a VFAT nem támogatja a 2GB+ fájlokat.
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
-Mit jelentenek a státusz sorban lévő számok a kódolási folyamat közben?
-</para></question>
-<answer><para>
-Példa:
-<screen>Pos: 264.5s   6612f ( 2%)  7.12fps Trem: 576min 2856mb  A-V:0.065 [2126:192]</screen>
-<variablelist>
-<varlistentry><term><systemitem>Pos: 264.5s</systemitem></term>
-<listitem><para>időbeli pozíció a kódolt folyamban</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>6612f</systemitem></term>
-<listitem><para>az elkódolt videó kockák száma</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>( 2%)</systemitem></term>
-<listitem><para>a bemeneti folyam már elkódolt része</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>7.12fps</systemitem></term>
-<listitem><para>kódolási sebesség</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>Trem: 576min</systemitem></term>
-<listitem><para>becsült hátralévő kódolási idő</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>2856mb</systemitem></term>
-<listitem><para>a kódolt fájl becsült végső fájlmérete</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>A-V:0.065</systemitem></term>
-<listitem><para>aktuális késleltetés az audió és a videó folyam között</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>[2126:192]</systemitem></term>
-<listitem>
-<para>átlagos videó bitráta (Mb/s-ben) és átlagos audió bitráta (Mb/s-ben)</para></listitem>
-</varlistentry>
-</variablelist>
 </para></answer>
 </qandaentry>
 

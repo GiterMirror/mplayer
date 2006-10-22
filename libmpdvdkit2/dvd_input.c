@@ -3,7 +3,7 @@
  *                    Håkan Hjort <d95hjort@dtek.chalmers.se>
  *
  * Modified for use with MPlayer, changes contained in libdvdread_changes.diff.
- * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
+ * detailed CVS changelog at http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,7 +41,7 @@ char *      (*dvdinput_error) (dvd_input_t);
 
 #ifdef HAVE_DVDCSS_DVDCSS_H
 /* linking to libdvdcss */
-#include "dvdcss/dvdcss.h"
+#include "dvdcss.h"
 #define DVDcss_open(a) dvdcss_open((char*)(a))
 #define DVDcss_close   dvdcss_close
 #define DVDcss_seek    dvdcss_seek

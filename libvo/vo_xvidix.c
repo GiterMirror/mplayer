@@ -367,13 +367,13 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 
                 XStoreName(mDisplay, vo_window, title);
                 XMapWindow(mDisplay, vo_window);
-                vo_x11_nofs_sizepos(vo_dx, vo_dy, vo_dwidth, vo_dheight);
 
                 if (flags & VOFLAG_FULLSCREEN)
                     vo_x11_fullscreen();
 
-            } else
-                vo_x11_nofs_sizepos(vo_dx, vo_dy, vo_dwidth, vo_dheight);
+            } else if (!(flags & VOFLAG_FULLSCREEN))
+                XMoveResizeWindow(mDisplay, vo_window, vo_dx, vo_dy,
+                                  vo_dwidth, vo_dheight);
         }
 
         if (vo_gc != None)
@@ -542,7 +542,7 @@ static int control(uint32_t request, void *data, ...)
 
                 va_end(ap);
 
-                return vidix_control(request, data, value);
+                return vidix_control(request, data, (int *) value);
             }
         case VOCTRL_GET_EQUALIZER:
             {

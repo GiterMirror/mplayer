@@ -17,7 +17,7 @@
 #include "../libvo/x11_common.h"
 #include "../libvo/fastmemcpy.h"
 
-#include "../stream/stream.h"
+#include "../libmpdemux/stream.h"
 #include "../mixer.h"
 #include "../libvo/sub.h"
 #include "../mplayer.h"
@@ -53,6 +53,9 @@ int             i,pot = 0;
 
 void mplMainDraw( void )
 {
+ wItem    * item;
+ txSample * image = NULL;
+ int        i, type;
 
  if ( appMPlayer.mainWindow.State == wsWindowClosed ) exit_player( MSGTR_Exit_quit );
  
@@ -73,12 +76,13 @@ void mplMainDraw( void )
 // XFlush( wsDisplay );
 }
 
-extern void exit_player(const char* how);
+extern void exit_player(char* how);
 extern int vcd_track;
 static unsigned last_redraw_time = 0;
 
 void mplEventHandling( int msg,float param )
 {
+ int j;
  int iparam = (int)param;
 
  switch( msg )

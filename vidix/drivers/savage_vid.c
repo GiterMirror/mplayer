@@ -323,7 +323,7 @@ static struct savage_cards savage_card_ids[] = {
 	{ PCI_CHIP_PROSAVAGE_DDRK	, 			S3_PROSAVAGE },
 };
 
-static void SavageSetColorOld(void)
+void SavageSetColorOld(void)
 {
 
 
@@ -360,7 +360,7 @@ static void SavageSetColorOld(void)
   }
 }
 
-static void SavageSetColorKeyOld(void)
+void SavageSetColorKeyOld(void)
 {
     int red, green, blue;
 
@@ -528,7 +528,7 @@ SavageDisplayVideoOld(void)
 
 }
 
-static void SavageInitStreamsOld(void)
+void SavageInitStreamsOld(void)
 {
     /*unsigned long jDelta;*/
     unsigned long format = 0;
@@ -726,7 +726,7 @@ static void savage_getscreenproperties(struct savage_info *info){
 }
 
 
-static void SavageStreamsOff(void)
+void SavageStreamsOff(void)
 {
     unsigned char jStreamsControl;
     unsigned short vgaCRIndex = 0x3d0 + 4;
@@ -873,7 +873,7 @@ vixInit (void)
 	fprintf(stderr, "vixInit enter \n");
 //	//getc(stdin);
 	
-  info = calloc(1,sizeof(savage_info));
+  info = (savage_info*)calloc(1,sizeof(savage_info));
   
 
   /* need this if we want direct outb and inb access? */

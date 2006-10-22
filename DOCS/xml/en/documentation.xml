@@ -30,7 +30,7 @@
 
   <para>You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software Foundation,
-  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</para>
+  Inc., 59 Temple Place, Suite 330, Boston, MA, 02111-1307, USA.</para>
 </legalnotice>
 -->
 </bookinfo>
@@ -46,12 +46,9 @@ you have any other questions, return to the <link linkend="toc">Table of
 Contents</link> and search for the topic, read the <xref linkend="faq"/>,
 or try grepping through the files. Most questions should be answered somewhere
 here and the rest has probably already been asked on our
-<ulink url="http://www.mplayerhq.hu/design7/info.html#mailing_lists">mailing lists</ulink>.
-<!-- FIXME: This refers to nonexistent links
-Check the
-<ulink url="http://lists.mplayerhq.hu/cgi-bin/s-arch.cgi">archives</ulink>, there
+<link linkend="mailinglists">mailing lists</link>.  Check the
+<ulink url="http://www.mplayerhq.hu/cgi-bin/s-arch.cgi">archives</ulink>, there
 is a lot of valuable information to be found there.
--->
 </para>
 </preface>
 
@@ -174,6 +171,7 @@ audio.
 can be distributed under the terms of the GNU General Public License Version 2.
 </para>
 
+&history.xml;
 </chapter>
 
 &install.xml;
@@ -182,17 +180,17 @@ can be distributed under the terms of the GNU General Public License Version 2.
 &cd-dvd.xml;
 &faq.xml;
 
-&containers.xml;
+&formats.xml;
 &codecs.xml;
 &video.xml;
 &audio.xml;
 &tvinput.xml;
-&radio.xml;
 
 &ports.xml;
 &mencoder.xml;
 &encoding-guide.xml;
+&mail-lists.xml;
 &bugreports.xml;
 &bugs.xml;
 &skin.xml;
-&history.xml;
+&users-vs-dev.xml;

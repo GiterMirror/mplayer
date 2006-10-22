@@ -10,7 +10,7 @@ from several external sources:
 Name:       FFmpeg
 Version:    CVS snapshot
 Homepage:   http://www.ffmpeg.org
-Directory:  libavcodec, libavformat, libavutil, libpostproc
+Directory:  libavcodec, libavformat
 License:    GNU Lesser General Public License, some parts GNU General Public
             License, GNU General Public License when combined
 
@@ -26,14 +26,8 @@ Homepage:   http://kbs.cs.tu-berlin.de/~jutta/toast.html
 Directory:  libmpcodecs/native/
 License:    permissive, see libmpcodecs/native/xa_gsm.c
 
-Name:       miniLZO
-Version:    1.07
-Homepage:   http://www.oberhumer.com/opensource/lzo/#minilzo
-Directory:  libmpcodecs/native/
-License:    GNU General Public License
-
 Name:       liba52
-Version:    0.7.4 + patches
+Version:    0.7.1b + patches
 Homepage:   http://liba52.sourceforge.net/
 Directory:  liba52
 License:    GNU General Public License
@@ -68,6 +62,12 @@ Homepage:   http://xiph.org/
 Directory:  tremor
 License:    BSD-like, see tremor/COPYING
 
+Name:       LRMI - Linux Real Mode Interface
+Version:    unknown, taken from svgalib + patches
+Homepage:   http://www.svgalib.org/
+Directory:  osdep/lrmi.[ch]
+License:    permissive, see file header
+
 Name:       avifile DLL loader
 Version:    0.47 + patches + CVS updates
 Homepage:   http://avifile.sourceforge.net/
@@ -77,19 +77,13 @@ License:    GNU General Public License
 Name:       dvbstream
 Version:    0.4.3-pre3 (cvs checkout)
 Homepage:   http://www.linuxstb.org/dvbstream/
-Directory:  stream
-License:    GNU General Public License
-
-Name:       librtsp
-Version:    xine CVS 2003/04/10 + patches
-Homepage:   http://www.xinehq.de
-Directory:  stream/librtsp/
+Directory:  libmpdemux
 License:    GNU General Public License
 
 Name:       realrtsp
 Version:    xine CVS 2003/04/17 + patches
 Homepage:   http://www.xinehq.de
-Directory:  stream/realrtsp/
+Directory:  libmpdemux/realrtsp/
 License:    GNU General Public License
 
 Name:       id3edit
@@ -115,9 +109,3 @@ Version:    development files as of september 2004
 Homepage:   http://ubiqx.org/libcifs/
 Directory:  libvo/md5sum.[ch]
 License:    GNU Lesser General Public License
-
-Name:       FreeSDP
-Version:    0.4.1
-Homepage:   https://savannah.nongnu.org/projects/freesdp/
-Directory:  stream/freesdp/
-License:    GNU General Public License

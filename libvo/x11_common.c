@@ -63,7 +63,6 @@
 #define WIN_LAYER_ONTOP                  6
 #define WIN_LAYER_ABOVE_DOCK             10
 
-extern int enable_mouse_movements;
 int fs_layer = WIN_LAYER_ABOVE_DOCK;
 static int orig_layer = 0;
 static int old_gravity = NorthWestGravity;
@@ -560,7 +559,7 @@ void vo_uninit(void)
 extern void mplayer_put_key(int code);
 
 #ifdef XF86XK_AudioPause
-static void vo_x11_putkey_ext(int keysym)
+void vo_x11_putkey_ext(int keysym)
 {
     switch (keysym)
     {
@@ -1085,13 +1084,6 @@ int vo_x11_check_events(Display * mydisplay)
                 }
                 break;
             case MotionNotify:
-                if(enable_mouse_movements)
-                {
-                    char cmd_str[40];
-                    sprintf(cmd_str,"set_mouse_pos %i %i",Event.xmotion.x, Event.xmotion.y);
-                    mp_input_queue_cmd(mp_input_parse_cmd(cmd_str));
-                }
-
                 if (vo_mouse_autohide)
                 {
                     vo_showcursor(mydisplay, vo_window);
@@ -1520,8 +1512,6 @@ void vo_x11_fullscreen(void)
         vo_x11_setlayer(mDisplay, vo_window, vo_ontop);
 
     XMapRaised(mDisplay, vo_window);
-    if ( ! (vo_fs_type & vo_wm_FULLSCREEN) ) // some WMs change window pos on map
-        XMoveResizeWindow(mDisplay, vo_window, x, y, w, h);
     XRaiseWindow(mDisplay, vo_window);
     XFlush(mDisplay);
 }

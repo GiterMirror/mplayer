@@ -3,6 +3,7 @@
 
 #include "config.h"
 
+#if defined(USE_QTX_CODECS) || defined(MACOSX)
 #include "wine/windef.h"
 
 #include "mp_msg.h"
@@ -29,7 +30,11 @@ LIBVD_EXTERN(qtvideo)
 #define dump_ImageDescription(x)
 #else
 #include "qtx/qtxsdk/components.h"
+#endif
+
+#if defined(USE_QTX_CODECS) && !defined(MACOSX)
 //#include "wine/windef.h"
+
 HMODULE   WINAPI LoadLibraryA(LPCSTR);
 FARPROC   WINAPI GetProcAddress(HMODULE,LPCSTR);
 int       WINAPI FreeLibrary(HMODULE);
@@ -50,7 +55,7 @@ static ImageDescriptionHandle framedescHandle;
 static HINSTANCE qtime_qts; // handle to the preloaded quicktime.qts
 static HMODULE handler;
 
-#if !defined(MACOSX)
+#if defined(USE_QTX_CODECS) && !defined(MACOSX)
 static    Component (*FindNextComponent)(Component prev,ComponentDescription* desc);
 static    OSErr (*GetComponentInfo)(Component prev,ComponentDescription* desc,Handle h1,Handle h2,Handle h3);
 static    long (*CountComponents)(ComponentDescription* desc);
@@ -85,7 +90,7 @@ static    OSErr           (*QTNewGWorldFromPtr)(GWorldPtr *gw,
                                void *baseAddr,
                                long rowBytes); 
 static    OSErr           (*NewHandleClear)(Size byteCount);                          
-#endif /* #if !defined(MACOSX) */
+#endif
 
 // to set/get/query special features/parameters
 static int control(sh_video_t *sh,int cmd,void* arg,...){
@@ -150,7 +155,7 @@ static int init(sh_video_t *sh){
     mp_msg(MSGT_DECVIDEO,MSGL_DBG2,"InitializeQTML returned %li\n",result);
 //    result=EnterMovies();
 //    printf("EnterMovies->%d\n",result);
-#endif /* MACOSX */
+#endif /* !MACOSX */
 
 #if 0
     memset(&desc,0,sizeof(desc));
@@ -433,3 +438,4 @@ if((int)sh->context==0x73797639){	// Sorenson 16-bit YUV -> std YVU9
 
     return mpi;
 }
+#endif

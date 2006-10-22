@@ -34,6 +34,8 @@ extern vd_functions_t mpcodecs_vd_dshow;
 extern vd_functions_t mpcodecs_vd_dmo;
 extern vd_functions_t mpcodecs_vd_vfw;
 extern vd_functions_t mpcodecs_vd_vfwex;
+extern vd_functions_t mpcodecs_vd_odivx;
+extern vd_functions_t mpcodecs_vd_divx4;
 extern vd_functions_t mpcodecs_vd_raw;
 extern vd_functions_t mpcodecs_vd_hmblck;
 extern vd_functions_t mpcodecs_vd_xanim;
@@ -60,10 +62,18 @@ vd_functions_t* mpcodecs_vd_drivers[] = {
 	&mpcodecs_vd_theora,
 #endif
 #ifdef USE_WIN32DLL
+#ifdef USE_DIRECTSHOW
         &mpcodecs_vd_dshow,
         &mpcodecs_vd_dmo,
+#endif
         &mpcodecs_vd_vfw,
         &mpcodecs_vd_vfwex,
+#endif
+#ifdef USE_DIVX
+        &mpcodecs_vd_odivx,
+#ifdef NEW_DECORE
+        &mpcodecs_vd_divx4,
+#endif
 #endif
         &mpcodecs_vd_lzo,
         &mpcodecs_vd_raw,
@@ -280,7 +290,6 @@ csp_again:
     if(sh->aspect>0.01){
       int w;
       mp_msg(MSGT_CPLAYER,MSGL_INFO,MSGTR_MovieAspectIsSet,sh->aspect);
-      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_ASPECT=%1.4f\n", sh->aspect);
       w=(int)((float)screen_size_y*sh->aspect); w+=w%2; // round
       // we don't like horizontal downscale || user forced width:
       if(w<screen_size_x || screen_size_xy>8){

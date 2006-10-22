@@ -1,4 +1,5 @@
 #include "config.h"
+#ifdef HAVE_PNG
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,15 +23,12 @@
 #include "vf_scale.h"
 
 #include "libvo/fastmemcpy.h"
-#include "libswscale/swscale.h"
+#include "postproc/swscale.h"
+#include "postproc/rgb2rgb.h"
 
 struct vf_priv_s {
     int frameno;
     char fname[102];
-    /// shot stores current screenshot mode:
-    /// 0: don't take screenshots
-    /// 1: take single screenshot, reset to 0 afterwards
-    /// 2: take screenshots of each frame
     int shot, store_slices;
     int dw, dh, stride;
     uint8_t *buffer;
@@ -91,7 +89,7 @@ static void write_png(char *fname, unsigned char *buffer, int width, int height,
         
     png_set_bgr(png_ptr);
 
-    row_pointers = malloc(height*sizeof(png_byte*));
+    row_pointers = (png_byte**)malloc(height*sizeof(png_byte*));
     for (k = 0; k < height; k++) {
 	unsigned char* s=buffer + stride*k;
 	row_pointers[k] = s;
@@ -212,8 +210,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
     }
 
     if(vf->priv->shot) {
-	if (vf->priv->shot==1)
-	    vf->priv->shot=0;
+	vf->priv->shot=0;
 	gen_fname(vf->priv);
 	if (vf->priv->fname[0]) {
 	    if (!vf->priv->store_slices)
@@ -228,20 +225,8 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 
 int control (vf_instance_t *vf, int request, void *data)
 {
-    /** data contains an integer argument
-     * 0: take screenshot with the next frame
-     * 1: take screenshots with each frame until the same command is given once again
-     **/
     if(request==VFCTRL_SCREENSHOT) {
-	if (data && *(int*)data) { // repeated screenshot mode
-	    if (vf->priv->shot==2)
-		vf->priv->shot=0;
-	    else
-		vf->priv->shot=2;
-	} else { // single screenshot
-	    if (!vf->priv->shot)
-		vf->priv->shot=1;
-	}
+	vf->priv->shot=1;
         return CONTROL_TRUE;
     }
     return vf_next_control (vf, request, data);
@@ -315,3 +300,5 @@ vf_info_t vf_info_screenshot = {
 };
 
 //===========================================================================//
+
+#endif /* HAVE_PNG */

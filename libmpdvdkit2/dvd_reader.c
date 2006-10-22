@@ -4,7 +4,7 @@
  *                                Björn Englund <d4bjorn@dtek.chalmers.se>
  *
  * Modified for use with MPlayer, changes contained in libdvdread_changes.diff.
- * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
+ * detailed CVS changelog at http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  *
  * This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@
 #include <mntent.h>
 #endif
 
-#if defined(__MINGW32__) && (__MINGW32_MAJOR_VERSION <= 3) && (__MINGW32_MINOR_VERSION < 10)
+#ifdef __MINGW32__
 #include <sys/timeb.h>
 static void gettimeofday(struct timeval* t,void* timezone){
     struct timeb timebuffer;
@@ -213,7 +213,7 @@ static int initAllCSSKeys( dvd_reader_t *dvd )
 #ifndef HAVE_MPLAYER
  #include "get_path.c"
 #else
- extern char * get_path( const char * filename );
+ extern char * get_path( char * filename );
 #endif
 
 //extern char * dvdcss_cache_dir;

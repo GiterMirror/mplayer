@@ -19,7 +19,7 @@
 #include "help_mp.h"
 
 // Convert from string to format
-int af_str2fmt(const char* str)
+int af_str2fmt(char* str)
 {
   int format=0;
   // Scan for endianess
@@ -178,18 +178,18 @@ static struct {
     { NULL, 0 }
 };
 
-const char *af_fmt2str_short(int format)
+char *af_fmt2str_short(int format)
 {
     int i;
 
     for (i = 0; af_fmtstr_table[i].name; i++)
 	if (af_fmtstr_table[i].format == format)
-	    return af_fmtstr_table[i].name;
+	    return (char*)(af_fmtstr_table[i].name);
 
     return "??";
 }
 
-int af_str2fmt_short(const char* str)
+int af_str2fmt_short(char* str)
 {
     int i;
 

@@ -12,8 +12,8 @@ SRCS	= DMO_AudioDecoder.c \
 
 OBJS = $(SRCS:.c=.o)
 
-INCLUDE = -I. -I../dshow -I..
-CFLAGS  = $(INCLUDE) $(OPTFLAGS) -DNOAVIFILE_HEADERS
+INCLUDE = -I. -I../dshow -I.. $(EXTRA_INC)
+CFLAGS  = $(OPTFLAGS) $(INCLUDE) -DNOAVIFILE_HEADERS
 
 .SUFFIXES: .c .o
 
@@ -26,7 +26,7 @@ $(LIBNAME):	$(OBJS)
 	$(AR) r $(LIBNAME) $(OBJS)
 
 test:   test.c $(LIBNAME)
-	$(CC) test.c $(CFLAGS) -o test ./libDMO_Filter.a ../libloader.a -lstdc++
+	$(CC) test.c $(CFLAGS) -o test ./libDMO_Filter.a ../libloader.a $(ARCH_LIBS) -lstdc++
 
 all:	$(LIBNAME)
 

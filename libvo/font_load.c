@@ -49,7 +49,7 @@ err_out:
 
 extern int sub_unicode;
 
-font_desc_t* read_font_desc(const char* fname,float factor,int verbose){
+font_desc_t* read_font_desc(char* fname,float factor,int verbose){
 unsigned char sor[1024];
 unsigned char sor2[1024];
 font_desc_t *desc;
@@ -104,7 +104,7 @@ while(fgets(sor,1020,f)){
   
   if (first) {
     if (!sor[0] || sor[1] == 1 || (sor[0] == 'M' && sor[1] == 'Z') || (sor[0] == 0x1f && sor[1] == 0x8b) || (sor[0] == 1 && sor[1] == 0x66)) {
-      mp_msg(MSGT_OSD, MSGL_ERR, "%s doesn't look like a bitmap font description, ignoring.\n", fname);
+      mp_msg(MSGT_OSD, MSGL_ERR, "%s doesn't look like a font description, ignoring.\n", fname);
       goto fail_out;
     }
     first = 0;
@@ -160,26 +160,19 @@ while(fgets(sor,1020,f)){
       }
   } else    
 
-#ifdef SYS_AMIGAOS4
-#define FONT_PATH_SEP ""
-#else
-//! path seperator for font paths, may not be more than one character
-#define FONT_PATH_SEP "/"
-#endif
-
   if(strcmp(section,"[files]")==0){
-      char *default_dir=MPLAYER_DATADIR FONT_PATH_SEP "font";
+      char *default_dir=MPLAYER_DATADIR "/font";
       if(pdb==2 && strcmp(p[0],"alpha")==0){
     	  char *cp;
 	  if (!(cp=malloc(strlen(desc->fpath)+strlen(p[1])+2))) goto fail_out;
 
-	  snprintf(cp,strlen(desc->fpath)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
+	  snprintf(cp,strlen(desc->fpath)+strlen(p[1])+2,"%s/%s",
 		desc->fpath,p[1]);
           if(!((desc->pic_a[fontdb]=load_raw(cp,verbose)))){
 		free(cp);
 		if (!(cp=malloc(strlen(default_dir)+strlen(p[1])+2))) 
 		   goto fail_out;
-		snprintf(cp,strlen(default_dir)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
+		snprintf(cp,strlen(default_dir)+strlen(p[1])+2,"%s/%s",
 			 default_dir,p[1]);
 		if (!((desc->pic_a[fontdb]=load_raw(cp,verbose)))){
 		   mp_msg(MSGT_OSD, MSGL_ERR, "Can't load font bitmap: %s\n",p[1]);
@@ -194,13 +187,13 @@ while(fgets(sor,1020,f)){
     	  char *cp;
 	  if (!(cp=malloc(strlen(desc->fpath)+strlen(p[1])+2))) goto fail_out;
 
-	  snprintf(cp,strlen(desc->fpath)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
+	  snprintf(cp,strlen(desc->fpath)+strlen(p[1])+2,"%s/%s",
 		desc->fpath,p[1]);
           if(!((desc->pic_b[fontdb]=load_raw(cp,verbose)))){
 		free(cp);
 		if (!(cp=malloc(strlen(default_dir)+strlen(p[1])+2))) 
 		   goto fail_out;
-		snprintf(cp,strlen(default_dir)+strlen(p[1])+2,"%s" FONT_PATH_SEP "%s",
+		snprintf(cp,strlen(default_dir)+strlen(p[1])+2,"%s/%s",
 			 default_dir,p[1]);
 		if (!((desc->pic_b[fontdb]=load_raw(cp,verbose)))){
 		   mp_msg(MSGT_OSD, MSGL_ERR, "Can't load font bitmap: %s\n",p[1]);
@@ -322,7 +315,7 @@ for(i=0;i<65536;i++)
 desc->font[' ']=-1;
 desc->width[' ']=desc->spacewidth;
 
-mp_msg(MSGT_OSD, MSGL_V, "Bitmap font %s loaded successfully! (%d chars)\n",fname,chardb);
+mp_msg(MSGT_OSD, MSGL_V, "Font %s loaded successfully! (%d chars)\n",fname,chardb);
 
 return desc;
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-2"?>
-<!-- synced with r20054 -->
+<!-- synced with r18650 -->
 <chapter id="video">
 <title>Videó kimeneti eszközök</title>
 
@@ -215,7 +215,8 @@ vagy udvariasan kérj az MPlayer-users levelezési listán egy MMX/3DNow! támogatás
 <title>nVidia kártyák</title>
 
 <para>
-Az nVidia nem mindig a legjobb választás Linux alatt... Az XFree86
+Az nVidia soha nem volt egy jó választás Linux alatt (az nVidia szerint ez
+<link linkend="nvidia-opinions">nem igaz</link>)... Az XFree86
 nyílt forráskódú vezérlője támogatja a legtöbb kártyát, de a legtöbb esetben a
 bináris, zárt forrású nVidia vezérlőt kell használnod, ami elérhető
 az <ulink url="http://www.nvidia.com/object/linux.html">nVidia weboldalán</ulink>.
@@ -638,6 +639,64 @@ Az SDL videó kimenet támogatja a feliratok megjelenítését a film alatt, a
 (ha van) fekete soron.
 </para>
 
+<variablelist>
+<title>Számos parancssori kapcsoló van az SDL-hez:</title>
+<varlistentry>
+  <term><option>-vo sdl:driver=<replaceable>név</replaceable></option></term>
+  <listitem><simpara>
+    előírja a használni kívánt SDL videó vezérlőt (pl. <literal>aalib</literal>,
+    <literal>dga</literal>, <literal>x11</literal>)
+  </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-ao sdl:<replaceable>name</replaceable></option></term>
+  <listitem><simpara>
+    előírja a használni kívánt SDL audió vezérlőt (pl. <literal>dsp</literal>,
+    <literal>esd</literal>, <literal>artsc</literal>)
+  </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-noxv</option></term>
+  <listitem><simpara>
+    letiltja a XVideo hardveres gyorsítását
+  </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-forcexv</option></term>
+  <listitem><simpara>
+    megpróbálja kikényszeríteni az XVideo gyorsítást
+  </simpara></listitem>
+</varlistentry>
+</variablelist>
+
+<table>
+<title>Csak SDL alatt használható billentyűk</title>
+<tgroup cols="2">
+<thead>
+<row><entry>Gomb</entry><entry>Tevékenység</entry></row>
+</thead>
+<tbody>
+<row><entry><keycap>c</keycap></entry><entry>
+    váltás az elérhető teljes képernyős módok között
+    </entry></row>
+<row><entry><keycap>n</keycap></entry><entry>
+    váltás normál módra
+    </entry></row>
+</tbody>
+</tgroup>
+</table>
+
+<itemizedlist>
+<title>Ismert hibák:</title>
+<listitem><simpara>
+  Az sdl:driver=aalib konzol vezérlő alatt leütött billentyűk a végtelenségig
+  ismétlődnek. (Használd a <option>-vo aa</option>-t!) Ez egy SDL hiba, nem
+  tudunk segíteni rajta (tesztelve SDL 1.2.1-el).
+  </simpara></listitem>
+<listitem><simpara>
+  NE HASZNÁLD AZ SDL-T GUI-VAL! Nem úgy működik, ahogy kellene neki.
+  </simpara></listitem>
+</itemizedlist>
 </sect2>
 
 
@@ -819,8 +878,8 @@ framebufferrel és ne is kérd, hogy működjön, mivel ez nem az
 
 <para>
 Ez a rész a Matrox G200/G400/G450/G550 BES (Back-End Scaler) támogatásról
-szól, az <systemitem>mga_vid</systemitem> kernel vezérlőről.
-Van benne hardveres VSYNC támogatás tripla buffereléssel. Működik mind
+szól, az mga_vid kernel vezérlőről. Jelenleg A'rpi fejleszti, van
+benne hardveres VSYNC támogatás tripla buffereléssel. Működik mind
 framebufferes konzolon, mind X alatt.
 </para>
 
@@ -1448,6 +1507,13 @@ nélküli használata, és így az automatikus detektálás engedélyezése.
 </para>
 
 <para>
+A VIDIX egy új technológia és eléggé elképzelhető, hogy a te rendszereden
+nem fog működni. Ebben az esetben az egyetlen megoldás, ha portolod
+(leginkább a libdha-t). De van remény, hogy működni fog azokon a rendszereken,
+amiken az X11 megy.
+</para>
+
+<para>
 Mivel a VIDIX-nek direkt hardver elérés kell, futtathatod root-ként vagy
 beállíthatod a SUID bit-et az <application>MPlayer</application> binárisán
 (<emphasis role="bold">Figyelem: Ez biztonsági kockázatot jelent!</emphasis>).
@@ -1537,15 +1603,42 @@ tesztelte le, így örömmel fogadjuk a jelentéseket.
 
 <sect3 id="vidix-nvidia">
 <title>nVidia kártya</title>
+<para>
+Van egy eléggé új nVidia vezérlő, tudvalevőleg működik a Riva
+128, TNT és GeForce2 chipset-ekkel, de a többi esetében is jelezték, hogy megy.
+</para>
+
+<itemizedlist spacing="compact">
+<title>KORLÁTOZÁSOK</title>
+<listitem><para>
+  Ajánlatos a bináris nVidia vezérlők használata az X-szel, mielőtt ezen VIDIX
+  vezérlőt használnád, mert néhány regiszter, melyek inicializálása szükséges,
+  még nem lettek teljesen felderítve, így valószínűleg sikertelen lesz a Nyílt
+  Forráskódú XFree86 <filename>nv.o</filename> vezérlőjével.
+  </para></listitem>
+<listitem><para>
+  Jelenleg csak az UYVY színterű kimenetre képes codec-ek működnek együtt ezzel
+  ezzel a vezérlővel. Sajnos ez kizár minden egyes dekódolót a
+  <systemitem class="library">libavcodec</systemitem> családból. Emiatt a
+  következő használható, népszerű codec-ek maradnak:
+  <systemitem>cvid, divxds, xvid, divx4, wmv7, wmv8</systemitem> és pár
+  egyéb. Kérjük vedd figyelembe, hogy ez csak ideiglenes kényelmetlenség.
+  A használati szintaxis a következő:
+  <screen>mplayer -vf format=uyvy -vc divxds <replaceable>divx3file.avi</replaceable></screen>
+  </para></listitem>
+</itemizedlist>
 
 <para>
   Egy egyedülálló tulajdonsága az nvidia_vid vezérlőnek a
   <emphasis role="bold">sima, egyszerű, csak szöveges konzolon</emphasis> történő
   videó megjelenítés - framebuffer vagy X varázslag és egyebek nélkül. Ehhez a
   <option>cvidix</option> videó kimenetet kell használni, amint az itt látható:
-  <screen>mplayer -vo cvidix <replaceable>pelda.avi</replaceable></screen>
+  <screen>mplayer -vf format=uyvy -vc divxds -vo cvidix <replaceable>example.avi</replaceable></screen>
 </para>
 
+<para>
+Várjuk a visszajelzéseket!
+</para>
 </sect3>
 
 <sect3 id="vidix-sis">
@@ -1782,16 +1875,6 @@ for a 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
   Egyéb lehetőségek: televideo pid, második audió sáv, stb.
 </para>
 
-<para>
-  Ha az <application>MPlayer</application> rendszeren panaszkodik
-  <screen>"Túl sok videó/audió csomag a bufferben"</screen>
-  <screen>"Too many video/audio packets in the buffer")</screen>
-  üzenettel vagy az audió és videó közötti szinkronizáció
-  növekvő eltérését tapasztalod, próbáld meg használni a libavformat-ban
-  lévő MPEG-TS demuxer-t a
-  <option>-demuxer lavf -lavfdopts probesize=128</option>
-  opció parancssorhoz történő hozzáadásával.
-</para>
 
 <para>
   A csatornák beállításainak kilistázásához futtast ezt:
@@ -1820,8 +1903,8 @@ for a 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
 
 <para>
   A csatornaváltáshoz nyomd meg a <keycap>h</keycap> (következő) vagy a
-  <keycap>k</keycap> (előző) gombot vagy használd az
-  <link linkend="osdmenu">OSD menü</link>t.
+  <keycap>k</keycap> (előző) gombot vagy használd az OSD menüt (működő
+  <link linkend="subosd">OSD alrendszer</link> kell hozzá).
 </para>
 
 <para>
@@ -1861,7 +1944,7 @@ for a 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
 <para>
 Ha kérdésed van vagy további bejelentésekről szeretnél tudomást szerezni és
 részt venni a beszélgetéseinkben, csatlakozz az
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dvb">MPlayer-DVB</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dvb">MPlayer-DVB</ulink>
 levelezési listához. Kérjük vedd figyelembe, hogy a lista nyelve az angol.
 </para>
 </formalpara>
@@ -2377,6 +2460,13 @@ csak egyszer, a POST folyamat során inicializálja magát.
 </para>
 </sect2>
 
+
+<sect2 id="tvout-voodoo">
+<title>Voodoo 3</title>
+<para>
+Nézd meg <ulink url="http://www.iki.fi/too/tvout-voodoo3-3000-xfree">ezt az URL-t</ulink>.
+</para>
+</sect2>
 
 <sect2 id="tvout-nvidia">
 <title>nVidia</title>

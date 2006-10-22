@@ -24,7 +24,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
 
@@ -1112,6 +1112,7 @@ static int demux_ty_fill_buffer( demuxer_t *demux, demux_stream_t *dsds )
 		{
 			unsigned char b1;
 			unsigned char b2;
+			unsigned char buffer[ 16 ];
 
 			b1 = ( ( ( recPtr[ 0 ] & 0x0f ) << 4 ) | 
 				( ( recPtr[ 1 ] & 0xf0 ) >> 4 ) );
@@ -1144,6 +1145,7 @@ static int demux_ty_fill_buffer( demuxer_t *demux, demux_stream_t *dsds )
 		{
 			unsigned char b1;
 			unsigned char b2;
+			unsigned char buffer[ 16 ];
 
 			b1 = ( ( ( recPtr[ 0 ] & 0x0f ) << 4 ) | 
 				( ( recPtr[ 1 ] & 0xf0 ) >> 4 ) );
@@ -1211,11 +1213,11 @@ static int demux_ty_fill_buffer( demuxer_t *demux, demux_stream_t *dsds )
      recPtr += 16;
    }
 
-   if ( errorHeader > 0 || invalidType > 0 )
+   if ( errorHeader > 0 )
    {
       mp_msg( MSGT_DEMUX, MSGL_DBG3, 
-         "ty:Error Check - Records %d, Parsed %d, Errors %d + %d\n",
-         numberRecs, recordsDecoded, errorHeader, invalidType );
+         "ty:Error Check - Records %d, Parsed %d, Errors %d\n",
+         numberRecs, recordsDecoded, errorHeader );
 
       // Invalid MPEG ES Size Check
       if ( errorHeader > ( numberRecs / 2 ) )

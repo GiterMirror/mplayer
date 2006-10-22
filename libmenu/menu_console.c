@@ -15,8 +15,8 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "libmpcodecs/img_format.h"
-#include "libmpcodecs/mp_image.h"
+#include "img_format.h"
+#include "mp_image.h"
 
 #include "m_struct.h"
 #include "m_option.h"
@@ -467,7 +467,7 @@ static int openMenu(menu_t* menu, char* args) {
   mpriv->lines = calloc(mpriv->buf_lines,sizeof(char*));
   mpriv->prompt = mpriv->mp_prompt;
   mpriv->cur_history = mpriv->history = calloc(1,sizeof(history_t));
-  mpriv->cur_history->buffer = calloc(255,1);
+  mpriv->cur_history->buffer = calloc(255,sizeof(char));
   mpriv->cur_history->size = 255;
   
   if(args)

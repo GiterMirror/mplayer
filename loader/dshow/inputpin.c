@@ -1,6 +1,6 @@
 /*
- * Modified for use with MPlayer, detailed changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, detailed CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  */
 
@@ -179,7 +179,7 @@ static long STDCALL CInputPin_ConnectionMediaType(IPin* This,
     *pmt=((CInputPin*)This)->type;
     if (pmt->cbFormat > 0)
     {
-	pmt->pbFormat=malloc(pmt->cbFormat);
+	pmt->pbFormat=(char *)malloc(pmt->cbFormat);
 	memcpy(pmt->pbFormat, ((CInputPin*)This)->type.pbFormat, pmt->cbFormat);
     }
     return 0;

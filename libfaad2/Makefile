@@ -46,11 +46,9 @@ OBJS	= $(SRCS:.c=.o)
 
 CFLAGS  = -I. $(OPTFLAGS) -D_GNU_SOURCE
 
-# The FIXED_POINT implementation of FAAD2 improves performance
-# on some platforms, especially for SBR files.
-ifeq ($(FAAD_FIXED),yes)
-CFLAGS  += -DFIXED_POINT
-endif
+# Uncomment this to use the FIXED_POINT implementation of FAAD2.
+# This should improve performance, especially for SBR files.
+#CFLAGS  = -I. $(OPTFLAGS) -DFIXED_POINT
 
 .SUFFIXES: .c .o
 

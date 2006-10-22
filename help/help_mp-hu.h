@@ -3,7 +3,7 @@
 //... Okay enough of the hw, now send the other two!
 //
 // Updated by: Gabrov <gabrov@freemail.hu>
-// Sync'ed with help_mp-en.h r20355 (2006. 10. 22.)
+// Sync'ed with help_mp-en.h 1.256 (2006. 05. 14.)
 
 // ========================= MPlayer help ===========================
 
@@ -67,7 +67,7 @@ static char help_text[]=
 #define MSGTR_CreatingCfgFile "Konfigurációs fájl létrehozása: %s\n"
 #define MSGTR_CopyCodecsConf "(másold/linkeld az etc/codecs.conf fájlt ~/.mplayer/codecs.conf-ba)\n"
 #define MSGTR_BuiltinCodecsConf "Befordított codecs.conf használata.\n"
-#define MSGTR_CantLoadFont "Nem tudom betölteni a következõ bittérképes betût: %s\n"
+#define MSGTR_CantLoadFont "Nem tudom betölteni a következõ fontot: %s\n"
 #define MSGTR_CantLoadSub "Nem tudom betölteni a feliratot: %s\n"
 #define MSGTR_DumpSelectedStreamMissing "dump: VÉGZETES HIBA: a kért stream nem található!\n"
 #define MSGTR_CantOpenDumpfile "Nem tudom megnyitni a dump fájlt!\n"
@@ -147,9 +147,9 @@ static char help_text[]=
 "- Az MPlayer összeomlott. Ennek nem lenne szabad megtörténnie. Az ok lehet\n"\
 "  egy hiba az MPlayer kódjában _vagy_ a Te meghajtóidban, _vagy_ a gcc-ben.\n"\
 "  Ha úgy véled hogy ez egy MPlayer hiba, úgy olvasd el a\n"\
-"  DOCS/HTML/hu/bugreports.html fájlt és kövesd az utasításait! Nem tudunk\n"\
-"  és nem fogunk segíteni, amíg nem szolgálsz megfelelõ információkkal a\n"\
-"  hiba bejelentésekor.\n"
+"  DOCS/HTML/hu/bugreports.html fájlt és kövesd az utasításait! Nem tudunk és\n"\
+"  nem fogunk segíteni, amíg nem szolgálsz megfelelõ információkkal a hiba\n"\
+"  bejelentésekor.\n"
 #define MSGTR_LoadingConfig "'%s' konfiguráció betöltése\n"
 #define MSGTR_AddedSubtitleFile "SUB: Felirat fájl (%d) hozzáadva: %s\n"
 #define MSGTR_RemovedSubtitleFile "SUB: Felirat fájl (%d) eltávolítva: %s\n"
@@ -197,21 +197,15 @@ static char help_text[]=
 #define MSGTR_EdlBadLineOverlap "Az utolsó megállítási pozíció [%f] volt; a következõ indulási [%f]."\
 "A bejegyzéseknek idõrendben kell lenniük, nem átlapolhatóak. Kihagyva.\n"
 #define MSGTR_EdlBadLineBadStop "A megállítási idõnek a kezdési idõ után kell lennie.\n"
-#define MSGTR_EdloutBadStop "EDL skip visszavonva, az utolsó start > stop\n"
-#define MSGTR_EdloutStartSkip "EDL skip eleje, nyomd meg az 'i'-t a blokk befejezéséhez.\n"
-#define MSGTR_EdloutEndSkip "EDL skip vége, a sor kiírva.\n"
-#define MSGTR_MPEndposNoSizeBased "Az MPlayer -endpos opciója jelenleg még nem támogatja a méretbeli megadást.\n"
 
 // mplayer.c OSD
 
 #define MSGTR_OSDenabled "bekapcsolva"
 #define MSGTR_OSDdisabled "kikapcsolva"
-#define MSGTR_OSDAudio "Audió: %s"
 #define MSGTR_OSDChannel "Csatorna: %s"
-#define MSGTR_OSDSubDelay "Felirat késés: %d ms"
+#define MSGTR_OSDSubDelay "Sub késés: %d ms"
 #define MSGTR_OSDSpeed "Sebesség: x %6.2f"
 #define MSGTR_OSDosd "OSD: %s"
-#define MSGTR_OSDChapter "Fejezet: (%d) %s"
 
 // property values
 #define MSGTR_Enabled "bekapcsolva"
@@ -488,6 +482,12 @@ static char help_text[]=
 #define MSGTR_CodecDefinitionIncorrect "A codec nincs megfelelõen definiálva."
 #define MSGTR_OutdatedCodecsConf "Ez a codecs.conf túl régi és nem kompatibilis az MPlayer ezen kiadásával!"
 
+// divx4_vbr.c:
+#define MSGTR_OutOfMemory "elfogyott a memória"
+#define MSGTR_OverridingTooLowBitrate "A megadott bitráta túl alacsony ehhez a klipphez.\n"\
+"A minimális lehetséges bitráta ehhez a klipphez %.0f kbps. A felhasználói\n"\
+"érték felülbírálva.\n"
+
 // fifo.c
 #define MSGTR_CannotMakePipe "Nem hozható létre PIPE!\n"
 
@@ -523,9 +523,8 @@ static char help_text[]=
 #define MSGTR_SMBNotCompiled "Nincs befordítva az MPlayerbe az SMB támogatás\n"
 
 #define MSGTR_CantOpenDVD "Nem tudom megnyitni a DVD eszközt: %s\n"
-
-// stream_dvd.c
 #define MSGTR_NoDVDSupport "Az MPlayer DVD támogatás nélkül lett lefordítva, kilépés.\n"
+#define MSGTR_DVDwait "A lemez struktúrájának olvasása, kérlek várj...\n"
 #define MSGTR_DVDnumTitles "%d sáv van a DVD-n.\n"
 #define MSGTR_DVDinvalidTitle "Helytelen DVD sáv: %d\n"
 #define MSGTR_DVDnumChapters "Az adott DVD sávban %d fejezet van.\n"
@@ -539,12 +538,9 @@ static char help_text[]=
 #define MSGTR_DVDnoVOBs "Nem tudom megnyitni a VOBS sávokat (VTS_%02d_1.VOB).\n"
 #define MSGTR_DVDnoMatchingAudio "Nem található megfelelõ nyelvû DVD audió!\n"
 #define MSGTR_DVDaudioChannel "Kiválasztott DVD audió csatorna: %d nyelv: %c%c\n"
-#define MSGTR_DVDaudioStreamInfo "audió folyam: %d formátum: %s (%s) nyelv: %s aid: %d.\n"
-#define MSGTR_DVDnumAudioChannels "audió csatornák száma a lemezen: %d.\n"
 #define MSGTR_DVDnoMatchingSubtitle "Nincs megfelelõ nyelvû DVD felirat fájl!\n"
 #define MSGTR_DVDsubtitleChannel "Kiválasztott DVD felirat csatorna: %d nyelv: %c%c\n"
-#define MSGTR_DVDsubtitleLanguage "felirat ( sid ): %d nyelv: %s\n"
-#define MSGTR_DVDnumSubtitles "feliratok szám a lemezen: %d\n"
+#define MSGTR_DVDopenOk "DVD sikeresen megnyitva!\n"
 
 // muxer.c, muxer_*.c:
 #define MSGTR_TooManyStreams "Túl sok stream!"
@@ -587,6 +583,8 @@ static char help_text[]=
 #define MSGTR_CantSeekRawAVI "Nem tudok nyers .AVI-kban tekerni! (index kell, próbáld az -idx kapcsolóval!)\n"
 #define MSGTR_CantSeekFile "Nem tudok ebben a fájlban tekerni!\n"
 
+#define MSGTR_EncryptedVOB "Titkosítótt VOB fájl! Olvasd el a DOCS/HTML/hu/cd-dvd.html fájlt!\n"
+
 #define MSGTR_MOVcomprhdr "MOV: A tömörített fejlécek támogatásához ZLIB kell!\n"
 #define MSGTR_MOVvariableFourCC "MOV: Vigyázat: változó FourCC detektálva!?\n"
 #define MSGTR_MOVtooManyTrk "MOV: Vigyázat: túl sok sáv!"
@@ -600,7 +598,7 @@ static char help_text[]=
 #define MSGTR_OpeningAudioDemuxerFailed "Audio demuxer meghívása sikertelen: %s\n"
 #define MSGTR_OpeningSubtitlesDemuxerFailed "Felirat demuxer meghívása sikertelen: %s\n"
 #define MSGTR_TVInputNotSeekable "TV bemenet nem tekerhetõ! (Meg kéne csinálni hogy most váltson csatornát ;)\n"
-#define MSGTR_DemuxerInfoChanged "%s demuxer infó megváltozott erre: %s\n"
+#define MSGTR_DemuxerInfoAlreadyPresent "%s demuxer info már jelen van!\n"
 #define MSGTR_ClipInfo "Klipp info: \n"
 
 #define MSGTR_LeaveTelecineMode "\ndemux_mpg: 30000/1001fps NTSC formátumot találtam, frameráta váltás.\n"
@@ -649,7 +647,8 @@ static char help_text[]=
 
 // LIRC:
 #define MSGTR_SettingUpLIRC "LIRC támogatás indítása...\n"
-#define MSGTR_LIRCopenfailed "Nem tudtam megnyitni a lirc támogatást. Nem fogod tudni használni a távirányítót.\n"
+#define MSGTR_LIRCdisabled "Nem fogod tudni használni a távirányítót.\n"
+#define MSGTR_LIRCopenfailed "Nem tudtam megnyitni a lirc támogatást!\n"
 #define MSGTR_LIRCcfgerr "Nem tudom olvasni a LIRC konfigurációs fájlt: %s \n"
 
 // vf.c
@@ -1572,15 +1571,15 @@ static char help_text[]=
 
 // mga_common.c
 
-#define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "[MGA] hiba az mga_vid_config ioctl-ben (hibás verziójú mga_vid.o?)"
-#define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "[MGA] Nem kérdezhetõek le a luma értékek a kernel modulból!\n"
-#define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "[MGA] Nem állíthatóak be a luma értékek a kernel modulból!\n"
-#define MSGTR_LIBVO_MGA_ScreenWidthHeightUnknown "[MGA] Képernyõ szélesség/magasság ismeretlen!\n"
-#define MSGTR_LIBVO_MGA_InvalidOutputFormat "[MGA] Hibás kimeneti formátum %0X\n"
-#define MSGTR_LIBVO_MGA_IncompatibleDriverVersion "[MGA] Az mga_vid vezérlõd verziója nem kompatibilis ezzel az MPlayer verzióval!\n"
-#define MSGTR_LIBVO_MGA_UsingBuffers "[MGA] %d buffer használata.\n"
-#define MSGTR_LIBVO_MGA_CouldntOpen "[MGA] Nem nyitható meg: %s\n"
-#define MGSTR_LIBVO_MGA_ResolutionTooHigh "[MGA] A forrás felbontás legalább egy dimenzióban nagyobb, mint 1023x1023. Kérlek méretezd át szoftveresen vagy használd a -lavdopts lowres=1-t\n"
+#define MSGTR_LIBVO_MGA_ErrorInConfigIoctl "hiba az mga_vid_config ioctl-ben (hibás verziójú mga_vid.o?)"
+#define MSGTR_LIBVO_MGA_CouldNotGetLumaValuesFromTheKernelModule "Nem kérdezhetõek le a luma értékek a kernel modulból!\n"
+#define MSGTR_LIBVO_MGA_CouldNotSetLumaValuesFromTheKernelModule "Nem állíthatóak be a luma értékek a kernel modulból!\n"
+#define MSGTR_LIBVO_MGA_ScreenWidthHeightUnknown "Képernyõ szélesség/magasság ismeretlen!\n"
+#define MSGTR_LIBVO_MGA_InvalidOutputFormat "mga: hibás kimeneti formátum %0X\n"
+#define MSGTR_LIBVO_MGA_MgaInvalidOutputFormat "Hibás kimeneti formátum %0X.\n"
+#define MSGTR_LIBVO_MGA_IncompatibleDriverVersion "Az mga_vid vezérlõd verziója nem kompatibilis ezzel az MPlayer verzióval!\n"
+#define MSGTR_LIBVO_MGA_UsingBuffers "%d buffer használata.\n"
+#define MSGTR_LIBVO_MGA_CouldntOpen "Nem nyitható meg: %s\n"
 
 // libvo/vesa_lvo.c
 
@@ -1814,47 +1813,3 @@ static char help_text[]=
 // libvo/vo_xv.c
 
 #define MSGTR_LIBVO_XV_DrawFrameCalled "[VO_XV] draw_frame() meghívva!!!!!!\n"
-
-// stream/stream_radio.c
-
-#define MSGTR_RADIO_ChannelNamesDetected "[radio] Rádió csatornák neve megtalálva.\n"
-#define MSGTR_RADIO_WrongFreqForChannel "[radio] Hibás frekvencia a(z) %s csatornának\n"
-#define MSGTR_RADIO_WrongChannelNumberFloat "[radio] Hibás csatorna szám: %.2f\n"
-#define MSGTR_RADIO_WrongChannelNumberInt "[radio] Hibás csatorna szám: %d\n"
-#define MSGTR_RADIO_WrongChannelName "[radio] Hibás csatorna név: %s\n"
-#define MSGTR_RADIO_FreqParameterDetected "[radio] Rádió frekvencia paramétere megtalálva.\n"
-#define MSGTR_RADIO_DoneParsingChannels "[radio] Csatornák értelmezése kész.\n"
-#define MSGTR_RADIO_GetTunerFailed "[radio] Figyelmeztetés:ioctl get tuner sikertelen: %s. Frac beállítása: %d.\n"
-#define MSGTR_RADIO_NotRadioDevice "[radio] %s nem rádiós eszköz!\n"
-#define MSGTR_RADIO_TunerCapLowYes "[radio] a tuner low:yes frac=%d\n"
-#define MSGTR_RADIO_TunerCapLowNo "[radio] a tuner low:no frac=%d\n"
-#define MSGTR_RADIO_SetFreqFailed "[radio] ioctl set frequency 0x%x (%.2f) sikertelen: %s\n"
-#define MSGTR_RADIO_GetFreqFailed "[radio] ioctl get frequency sikertelen: %s\n"
-#define MSGTR_RADIO_SetMuteFailed "[radio] ioctl set mute sikertelen: %s\n"
-#define MSGTR_RADIO_QueryControlFailed "[radio] ioctl query control sikertelen: %s\n"
-#define MSGTR_RADIO_GetVolumeFailed "[radio] ioctl get volume sikertelen: %s\n"
-#define MSGTR_RADIO_SetVolumeFailed "[radio] ioctl set volume sikertelen: %s\n"
-#define MSGTR_RADIO_DroppingFrame "\n[radio] túl rossz - audió keret eldobása (%d bájt)!\n"
-#define MSGTR_RADIO_BufferEmpty "[radio] grab_audio_frame: üres a buffer, várakozás %d adat bájtra.\n"
-#define MSGTR_RADIO_AudioInitFailed "[radio] audio_in_init sikertelen: %s\n"
-#define MSGTR_RADIO_AudioBuffer "[radio] Audió rögzítés - buffer=%d bájt (blokk=%d bájt).\n"
-#define MSGTR_RADIO_AllocateBufferFailed "[radio] az audió buffer nem foglalható le (block=%d,buf=%d): %s\n"
-#define MSGTR_RADIO_CurrentFreq "[radio] Jelenlegi frekvencia: %.2f\n"
-#define MSGTR_RADIO_SelectedChannel "[radio] Kiválasztott csatorna: %d - %s (freq: %.2f)\n"
-#define MSGTR_RADIO_ChangeChannelNoChannelList "[radio] Nem lehet csatornát választani: nincs csatornalista megadva.\n"
-#define MSGTR_RADIO_UnableOpenDevice "[radio] '%s' nem nyitható meg: %s\n"
-#define MSGTR_RADIO_RadioDevice "[radio] Radio fd: %d, %s\n"
-#define MSGTR_RADIO_InitFracFailed "[radio] init_frac sikertelen.\n"
-#define MSGTR_RADIO_WrongFreq "[radio] Hibás frekvencia: %.2f\n"
-#define MSGTR_RADIO_UsingFreq "[radio] Használt frekvencia: %.2f.\n"
-#define MSGTR_RADIO_AudioInInitFailed "[radio] audio_in_init sikertelen.\n"
-#define MSGTR_RADIO_BufferString "[radio] %s: in buffer=%d dropped=%d\n"
-#define MSGTR_RADIO_AudioInSetupFailed "[radio] audio_in_setup hívás sikertelen: %s\n"
-#define MSGTR_RADIO_CaptureStarting "[radio] Mentés kezdése.\n"
-#define MSGTR_RADIO_ClearBufferFailed "[radio] Buffer kiürítése sikertelen: %s\n"
-#define MSGTR_RADIO_StreamEnableCacheFailed "[radio] stream_enable_cache hívás sikertelen: %s\n"
-#define MSGTR_RADIO_DriverUnknownId "[radio] Ismeretlen eszköz id: %d\n"
-#define MSGTR_RADIO_DriverUnknownStr "[radio] Ismeretlen vezérlõ név: %s\n"
-#define MSGTR_RADIO_DriverV4L2 "[radio] V4Lv2 rádió interfész használata.\n"
-#define MSGTR_RADIO_DriverV4L "[radio] V4Lv1 rádió interfész használata.\n"
-

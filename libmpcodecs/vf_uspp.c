@@ -21,7 +21,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include <math.h>
-#include <assert.h>
 
 #include "config.h"
 
@@ -178,7 +177,7 @@ static void filter(struct vf_priv_s *p, uint8_t *dst[3], uint8_t *src[3], int ds
     for(i=0; i<count; i++){
         const int x1= offset[i+count-1][0];
         const int y1= offset[i+count-1][1];
-        int offset, out_size;
+        int offset, out_size, got_picture;
         p->frame->data[0]= p->src[0] + x1 + y1 * p->frame->linesize[0];
         p->frame->data[1]= p->src[1] + x1/2 + y1/2 * p->frame->linesize[1];
         p->frame->data[2]= p->src[2] + x1/2 + y1/2 * p->frame->linesize[2];
@@ -241,10 +240,9 @@ static int config(struct vf_instance_s* vf,
             avctx_enc->pix_fmt = PIX_FMT_YUV420P;
             avctx_enc->flags = CODEC_FLAG_QSCALE | CODEC_FLAG_LOW_DELAY;
             avctx_enc->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
-            avctx_enc->global_quality= 123;
             avcodec_open(avctx_enc, enc);
             avcodec_open(vf->priv->avctx_dec[i], dec);
-            assert(avctx_enc->codec);
+
         }
         vf->priv->frame= avcodec_alloc_frame();
         vf->priv->frame_dec= avcodec_alloc_frame();

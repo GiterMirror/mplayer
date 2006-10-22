@@ -18,14 +18,13 @@
 #include "m_property.h"
 #include "asxparser.h"
 
-#include "libmpcodecs/img_format.h"
-#include "libmpcodecs/mp_image.h"
+#include "img_format.h"
+#include "mp_image.h"
 
 #include "menu.h"
 #include "menu_list.h"
 #include "input/input.h"
 #include "osdep/keycodes.h"
-#include "metadata.h"
 
 struct list_entry_s {
   struct list_entry p;
@@ -42,7 +41,7 @@ struct menu_priv_s {
   char* na;
   int hide_na;
 };
- 
+
 static struct menu_priv_s cfg_dflt = {
   MENU_LIST_PRIV_DFLT,
   NULL,
@@ -61,22 +60,7 @@ static m_option_t cfg_fields[] = {
 
 #define mpriv (menu->priv)
 
-#define OPT_NAME "name"
-#define OPT_VCODEC "vcodec"
-#define OPT_VBITRATE "vbitrate"
-#define OPT_RESOLUTION "resolution"
-#define OPT_ACODEC "acodec"
-#define OPT_ABITRATE "abitrate"
-#define OPT_SAMPLES "asamples"
-#define OPT_INFO_TITLE "title"
-#define OPT_INFO_ARTIST "artist"
-#define OPT_INFO_ALBUM "album"
-#define OPT_INFO_YEAR "year"
-#define OPT_INFO_COMMENT "comment"
-#define OPT_INFO_TRACK "track"
-#define OPT_INFO_GENRE "genre"
-
-m_option_t*  mp_property_find(const char* name);
+m_option_t*  mp_property_find(char* name);
 
 static void entry_set_text(menu_t* menu, list_entry_t* e) {
   char* val = m_property_print(e->opt);
@@ -103,7 +87,7 @@ static void update_entries(menu_t* menu) {
 }
 
 static int parse_args(menu_t* menu,char* args) {
-  char *element,*body, **attribs, *name, *meta, *val;
+  char *element,*body, **attribs, *name;
   list_entry_t* m = NULL;
   int r;
   m_option_t* opt;
@@ -140,60 +124,6 @@ static int parse_args(menu_t* menu,char* args) {
       goto next_element;
     }
 
-    meta = asx_get_attrib("meta",attribs);
-    val = NULL;
-    if(meta) {
-      if (!strcmp (meta, OPT_NAME))
-        val = get_metadata (META_NAME);
-      else if (!strcmp (meta, OPT_VCODEC))
-        val = get_metadata (META_VIDEO_CODEC);
-      else if (!strcmp(meta, OPT_VBITRATE))
-        val = get_metadata (META_VIDEO_BITRATE);
-      else if(!strcmp(meta, OPT_RESOLUTION))
-      val = get_metadata (META_VIDEO_RESOLUTION);
-      else if (!strcmp(meta, OPT_ACODEC))
-        val = get_metadata (META_AUDIO_CODEC);
-      else if(!strcmp(meta, OPT_ABITRATE))
-        val = get_metadata (META_AUDIO_BITRATE);
-      else if(!strcmp(meta, OPT_SAMPLES))
-        val = get_metadata (META_AUDIO_SAMPLES);
-      else if (!strcmp (meta, OPT_INFO_TITLE))
-        val = get_metadata (META_INFO_TITLE);
-      else if (!strcmp (meta, OPT_INFO_ARTIST))
-        val = get_metadata (META_INFO_ARTIST);
-      else if (!strcmp (meta, OPT_INFO_ALBUM))
-        val = get_metadata (META_INFO_ALBUM);
-      else if (!strcmp (meta, OPT_INFO_YEAR))
-        val = get_metadata (META_INFO_YEAR);
-      else if (!strcmp (meta, OPT_INFO_COMMENT))
-        val = get_metadata (META_INFO_COMMENT);
-      else if (!strcmp (meta, OPT_INFO_TRACK))
-        val = get_metadata (META_INFO_TRACK);
-      else if (!strcmp (meta, OPT_INFO_GENRE))
-      val = get_metadata (META_INFO_GENRE);
-    if (val) {
-      char *item = asx_get_attrib("name",attribs);
-      int l;
-
-      if (!item)
-        item = strdup (meta);
-      l = strlen(item) + 2 + strlen(val) + 1;
-      m = calloc(1,sizeof(struct list_entry_s));
-      m->p.txt = malloc(l);
-      sprintf(m->p.txt,"%s: %s",item,val);
-      free(val);
-      free(item);
-      menu_list_add_entry(menu,m);
-    }
-    free (meta);
-    if (element)
-      free(element);
-    if(body)
-      free(body);
-    asx_free_attribs(attribs);
-    continue;
-    }
-    
     name = asx_get_attrib("property",attribs);
     opt = name ? mp_property_find(name) : NULL;
     if(!opt) {

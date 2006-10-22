@@ -53,7 +53,7 @@ int vo_border=1;
 int WinID = -1;
 
 int vo_pts=0; // for hw decoding
-float vo_fps=0;
+float vo_fps=0; // for mp1e rte
 
 char *vo_subdevice = NULL;
 int vo_directrendering=0;
@@ -79,6 +79,7 @@ extern vo_functions_t video_out_3dfx;
 extern vo_functions_t video_out_tdfxfb;
 extern vo_functions_t video_out_s3fb;
 extern vo_functions_t video_out_null;
+//extern vo_functions_t video_out_odivx;
 extern vo_functions_t video_out_zr;
 extern vo_functions_t video_out_zr2;
 extern vo_functions_t video_out_bl;
@@ -99,9 +100,6 @@ extern vo_functions_t video_out_directx;
 extern vo_functions_t video_out_dxr2;
 #endif
 extern vo_functions_t video_out_dxr3;
-#ifdef HAVE_IVTV
-extern vo_functions_t video_out_ivtv;
-#endif
 #ifdef HAVE_JPEG
 extern vo_functions_t video_out_jpeg;
 #endif
@@ -113,7 +111,7 @@ extern vo_functions_t video_out_vesa;
 #endif
 #ifdef HAVE_DIRECTFB
 extern vo_functions_t video_out_directfb;
-#ifdef HAVE_DFBMGA
+#if DIRECTFBVERSION >= 915
 extern vo_functions_t video_out_dfbmga;
 #endif
 #endif
@@ -213,9 +211,6 @@ vo_functions_t* video_out_drivers[] =
 #ifdef HAVE_DXR3
 	&video_out_dxr3,
 #endif
-#ifdef HAVE_IVTV
-        &video_out_ivtv,
-#endif
 #ifdef HAVE_ZR
 	&video_out_zr,
 	&video_out_zr2,
@@ -228,7 +223,7 @@ vo_functions_t* video_out_drivers[] =
 #endif
 #ifdef HAVE_DIRECTFB
 	&video_out_directfb,
-#ifdef HAVE_DFBMGA
+#if DIRECTFBVERSION >= 915
         &video_out_dfbmga,
 #endif
 #endif

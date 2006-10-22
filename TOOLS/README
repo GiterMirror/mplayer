@@ -123,7 +123,7 @@ Author:       Felix Bünemann
 
 Description:  Helper script to ease MEncoder two pass encoding. Give it all
               the encoding parameters you would pass to mencoder, but leave
-              out the (v)pass=<n> suboption.
+						  out the (v)pass=<n> suboption.
 
 Usage:        menc2pass <options>
 
@@ -521,6 +521,16 @@ Usage:        w32codec_dl.pl <codecs.conf location>
 
 Note:         You will need the libwww-perl stuff and the cabextract utility
               which can be found at http://www.kyz.uklinux.net/cabextract.php3.
+
+
+install-divx5.sh
+
+Author:       Andrea Menucci, thuglife
+
+Description:  Downloads and installs DivX 5 codecs from divx.com.
+
+Usage:        install-divx5.sh install
+              install-divx5.sh uninstall
 
 
 install-w32codecs.sh

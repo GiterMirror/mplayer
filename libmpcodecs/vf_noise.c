@@ -25,6 +25,7 @@
 #include "config.h"
 #include "mp_msg.h"
 #include "cpudetect.h"
+#include "asmalign.h"
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
@@ -153,7 +154,7 @@ static inline void lineNoise_MMX(uint8_t *dst, uint8_t *src, int8_t *noise, int 
 		"pcmpeqb %%mm7, %%mm7		\n\t"
 		"psllw $15, %%mm7		\n\t"
 		"packsswb %%mm7, %%mm7		\n\t"
-		ASMALIGN(4)
+		ASMALIGN16   
 		"1:				\n\t"
 		"movq (%0, %%"REG_a"), %%mm0	\n\t"
 		"movq (%1, %%"REG_a"), %%mm1	\n\t"
@@ -182,7 +183,7 @@ static inline void lineNoise_MMX2(uint8_t *dst, uint8_t *src, int8_t *noise, int
 		"pcmpeqb %%mm7, %%mm7		\n\t"
 		"psllw $15, %%mm7		\n\t"
 		"packsswb %%mm7, %%mm7		\n\t"
-		ASMALIGN(4)
+		ASMALIGN16  
 		"1:				\n\t"
 		"movq (%0, %%"REG_a"), %%mm0	\n\t"
 		"movq (%1, %%"REG_a"), %%mm1	\n\t"
@@ -220,7 +221,7 @@ static inline void lineNoiseAvg_MMX(uint8_t *dst, uint8_t *src, int len, int8_t 
 
 	asm volatile(
 		"mov %5, %%"REG_a"		\n\t"
-		ASMALIGN(4)
+		ASMALIGN16   
 		"1:				\n\t"
 		"movq (%1, %%"REG_a"), %%mm1	\n\t"
 		"movq (%0, %%"REG_a"), %%mm0	\n\t"
@@ -460,7 +461,7 @@ static int open(vf_instance_t *vf, char* args){
 }
 
 vf_info_t vf_info_noise = {
-    "noise generator",
+    "noise genenerator",
     "noise",
     "Michael Niedermayer",
     "",

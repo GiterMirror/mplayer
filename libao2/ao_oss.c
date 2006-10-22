@@ -148,8 +148,8 @@ static char *dsp=PATH_DEV_DSP;
 static audio_buf_info zz;
 static int audio_fd=-1;
 
-static const char *oss_mixer_device = PATH_DEV_MIXER;
-static int oss_mixer_channel = SOUND_MIXER_PCM;
+char *oss_mixer_device = PATH_DEV_MIXER;
+int oss_mixer_channel = SOUND_MIXER_PCM;
 
 // to set/get/query special features/parameters
 static int control(int cmd,void *arg){
@@ -495,13 +495,8 @@ static int get_space(void){
 // it should round it down to outburst*n
 // return: number of bytes played
 static int play(void* data,int len,int flags){
-    if(len==0)
-        return len;
-    if(len>ao_data.outburst || !(flags & AOPLAY_FINAL_CHUNK)) {
-        len/=ao_data.outburst;
-        len*=ao_data.outburst;
-    }
-    len=write(audio_fd,data,len);
+    len/=ao_data.outburst;
+    len=write(audio_fd,data,len*ao_data.outburst);
     return len;
 }
 

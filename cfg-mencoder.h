@@ -8,11 +8,18 @@
 #ifdef USE_FAKE_MONO
 extern int fakemono; // defined in dec_audio.c
 #endif
+#ifdef HAVE_ODIVX_POSTPROCESS
+extern int use_old_pp;
+#endif
 
 extern int sws_flags;
 extern int readPPOpt(void *, char *arg);
 extern void revertPPOpt(void *conf, char* opt);
 extern char *pp_help;
+
+#ifdef HAVE_DIVX4ENCORE
+extern m_option_t divx4opts_conf[];
+#endif
 
 #ifdef HAVE_MP3LAME
 extern m_option_t lameopts_conf[];
@@ -43,7 +50,7 @@ extern m_option_t xvidencopts_conf[];
 #endif
 
 #if defined(HAVE_X264)
-extern void x264enc_set_param(m_option_t* opt, char* arg);
+extern m_option_t x264encopts_conf[];
 #endif
 
 extern m_option_t nuvopts_conf[];
@@ -55,6 +62,7 @@ extern m_option_t lavfopts_conf[];
 m_option_t ovc_conf[]={
 	{"copy", &out_video_codec, CONF_TYPE_FLAG, 0, 0, VCODEC_COPY, NULL},
 	{"frameno", &out_video_codec, CONF_TYPE_FLAG, 0, 0, VCODEC_FRAMENO, NULL},
+	{"divx4", &out_video_codec, CONF_TYPE_FLAG, 0, 0, VCODEC_DIVX4, NULL},
 	{"lavc", &out_video_codec, CONF_TYPE_FLAG, 0, 0, VCODEC_LIBAVCODEC, NULL},
 //	{"null", &out_video_codec, CONF_TYPE_FLAG, 0, 0, VCODEC_NULL, NULL},
 	{"raw", &out_video_codec, CONF_TYPE_FLAG, 0, 0, VCODEC_RAW, NULL},
@@ -69,6 +77,13 @@ m_option_t ovc_conf[]={
 	"   frameno  - special audio-only file for 3-pass encoding, see DOCS.\n"
 	"   raw      - uncompressed video. Use fourcc option to set format explicitly.\n"
 	"   nuv      - nuppel video\n"
+#ifdef HAVE_DIVX4ENCORE
+#ifdef ENCORE_XVID
+	"   divx4    - XviD (divx4linux compatibility mode)\n"
+#else
+	"   divx4    - divx4linux/divx5linux library (depends on configuration)\n"
+#endif
+#endif
 #ifdef USE_LIBAVCODEC
 	"   lavc     - libavcodec codecs - best quality!\n"
 #endif
@@ -185,6 +200,8 @@ extern int write_odml; /* defined in libmpdemux/muxer_avi.c */
 m_option_t mencoder_opts[]={
 	/* name, pointer, type, flags, min, max */
 
+	{"endpos", &end_at_string, CONF_TYPE_STRING, 0, 0, 0, NULL},
+
 	{"frameno-file", &frameno_filename, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
 
         {"hr-edl-seek", &edl_seek_type, CONF_TYPE_FLAG, 0, 0, 1, NULL},
@@ -222,7 +239,7 @@ m_option_t mencoder_opts[]={
 	// override avi aspect autodetection
 	{"force-avi-aspect", &avi_aspect_override, CONF_TYPE_FLOAT, CONF_RANGE|CONF_GLOBAL, 0.2, 3.0, NULL},
 
-	{"pass", "-pass is obsolete, use -lavcopts vpass=n, -xvidencopts pass=n\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+	{"pass", "-pass is obsolete, use -lavcopts vpass=n, -xvidencopts pass=n, -divx4opts pass=n\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 	{"passlogfile", &passtmpfile, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
 	
 	{"vobsubout", &vobsub_out, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
@@ -241,6 +258,9 @@ m_option_t mencoder_opts[]={
 	// info header strings
 	{"info", info_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
 
+#ifdef HAVE_DIVX4ENCORE
+	{"divx4opts", divx4opts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
+#endif
 #ifdef HAVE_MP3LAME
 	{"lameopts", lameopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
 #endif
@@ -271,7 +291,7 @@ m_option_t mencoder_opts[]={
 	{"xvidencopts", xvidencopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
 #endif
 #if defined(HAVE_X264)
-	{"x264encopts", &x264enc_set_param, CONF_TYPE_FUNC_PARAM, CONF_GLOBAL, 0, 0, NULL},
+	{"x264encopts", x264encopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
 #endif
 
 	{"nuvopts",  nuvopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},

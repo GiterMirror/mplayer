@@ -1,6 +1,24 @@
 
 #include "config.h"
 
+unsigned int store_ughvlc(unsigned char *s, unsigned int v)
+{
+  unsigned int n = 0;
+
+  while(v >= 0xff)
+  {
+    *s++ = 0xff;
+    v -= 0xff;
+    n++;
+  }
+  *s = v;
+  n++;
+
+  return n;
+}
+
+#ifdef HAVE_OGGVORBIS
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -162,6 +180,7 @@ extern int index_mode;
 
 extern char *dvdsub_lang, *audio_lang;
 extern int dvdsub_id;
+extern int demux_aid_vid_mismatch;
 
 //-------- subtitle support - should be moved to decoder layer, and queue
 //                          - subtitles up in demuxer buffer...
@@ -229,7 +248,7 @@ void demux_ogg_init_sub (void) {
   int lcv;
   if(!ogg_sub.text[0]) // not yet allocated
   for (lcv = 0; lcv < SUB_MAX_TEXT; lcv++) {
-    ogg_sub.text[lcv] = malloc(OGG_SUB_MAX_LINE);
+    ogg_sub.text[lcv] = (char*)malloc(OGG_SUB_MAX_LINE);
   }
 }
 
@@ -293,7 +312,7 @@ void demux_ogg_add_sub (ogg_stream_t* os,ogg_packet* pack) {
   mp_msg(MSGT_DEMUX,MSGL_DBG2,"Ogg sub lines: %d  first: '%s'\n",
       ogg_sub.lines, ogg_sub.text[0]);
 #ifdef USE_ICONV
-  subcp_recode(&ogg_sub);
+  subcp_recode1(&ogg_sub);
 #endif
   vo_sub = &ogg_sub;
   vo_osd_changed(OSDTYPE_SUBTITLE);
@@ -391,8 +410,10 @@ static unsigned char* demux_ogg_read_packet(ogg_stream_t* os,ogg_packet* pack,vo
 	*pts = (double)os->lastpos / (double)os->samplerate;
      }
 #endif /* HAVE_OGGTHEORA */
+# ifdef HAVE_FLAC
   } else if (os->flac) {
      /* we pass complete packets to flac, mustn't strip the header! */
+#endif /* HAVE_FLAC */
   } else {
     if(*pack->packet & PACKET_TYPE_HEADER)
       os->hdr_packets++;
@@ -422,7 +443,7 @@ static unsigned char* demux_ogg_read_packet(ogg_stream_t* os,ogg_packet* pack,vo
 }
 
 // check if clang has substring from comma separated langlist
-static int demux_ogg_check_lang(const char *clang, char *langlist)
+static int demux_ogg_check_lang(char *clang, char *langlist)
 {
   char *c;
 
@@ -444,13 +465,13 @@ static int demux_ogg_sub_reverse_id(demuxer_t *demuxer, int id);
 /// Try to print out comments and also check for LANGUAGE= tag
 static void demux_ogg_check_comments(demuxer_t *d, ogg_stream_t *os, int id, vorbis_comment *vc)
 {
-  const char *hdr, *val;
+  char *hdr, *val;
   char **cmt = vc->user_comments;
   int index, i;
   ogg_demuxer_t *ogg_d = (ogg_demuxer_t *)d->priv;
   struct table {
-    const char *ogg;
-    const char *mp;
+    char *ogg;
+    char *mp;
   } table[] = {
     { "ENCODED_USING", "Software" },
     { "ENCODER_URL", "Encoder URL" },
@@ -711,9 +732,6 @@ void demux_ogg_scan_stream(demuxer_t* demuxer) {
 extern void print_wave_header(WAVEFORMATEX *h, int verbose_level);
 extern void print_video_header(BITMAPINFOHEADER *h, int verbose_level);
 
-/* defined in demux_mov.c */
-extern unsigned int store_ughvlc(unsigned char *s, unsigned int v);
-
 /** \brief Return the number of subtitle tracks in the file.
 
   \param demuxer The demuxer for which the number of subtitle tracks
@@ -795,7 +813,7 @@ static void fixup_vorbis_wf(sh_audio_t *sh, ogg_demuxer_t *od)
     od->vi_inited = 1;
 
   len = op[0].bytes + op[1].bytes + op[2].bytes;
-  sh->wf = calloc(1, sizeof(WAVEFORMATEX) + len + len/255 + 64);
+  sh->wf = (WAVEFORMATEX*)calloc(1, sizeof(WAVEFORMATEX) + len + len/255 + 64);
   ptr = (unsigned char*) (sh->wf+1);
 
   ptr[0] = 2;
@@ -814,22 +832,13 @@ static void fixup_vorbis_wf(sh_audio_t *sh, ogg_demuxer_t *od)
   sh->wf = (WAVEFORMATEX*)realloc(sh->wf, sizeof(WAVEFORMATEX) + sh->wf->cbSize);
 
   if(op[0].bytes >= 29) {
-    unsigned int br;
-    int nombr, minbr, maxbr;
+    unsigned int br, nombr, minbr, maxbr;
     ptr = buf[0];
     sh->channels = ptr[11];
     sh->samplerate = sh->wf->nSamplesPerSec = get_uint32(&ptr[12]);
     maxbr = get_uint32(&ptr[16]);  //max
     nombr = get_uint32(&ptr[20]);  //nominal
     minbr = get_uint32(&ptr[24]);  //minimum
-
-    if(maxbr == -1)
-        maxbr = 0;
-    if(nombr == -1)
-        nombr = 0;
-    if(minbr == -1)
-        minbr = 0;
-    
     br = maxbr / 8;
     if(!br)
       br = nombr / 8;
@@ -870,7 +879,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
   s = demuxer->stream;
 
   demuxer->priv =
-  ogg_d = calloc(1,sizeof(ogg_demuxer_t));
+  ogg_d = (ogg_demuxer_t*)calloc(1,sizeof(ogg_demuxer_t));
   sync = &ogg_d->sync;
   page = &ogg_d->page;
 
@@ -925,19 +934,21 @@ int demux_ogg_open(demuxer_t* demuxer) {
     sh_a = NULL;
     sh_v = NULL;
 
+    demux_aid_vid_mismatch = 1; // don't identify in new_sh_* since ids don't match
     ogg_d->subs[ogg_d->num_sub].ogg_d = ogg_d;
 
     // Check for Vorbis
     if(pack.bytes >= 7 && ! strncmp(&pack.packet[1],"vorbis", 6) ) {
-      sh_a = new_sh_audio_aid(demuxer,ogg_d->num_sub, n_audio);
+      sh_a = new_sh_audio(demuxer,ogg_d->num_sub);
       sh_a->format = FOURCC_VORBIS;
       ogg_d->subs[ogg_d->num_sub].vorbis = 1;
+      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_ID=%d\n", n_audio);
       ogg_d->subs[ogg_d->num_sub].id = n_audio;
       n_audio++;
       mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (Vorbis), -aid %d\n",ogg_d->num_sub,n_audio-1);
     } else if (pack.bytes >= 80 && !strncmp(pack.packet,"Speex", 5)) {
-      sh_a = new_sh_audio_aid(demuxer, ogg_d->num_sub, n_audio);
-      sh_a->wf = calloc(1, sizeof(WAVEFORMATEX) + pack.bytes);
+      sh_a = new_sh_audio(demuxer, ogg_d->num_sub);
+      sh_a->wf = (WAVEFORMATEX*)calloc(1, sizeof(WAVEFORMATEX) + pack.bytes);
       sh_a->format = FOURCC_SPEEX;
       sh_a->samplerate = sh_a->wf->nSamplesPerSec = get_uint32(&pack.packet[36]);
       sh_a->channels = sh_a->wf->nChannels = get_uint32(&pack.packet[48]);
@@ -951,6 +962,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
 
       ogg_d->subs[ogg_d->num_sub].samplerate = sh_a->samplerate;
       ogg_d->subs[ogg_d->num_sub].speex = 1;
+      mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_ID=%d\n", n_audio);
       ogg_d->subs[ogg_d->num_sub].id = n_audio;
       n_audio++;
       mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (Speex), -aid %d\n",ogg_d->num_sub,n_audio-1);
@@ -971,10 +983,10 @@ int demux_ogg_open(demuxer_t* demuxer) {
 		   errorCode);
 	else
 	{
-	    sh_v = new_sh_video_vid(demuxer,ogg_d->num_sub, n_video);
+	    sh_v = new_sh_video(demuxer,ogg_d->num_sub);
 
 	    sh_v->context = NULL;
-	    sh_v->bih = calloc(1,sizeof(BITMAPINFOHEADER));
+	    sh_v->bih = (BITMAPINFOHEADER*)calloc(1,sizeof(BITMAPINFOHEADER));
 	    sh_v->bih->biSize=sizeof(BITMAPINFOHEADER);
 	    sh_v->bih->biCompression= sh_v->format = FOURCC_THEORA;
 	    sh_v->fps = ((double)inf.fps_numerator)/
@@ -989,6 +1001,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
 				      sh_v->bih->biWidth*sh_v->bih->biHeight);
 	    ogg_d->subs[ogg_d->num_sub].samplerate = sh_v->fps;
 	    ogg_d->subs[ogg_d->num_sub].theora = 1;
+	    mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_ID=%d\n", n_video);
 	    ogg_d->subs[ogg_d->num_sub].id = n_video;
 	    n_video++;
 	    mp_msg(MSGT_DEMUX,MSGL_INFO,
@@ -1001,22 +1014,25 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	    if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_video_header(sh_v->bih,MSGL_V);
 	}
 #   endif /* HAVE_OGGTHEORA */
+#   ifdef HAVE_FLAC
     } else if (pack.bytes >= 4 && !strncmp (&pack.packet[0], "fLaC", 4)) {
-	sh_a = new_sh_audio_aid(demuxer,ogg_d->num_sub, n_audio);
+	sh_a = new_sh_audio(demuxer,ogg_d->num_sub);
 	sh_a->format =  mmioFOURCC('f', 'L', 'a', 'C');
+	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_ID=%d\n", n_audio);
 	ogg_d->subs[ogg_d->num_sub].id = n_audio;
 	n_audio++;
 	ogg_d->subs[ogg_d->num_sub].flac = 1;
 	sh_a->wf = NULL;
 	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (FLAC), -aid %d\n",ogg_d->num_sub,n_audio-1);
+#   endif /* HAVE_FLAC */
 
       /// Check for old header
     } else if(pack.bytes >= 142 && ! strncmp(&pack.packet[1],"Direct Show Samples embedded in Ogg",35) ) {
 
        // Old video header
       if(get_uint32 (pack.packet+96) == 0x05589f80 && pack.bytes >= 184) {
-	sh_v = new_sh_video_vid(demuxer,ogg_d->num_sub, n_video);
-	sh_v->bih = calloc(1,sizeof(BITMAPINFOHEADER));
+	sh_v = new_sh_video(demuxer,ogg_d->num_sub);
+	sh_v->bih = (BITMAPINFOHEADER*)calloc(1,sizeof(BITMAPINFOHEADER));
 	sh_v->bih->biSize=sizeof(BITMAPINFOHEADER);
 	sh_v->bih->biCompression=
 	sh_v->format = mmioFOURCC(pack.packet[68],pack.packet[69],
@@ -1031,6 +1047,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	sh_v->bih->biSizeImage=(sh_v->bih->biBitCount>>3)*sh_v->bih->biWidth*sh_v->bih->biHeight;
 
 	ogg_d->subs[ogg_d->num_sub].samplerate = sh_v->fps;
+	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_ID=%d\n", n_video);
 	ogg_d->subs[ogg_d->num_sub].id = n_video;
 	n_video++;
 	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: video (FOURCC %c%c%c%c), -vid %d\n",
@@ -1039,9 +1056,9 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	// Old audio header
       } else if(get_uint32(pack.packet+96) == 0x05589F81) {
 	unsigned int extra_size;
-	sh_a = new_sh_audio_aid(demuxer,ogg_d->num_sub, n_audio);
+	sh_a = new_sh_audio(demuxer,ogg_d->num_sub);
 	extra_size = get_uint16(pack.packet+140);
-	sh_a->wf = calloc(1,sizeof(WAVEFORMATEX)+extra_size);
+	sh_a->wf = (WAVEFORMATEX*)calloc(1,sizeof(WAVEFORMATEX)+extra_size);
 	sh_a->format = sh_a->wf->wFormatTag = get_uint16(pack.packet+124);
 	sh_a->channels = sh_a->wf->nChannels = get_uint16(pack.packet+126);
 	sh_a->samplerate = sh_a->wf->nSamplesPerSec = get_uint32(pack.packet+128);
@@ -1054,6 +1071,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	  memcpy(((char *)sh_a->wf)+sizeof(WAVEFORMATEX),pack.packet+142,extra_size);
 
 	ogg_d->subs[ogg_d->num_sub].samplerate = sh_a->samplerate; // * sh_a->channels;
+	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_ID=%d\n", n_audio);
 	ogg_d->subs[ogg_d->num_sub].id = n_audio;
 	n_audio++;
 	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (format 0x%04x), -aid %d\n",ogg_d->num_sub,sh_a->format,n_audio-1);
@@ -1067,8 +1085,8 @@ int demux_ogg_open(demuxer_t* demuxer) {
       stream_header *st = (stream_header*)(pack.packet+1);
       /// New video header
       if(strncmp(st->streamtype,"video",5) == 0) {
-	sh_v = new_sh_video_vid(demuxer,ogg_d->num_sub, n_video);
-	sh_v->bih = calloc(1,sizeof(BITMAPINFOHEADER));
+	sh_v = new_sh_video(demuxer,ogg_d->num_sub);
+	sh_v->bih = (BITMAPINFOHEADER*)calloc(1,sizeof(BITMAPINFOHEADER));
 	sh_v->bih->biSize=sizeof(BITMAPINFOHEADER);
 	sh_v->bih->biCompression=
 	sh_v->format = mmioFOURCC(st->subtype[0],st->subtype[1],
@@ -1083,6 +1101,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	sh_v->bih->biSizeImage=(sh_v->bih->biBitCount>>3)*sh_v->bih->biWidth*sh_v->bih->biHeight;
 
 	ogg_d->subs[ogg_d->num_sub].samplerate= sh_v->fps;
+	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_ID=%d\n", n_video);
 	ogg_d->subs[ogg_d->num_sub].id = n_video;
 	n_video++;
 	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: video (FOURCC %c%c%c%c), -vid %d\n",
@@ -1107,8 +1126,8 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	  extra_offset = 4;
 	}
 
-	sh_a = new_sh_audio_aid(demuxer,ogg_d->num_sub, n_audio);
-	sh_a->wf = calloc(1,sizeof(WAVEFORMATEX)+extra_size);
+	sh_a = new_sh_audio(demuxer,ogg_d->num_sub);
+	sh_a->wf = (WAVEFORMATEX*)calloc(1,sizeof(WAVEFORMATEX)+extra_size);
 	sh_a->format =  sh_a->wf->wFormatTag = strtol(buffer, NULL, 16);
 	sh_a->channels = sh_a->wf->nChannels = get_uint16(&st->sh.audio.channels);
 	sh_a->samplerate = sh_a->wf->nSamplesPerSec = get_uint64(&st->samples_per_unit);
@@ -1121,6 +1140,7 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	  memcpy(((char *)sh_a->wf)+sizeof(WAVEFORMATEX),((char *)(st+1))+extra_offset,extra_size);
 
 	ogg_d->subs[ogg_d->num_sub].samplerate = sh_a->samplerate; // * sh_a->channels;
+	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_ID=%d\n", n_audio);
 	ogg_d->subs[ogg_d->num_sub].id = n_audio;
 	n_audio++;
 	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (format 0x%04x), -aid %d\n",ogg_d->num_sub,sh_a->format,n_audio-1);
@@ -1348,9 +1368,9 @@ demuxer_t* init_avi_with_ogg(demuxer_t* demuxer) {
   }
 
   // Build the ogg demuxer private datas
-  ogg_d = calloc(1,sizeof(ogg_demuxer_t));
+  ogg_d = (ogg_demuxer_t*)calloc(1,sizeof(ogg_demuxer_t));
   ogg_d->num_sub = 1;
-  ogg_d->subs = malloc(sizeof(ogg_stream_t));
+  ogg_d->subs = (ogg_stream_t*)malloc(sizeof(ogg_stream_t));
   ogg_d->subs[0].vorbis = 1;
 
    // Init the ogg physical stream
@@ -1418,6 +1438,7 @@ static void demux_ogg_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
   ogg_stream_state* oss;
   ogg_stream_t* os;
   demux_stream_t* ds;
+  sh_audio_t* sh_audio = demuxer->audio->sh;
   ogg_packet op;
   float rate;
   int i,sp,first,precision=1,do_seek=1;
@@ -1430,7 +1451,6 @@ static void demux_ogg_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
   float pts;
   int is_keyframe;
   int samplesize=1;
-  ogg_int64_t granulepos_orig;
 
   if(demuxer->video->id >= 0) {
     ds = demuxer->video;
@@ -1549,7 +1569,6 @@ static void demux_ogg_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
         break;
       }
       is_gp_valid = (op.granulepos >= 0);
-      granulepos_orig=op.granulepos;
       demux_ogg_read_packet(os,&op,context,&pts,&is_keyframe,samplesize);
       if (precision && is_gp_valid) {
         precision--;
@@ -1579,8 +1598,9 @@ static void demux_ogg_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
         vo_sub = &ogg_sub;
         vo_osd_changed(OSDTYPE_SUBTITLE);
         clear_sub = -1;
-	op.granulepos=granulepos_orig;
 	demux_ogg_add_packet(ds,os,ds->id,&op);
+        if (demuxer->video->id < 0)
+          sh_audio->delay = pts;
 	return;
       }
      }
@@ -1630,7 +1650,7 @@ static int demux_ogg_control(demuxer_t *demuxer,int cmd, void *arg){
     rate = os->samplerate;
   } else {
     os = &ogg_d->subs[demuxer->audio->id];
-    rate = ogg_d->vi.rate;
+    rate = (float)((ov_struct_t*)((sh_audio_t*)demuxer->audio->sh)->context)->vi.rate;
   }
 
 
@@ -1667,3 +1687,5 @@ demuxer_desc_t demuxer_desc_ogg = {
   demux_ogg_seek,
   demux_ogg_control
 };
+
+#endif

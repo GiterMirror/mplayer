@@ -4,9 +4,12 @@
 #include "config.h"
 #include "mp_msg.h"
 
+#ifdef HAVE_PNG
+
 #include <png.h>
 
 #include "bswap.h"
+#include "postproc/rgb2rgb.h"
 #include "libvo/fastmemcpy.h"
 
 #include "vd_internal.h"
@@ -135,7 +138,7 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
     if(!mpi) return NULL;
 
 // Let's DECODE!
- row_p=malloc( sizeof( png_bytep ) * png_height );
+ row_p=(png_bytep*)malloc( sizeof( png_bytep ) * png_height );
 //png_get_rowbytes( png,info ) 
  for ( i=0; i < png_height; i++ ) row_p[i]=mpi->planes[0] + mpi->stride[0]*i;
  png_read_image( png,row_p );
@@ -158,3 +161,5 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
 
     return mpi;
 }
+
+#endif

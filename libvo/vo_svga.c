@@ -303,7 +303,7 @@ int page;
   return VO_TRUE;
 }
 
-static int bpp_from_vminfo(vga_modeinfo *vminfo){
+int bpp_from_vminfo(vga_modeinfo *vminfo){
   switch(vminfo->colors){
     case 2: return 1;
     case 16: return 4;
@@ -315,7 +315,7 @@ static int bpp_from_vminfo(vga_modeinfo *vminfo){
   return 0;
 }
 
-static int find_best_svga_mode(int req_w,int req_h, int req_bpp){
+int find_best_svga_mode(int req_w,int req_h, int req_bpp){
  int badness,prev_badness;
  int bestmode,lastmode;
  int i;
@@ -371,7 +371,7 @@ static int control(uint32_t request, void *data, ...)
       value = va_arg(ap, int);
       va_end(ap);
 
-      return vidix_control(request, data, value);
+      return vidix_control(request, data, (int *)value);
     }
     case VOCTRL_GET_EQUALIZER:
     {

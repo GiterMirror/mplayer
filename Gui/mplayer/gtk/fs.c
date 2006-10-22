@@ -16,7 +16,7 @@
 #include "../interface.h"
 #include "../../config.h"
 #include "../../help_mp.h"
-#include "../../stream/stream.h"
+#include "../../libmpdemux/stream.h"
 
 #include "../widgets.h"
 #include "fs.h"
@@ -72,10 +72,9 @@ char * fsSubtitleFilterNames[][2] =
            { "SMI (*.smi)",   						   "*.smi" },
            { "RT  (*.rt) ",   						   "*.rt"  },
            { "TXT (*.txt)",   						   "*.txt" },
-           { "ASS (*.ass)",   						   "*.ass" },
            { "SSA (*.ssa)",   						   "*.ssa" },
            { "AQT (*.aqt)",   						   "*.aqt" },
-	   { "Subtitles",						   "*.utf,*.sub,*.srt,*.smi,*.rt,*.txt,*.ass,*.ssa,*.aqt" },
+	   { "Subtitles",						   "*.utf,*.sub,*.srt,*.smi,*.rt,*.txt,*.ssa,*.aqt" },
            { "All files",	 					   "*" },
 	   { NULL,NULL }
 	 };
@@ -322,6 +321,7 @@ void ShowFileSelect( int type,int modal )
  
  if ( fsTopList_items ) g_list_free( fsTopList_items ); fsTopList_items=NULL;
  {
+  char * hist;
   int  i, c = 1;
   
   if ( fsType == fsVideoSelector )
@@ -562,11 +562,19 @@ gboolean on_FileSelect_key_release_event( GtkWidget * widget,GdkEventKey * event
 
 GtkWidget * create_FileSelect( void )
 {
+ GtkWidget     * FSFrame;
+ GtkWidget     * frame2;
+ GtkWidget     * frame3;
+ GtkWidget     * frame4;
  GtkWidget     * vbox4;
  GtkWidget     * hbox4;
  GtkWidget     * vseparator1;
+ GtkWidget     * hseparator1;
  GtkWidget     * hbox6;
  GtkWidget     * fsFNameListWindow;
+ GtkWidget     * label1;
+ GtkWidget     * hseparator2;
+ GtkWidget     * hseparator3;
  GtkWidget     * hbuttonbox3;
 
  GtkWidget     * uppixmapwid;

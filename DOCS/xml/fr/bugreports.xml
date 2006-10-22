@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<!-- synced with r19715 -->
+<!-- synced with 1.15 -->
 <appendix id="bugreports">
 <title>Comment rapporter les bogues</title>
 
@@ -35,7 +35,7 @@ réparer le bogue vous-même. Ou peut-être l'avez-vous déjà fait? Veuillez
 lire <ulink url="../../tech/patches.txt">ce court document</ulink> (en anglais)
 pour trouver comment faire inclure votre code dans <application>MPlayer</application>.
 Les gens de la liste de diffusion
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
 vous assisterons si vous avez des questions.
 </para>
 </sect1>
@@ -45,7 +45,7 @@ vous assisterons si vous avez des questions.
 Un problème qui peut survenir quelque fois est 'cela marchait avant, et
 plus maintenant...'.
 Voici une procédure étape-par-étape pour tenter d'indiquer quand exactement
-le problème s'est produit. Ceci n'est <emphasis role="bold">pas</emphasis> pour les utilisateurs
+le problème s'est produit. Ceci n'est <emphasis role="bold">pas</emphasis> pour les utilisateurs 
 occasionnels.
 </para>
 <para>
@@ -55,7 +55,7 @@ Les instructions peuvent être trouvé au bas de
 <ulink url="http://www.mplayerhq.hu/dload.html">cette page</ulink>.
 </para>
 <para>
-Vous aurez donc dans le repertoire mplayer/ une image de l'arbre Subversion, du coté
+Vous aurez donc dans le repertoire mplayer/ une image de l'arbre Subversion, du coté 
 client.
 Maintenant mettez à jour cette image à la date voulue:
 <screen>
@@ -65,7 +65,7 @@ svn update -r {"2004-08-23"}
 Le format de date est AAAA-MM-JJ HH:MM:SS.
 Utiliser ce format de date vous assure que vous pourrez extraire les patches
 selon la date à laquelle elles ont été fusionnés au dépot, comme dans l'
-<ulink url="http://lists.mplayerhq.hu/pipermail/mplayer-cvslog/">archive MPlayer-cvslog</ulink>.
+<ulink url="http://mplayerhq.hu/pipermail/mplayer-cvslog/">archive MPlayer-cvslog</ulink>.
 </para>
 <para>
 Maintenant procéder comme pour une mise-à-jour normale:
@@ -77,7 +77,7 @@ make
 <para>
 Pour un non-informaticien qui lit ceci, la méthode la plus rapide d'arriver au point
 où le problème se produit est d'utiliser une recherche dichotomique &mdash; qui est,
-chercher la date où est survenu le problème en divisant à plusieurs reprises l'intervalle
+chercher la date où est survenu le problème en divisant à plusieurs reprises l'intervalle 
 de recherche par moitié.
 Par exemple, si le problème se produit en 2003, commencez en milieu d'année, puis demandez-vous
 "Le problème est-il déjà présent à ce moment?".
@@ -90,7 +90,7 @@ Si vous avez beaucoup d'espace libre sur le disque dur (une compilation complète
 plus vieille version fonctionnelle connue avant de la mettre à jour; cela sauvera du temps si
 vous devez y revenir.
 (Il est habituellement nécessaire de lancer 'make distclean' avant de recompiller une
-version plus récente, donc si vous ne faites pas une copie de sauvegarde de votre arbre
+version plus récente, donc si vous ne faites pas une copie de sauvegarde de votre arbre 
 source original, vous devrez tout recompiler dedans quand vous reviendrez
 à la version présente.)
 </para>
@@ -108,7 +108,7 @@ Si vous trouvez le patch qui est la cause du problème, vous avez quasiement gagn
 signalez le à
 <ulink url="http://bugzilla.mplayerhq.hu/">MPlayer Bugzilla</ulink> ou
 souscrivez à
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-users">MPlayer-users</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-users">MPlayer-users</ulink>
 et postez-le là.
 Il y a une chance pour que l'auteur s'empresse de suggérer un correctif.
 Vous pouvez également décortiquer le patch jusqu'à ce que le bug vous saute aux yeux :-).
@@ -177,8 +177,8 @@ votre problème ou même une réponse.
 <title>Où rapporter les bogues</title>
 <para>
 Souscrivez à la liste de diffusion mplayer-users:
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-users"/>
-et envoyez votre rapport à
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-users"/>
+et envoyez votre rapport à 
 <ulink url="mailto:mplayer-users@mplayerhq.hu"/> où vous pourrez en discuter.
 </para>
 <para>
@@ -205,7 +205,7 @@ et que c'est donc une bonne idée de souscrire pour recevoir votre réponse.
 <para>
 Vous pouvez avoir besoin d'inclure des fichiers de log, de configuration
 ou d'échantillon. Si certains sont très gros alors il vaut mieux les uploader
-sur notre <ulink url="ftp://upload.mplayerhq.hu/MPlayer/incoming/">serveur FTP</ulink>
+sur notre <ulink url="ftp://ftp.mplayerhq.hu/MPlayer/incoming/">serveur FTP</ulink>
 en format compressé (gzip et bzip2 préférés) et indiquer uniquement leur
 chemin et nom dans le rapport de bogue.
 Nos listes de diffusion ont une taille de message limite de 80k, si vous
@@ -330,6 +330,12 @@ Veuillez inclure ces fichiers:
 <listitem><para>config.h</para></listitem>
 <listitem><para>config.mak</para></listitem>
 </itemizedlist>
+Uniquement si la compilation échoue à partir d'un de ces répertoires, incluez ces fichiers:
+<itemizedlist>
+<listitem><para>Gui/config.mak</para></listitem>
+<listitem><para>libvo/config.mak</para></listitem>
+<listitem><para>libao2/config.mak</para></listitem>
+</itemizedlist>
 </para>
 </sect2>
 
@@ -347,7 +353,7 @@ dans un fichier comme ceci:
 <para>
 Si votre problème est spécifique à un ou plusieurs fichiers, alors merci d'uploader
 le(s) fautif(s) sur:
-<ulink url="ftp://upload.mplayerhq.hu/MPlayer/incoming/"/>
+<ulink url="ftp://mplayerhq.hu/MPlayer/incoming/"/>
 </para>
 
 <para>

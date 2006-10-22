@@ -16,6 +16,7 @@
 #include "ldt_keeper.h" 
 #endif 
 
+#ifdef USE_QTX_CODECS
 #include "loader/qtx/qtxsdk/components.h"
 #include "wine/windef.h"
 
@@ -340,3 +341,4 @@ vf_info_t ve_info_qtvideo = {
 };
 
 //===========================================================================//
+#endif

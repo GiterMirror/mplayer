@@ -1,6 +1,6 @@
 /*
- * Modified for use with MPlayer, detailed changelog at
- * http://svn.mplayerhq.hu/mplayer/trunk/
+ * Modified for use with MPlayer, detailed CVS changelog at
+ * http://www.mplayerhq.hu/cgi-bin/cvsweb.cgi/main/
  * $Id$
  */
 
@@ -178,9 +178,9 @@ static HRESULT STDCALL CMediaSample_GetMediaType(IMediaSample* This,
 
     t = &((CMediaSample*)This)->media_type;
     //    if(t.pbFormat)free(t.pbFormat);
-    (*ppMediaType) = malloc(sizeof(AM_MEDIA_TYPE));
+    (*ppMediaType) = (AM_MEDIA_TYPE*)malloc(sizeof(AM_MEDIA_TYPE));
     **ppMediaType = *t;
-    (*ppMediaType)->pbFormat = malloc(t->cbFormat);
+    (*ppMediaType)->pbFormat = (char*)malloc(t->cbFormat);
     memcpy((*ppMediaType)->pbFormat, t->pbFormat, t->cbFormat);
     //    *ppMediaType=0; //media type was not changed
     return 0;
@@ -199,7 +199,7 @@ static HRESULT STDCALL CMediaSample_SetMediaType(IMediaSample * This,
     t = pMediaType;
     if (t->cbFormat)
     {
-	t->pbFormat = malloc(t->cbFormat);
+	t->pbFormat = (char*)malloc(t->cbFormat);
 	memcpy(t->pbFormat, pMediaType->pbFormat, t->cbFormat);
     }
     else

@@ -7,6 +7,8 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+//#ifdef USE_LIBFAME
+
 // 100=best >=80 very good >=50 fast
 #define QUALITY 90
 
@@ -149,3 +151,4 @@ vf_info_t vf_info_fame = {
 };
 
 //===========================================================================//
+//#endif

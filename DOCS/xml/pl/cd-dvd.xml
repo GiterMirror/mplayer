@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- synced with r18426 -->
-<!-- Opiekun: Emdej -->
+<!-- synced with 1.15 -->
 <chapter id="cd-dvd">
 <title>Używanie CD/DVD</title>
 
@@ -137,9 +136,8 @@ ponieważ klucze nie muszą być łamane za każdym razem przed odtwarzaniem.
 </formalpara>
 
 <note><para>
-Jeśli występują problemy z dekodowaniem DVD, spróbuj wyłączyć supermount lub
-inne tego typu usługi. Niektóre napędy RPC-2 mogą również wymagać ustawienia
-kodu regionu DVD.
+Jeśli występują problemy z dekodowaniem DVD, spróbuj wyłączyć supermount albo
+inne tego typu usługi.
 </para></note>
 
 <para>

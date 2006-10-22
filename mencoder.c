@@ -1,6 +1,7 @@
 #define VCODEC_COPY 0
 #define VCODEC_FRAMENO 1
 // real codecs:
+#define VCODEC_DIVX4 2
 #define VCODEC_LIBAVCODEC 4
 #define VCODEC_VFW 7
 #define VCODEC_LIBDV 8
@@ -48,7 +49,7 @@
 #include "m_config.h"
 #include "parser-mecmd.h"
 
-#include "stream/stream.h"
+#include "libmpdemux/stream.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
 #include "libmpdemux/mp3_hdr.h"
@@ -74,10 +75,6 @@
 #include "osdep/timer.h"
 
 #include "get_path.c"
-
-#ifdef USE_DVDREAD
-#include "stream/stream_dvd.h"
-#endif
 
 #ifdef USE_LIBAVCODEC
 #ifdef USE_LIBAVCODEC_SO
@@ -222,13 +219,6 @@ int mp_input_check_interrupt(int time) {
   return 0;
 }
 
-#ifdef USE_ASS
-#include "libass/ass.h"
-#include "libass/ass_mp.h"
-
-ass_track_t* ass_track = 0; // current track to render
-#endif
-
 //char *out_audio_codec=NULL; // override audio codec
 //char *out_video_codec=NULL; // override video codec
 
@@ -252,10 +242,10 @@ static int cfg_include(m_option_t *conf, char *filename){
 static char *seek_to_sec=NULL;
 static off_t seek_to_byte=0;
 
-static m_time_size_t end_at = { .type = END_AT_NONE, .pos = 0 };
-
 static char * frameno_filename=NULL;
 
+static void parse_end_at(void);
+static char * end_at_string=0;
 //static uint8_t* flip_upside_down(uint8_t* dst, const uint8_t* src, int width, int height);
 
 typedef struct {
@@ -298,7 +288,7 @@ static int edl_seek(edl_record_ptr next_edl_record, demuxer_t* demuxer, demux_st
 
 #include "libao2/audio_out.h"
 /* FIXME */
-static void mencoder_exit(int level, const char *how)
+static void mencoder_exit(int level, char *how)
 {
     if (how)
 	mp_msg(MSGT_MENCODER, MSGL_INFO, MSGTR_ExitingHow, how);
@@ -308,7 +298,7 @@ static void mencoder_exit(int level, const char *how)
     exit(level);
 }
 
-static void parse_cfgfiles( m_config_t* conf )
+void parse_cfgfiles( m_config_t* conf )
 {
   char *conffile;
   if ((conffile = get_path("mencoder.conf")) == NULL) {
@@ -354,6 +344,10 @@ static float stop_time(demuxer_t* demuxer, muxer_stream_t* mux_v);
 
 static int at_eof=0;
 static int interrupted=0;
+
+enum end_at_type_t {END_AT_NONE, END_AT_TIME, END_AT_SIZE};
+static enum end_at_type_t end_at_type = END_AT_NONE;
+static double end_at;
 
 static void exit_sighandler(int x){
     at_eof=1;
@@ -530,7 +524,6 @@ if (frameno_filename) {
   if(!font_fontconfig)
   {
 #endif
-#ifdef HAVE_BITMAP_FONT
   if(font_name){
        vo_font=read_font_desc(font_name,font_factor,verbose>1);
        if(!vo_font) mp_msg(MSGT_CPLAYER,MSGL_ERR,MSGTR_CantLoadFont,font_name);
@@ -540,7 +533,6 @@ if (frameno_filename) {
        if(!vo_font)
        vo_font=read_font_desc(MPLAYER_DATADIR "/font/font.desc",font_factor,verbose>1);
   }
-#endif
 #ifdef HAVE_FONTCONFIG
   }
 #endif
@@ -828,6 +820,8 @@ default: {
     static vf_instance_t * ve = NULL;
   if (!ve) {
     switch(mux_v->codec){
+    case VCODEC_DIVX4:
+	sh_video->vfilter=vf_open_encoder(NULL,"divx4",(char *)mux_v); break;
     case VCODEC_LIBAVCODEC:
         sh_video->vfilter=vf_open_encoder(NULL,"lavc",(char *)mux_v); break;
     case VCODEC_RAW:
@@ -1036,6 +1030,8 @@ else {
 	}
 }
 
+parse_end_at();
+
 if (seek_to_sec) {
     int a,b; float d;
 
@@ -1074,7 +1070,7 @@ if(file_format == DEMUXER_TYPE_TV)
 	}
 
 play_n_frames=play_n_frames_mf;
-if (curfile && end_at.type == END_AT_TIME) end_at.pos += mux_v->timer;
+if (curfile && end_at_type == END_AT_TIME) end_at += mux_v->timer;
 
 if (edl_records) free_edl(edl_records);
 next_edl_record = edl_records = NULL;
@@ -1093,8 +1089,8 @@ while(!at_eof){
     float v_pts=0;
     int skip_flag=0; // 1=skip  -1=duplicate
 
-    if((end_at.type == END_AT_SIZE && end_at.pos <= ftello(muxer_f))  ||
-       (end_at.type == END_AT_TIME && end_at.pos < mux_v->timer))
+    if((end_at_type == END_AT_SIZE && end_at <= ftello(muxer_f))  ||
+       (end_at_type == END_AT_TIME && end_at < mux_v->timer))
         break;
 
     if(play_n_frames>=0){
@@ -1516,21 +1512,23 @@ if(sh_audio && !demuxer2){
 } // while(!at_eof)
 
 if (!interrupted && filelist[++curfile].name != 0) {
-	if (sh_video && sh_video->vfilter) { // Before uniniting sh_video and the filter chain, break apart the VE.
- 		vf_instance_t * ve; // this will be the filter right before the ve.
-		for (ve = sh_video->vfilter; ve->next && ve->next->next; ve = ve->next);
-
-		if (ve->next) ve->next = NULL; // I'm telling the last filter, before the VE, there is nothing after it
-		else sh_video->vfilter = NULL; // There is no chain except the VE.
+	if (sh_video && sh_video->vfilter) {
+        // Before uniniting sh_video and the filter chain, break apart the VE.
+ 	vf_instance_t * ve; // this will be the filter right before the ve.
+	for (ve = sh_video->vfilter; ve->next && ve->next->next; ve = ve->next);
+	if (ve->next)
+		ve->next = NULL; // I'm telling the last filter, before the VE, there is nothing after it
+	else // There is no chain except the VE.
+		sh_video->vfilter = NULL;
 	}
 
 	if(sh_audio){ uninit_audio(sh_audio);sh_audio=NULL; }
 	if(sh_video){ uninit_video(sh_video);sh_video=NULL; }
 	if(demuxer) free_demuxer(demuxer);
 	if(stream) free_stream(stream); // kill cache thread
-
+	
 	at_eof = 0;
-
+	
 	m_config_pop(mconfig);
 	goto play_next_file;
 }
@@ -1539,10 +1537,7 @@ if (!interrupted && filelist[++curfile].name != 0) {
 /*TODO emit frmaes delayed by decoder lag*/
 if(sh_video && sh_video->vfilter){
 	mp_msg(MSGT_MENCODER, MSGL_INFO, "\nFlushing video frames\n");
-	if (!((vf_instance_t *)sh_video->vfilter)->fmt.have_configured)
-		mp_msg(MSGT_MENCODER, MSGL_WARN, "Filters have not been configured! Empty file?\n");
-	else
-		((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter,
+	((vf_instance_t *)sh_video->vfilter)->control(sh_video->vfilter,
     	                                              VFCTRL_FLUSH_FRAMES, 0);
 }
 
@@ -1584,6 +1579,50 @@ if(stream) free_stream(stream); // kill cache thread
 return interrupted;
 }
 
+static void parse_end_at(void)
+{
+
+    end_at_type = END_AT_NONE;
+    if (!end_at_string) return;
+    
+    /* End at size parsing */
+    {
+        char unit[4];
+        
+        end_at_type = END_AT_SIZE;
+
+        if(sscanf(end_at_string, "%lf%3s", &end_at, unit) == 2) {
+            if(!strcasecmp(unit, "b"))
+                ;
+            else if(!strcasecmp(unit, "kb"))
+                end_at *= 1024;
+            else if(!strcasecmp(unit, "mb"))
+                end_at *= 1024*1024;
+            else
+                end_at_type = END_AT_NONE;
+        }
+        else
+            end_at_type = END_AT_NONE;
+    }
+
+    /* End at time parsing. This has to be last because of
+     * sscanf("%f", ...) below */
+    if(end_at_type == END_AT_NONE)
+    {
+        int a,b; float d;
+
+        end_at_type = END_AT_TIME;
+        
+        if (sscanf(end_at_string, "%d:%d:%f", &a, &b, &d) == 3)
+            end_at = 3600*a + 60*b + d;
+        else if (sscanf(end_at_string, "%d:%f", &a, &d) == 2)
+            end_at = 60*a + d;
+        else if (sscanf(end_at_string, "%f", &d) == 1)
+            end_at = d;
+        else
+            end_at_type = END_AT_NONE;
+    }
+}
 
 #if 0
 /* Flip the image in src and store the result in dst. src and dst may overlap.
@@ -1609,7 +1648,7 @@ static uint8_t* flip_upside_down(uint8_t* dst, const uint8_t* src, int width,
 static float stop_time(demuxer_t* demuxer, muxer_stream_t* mux_v) {
 	float timeleft = -1;
 	if (play_n_frames >= 0) timeleft = mux_v->timer + play_n_frames * (double)(mux_v->h.dwScale) / mux_v->h.dwRate;
-	if (end_at.type == END_AT_TIME && (timeleft > end_at.pos || timeleft == -1)) timeleft = end_at.pos;
+	if (end_at_type == END_AT_TIME && (timeleft > end_at || timeleft == -1)) timeleft = end_at;
 	if (next_edl_record && demuxer && demuxer->video) { // everything is OK to be checked
 		float tmp = mux_v->timer + next_edl_record->start_sec - demuxer->video->pts;
 		if (timeleft == -1 || timeleft > tmp) {

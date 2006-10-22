@@ -1,3 +1,6 @@
+// Don't change for DVB card, it must be 2048
+#define PES_MAX_SIZE 2048
+
 /* 
  * Based on:
  *
@@ -59,10 +62,9 @@
 #include "config.h"
 #include "video_out.h"
 #include "video_out_internal.h"
-#include "libmpdemux/mpeg_packetizer.h"
 
 int vo_mpegpes_fd=-1;
-extern int vo_mpegpes_fd2;
+int vo_mpegpes_fd2=-1;
 
 static vo_info_t info = 
 {
@@ -128,6 +130,10 @@ static int preinit(const char *arg){
         	perror("DVB VIDEO DEVICE: ");
         	return -1;
 	}
+	if((vo_mpegpes_fd2 = open(ao_file,O_RDWR|O_NONBLOCK)) < 0){
+        	perror("DVB AUDIO DEVICE: ");
+        	return -1;
+	}
 	if ( (ioctl(vo_mpegpes_fd,VIDEO_SET_BLANK, false) < 0)){
 		perror("DVB VIDEO SET BLANK: ");
 		return -1;
@@ -136,8 +142,32 @@ static int preinit(const char *arg){
 		perror("DVB VIDEO SELECT SOURCE: ");
 		return -1;
 	}
+#if 1
+	if ( (ioctl(vo_mpegpes_fd2,AUDIO_SELECT_SOURCE, AUDIO_SOURCE_MEMORY) < 0)){
+		perror("DVB AUDIO SELECT SOURCE: ");
+		return -1;
+	}
+	if ( (ioctl(vo_mpegpes_fd2,AUDIO_PLAY) < 0)){
+		perror("DVB AUDIO PLAY: ");
+		return -1;
+	}
+#else
+	if ( (ioctl(vo_mpegpes_fd2,AUDIO_STOP,0) < 0)){
+		perror("DVB AUDIO STOP: ");
+		return -1;
+	}
+#endif
 	if ( (ioctl(vo_mpegpes_fd,VIDEO_PLAY) < 0)){
 		perror("DVB VIDEO PLAY: ");
+		return -1;
+	}
+	if ( (ioctl(vo_mpegpes_fd2,AUDIO_SET_AV_SYNC, true) < 0)){
+		perror("DVB AUDIO SET AV SYNC: ");
+		return -1;
+	}
+//	if ( (ioctl(vo_mpegpes_fd2,AUDIO_SET_MUTE, false) < 0)){
+	if ( (ioctl(vo_mpegpes_fd2,AUDIO_SET_MUTE, true) < 0)){
+		perror("DVB AUDIO SET MUTE: ");
 		return -1;
 	}
 	return 0;
@@ -150,6 +180,7 @@ static int preinit(const char *arg){
 	perror("vo_mpegpes");
 	return -1;
     }
+    vo_mpegpes_fd2=vo_mpegpes_fd;
     return 0;
 }
 
@@ -159,8 +190,7 @@ static void draw_osd(void)
 }
 
 
-static int my_write(unsigned char* data,int len){
-    int orig_len = len;
+static void my_write(unsigned char* data,int len){
 #ifdef HAVE_DVB
 #define NFD   2
     struct pollfd pfd[NFD];
@@ -191,15 +221,130 @@ static int my_write(unsigned char* data,int len){
 #else
     write(vo_mpegpes_fd,data,len); // write to file
 #endif
-    return orig_len;
 }
 
+static unsigned char pes_header[PES_MAX_SIZE];
+
 void send_pes_packet(unsigned char* data,int len,int id,int timestamp){
-    send_mpeg_pes_packet (data, len, id, timestamp, 1, my_write);
+    int ptslen=timestamp?5:1;
+
+	      // startcode:
+	      pes_header[0]=pes_header[1]=0;
+	      pes_header[2]=id>>8; pes_header[3]=id&255;
+    
+    while(len>0){
+	    int payload_size=len;  // data + PTS
+	    if(6+ptslen+payload_size>PES_MAX_SIZE) payload_size=PES_MAX_SIZE-(6+ptslen);
+	    
+    // construct PES header:  (code from ffmpeg's libav)
+	      // packetsize:
+	      pes_header[4]=(ptslen+payload_size)>>8;
+	      pes_header[5]=(ptslen+payload_size)&255;
+
+	if(ptslen==5){
+	      int x;
+	      // presentation time stamp:
+	      x=(0x02 << 4) | (((timestamp >> 30) & 0x07) << 1) | 1;
+	      pes_header[6]=x;
+	      x=((((timestamp >> 15) & 0x7fff) << 1) | 1);
+	      pes_header[7]=x>>8; pes_header[8]=x&255;
+	      x=((((timestamp) & 0x7fff) << 1) | 1);
+	      pes_header[9]=x>>8; pes_header[10]=x&255;
+	} else {
+	      // stuffing and header bits:
+	      pes_header[6]=0x0f;
+	}
+
+	memcpy(&pes_header[6+ptslen],data,payload_size);
+	my_write(pes_header,6+ptslen+payload_size);
+
+	len-=payload_size; data+=payload_size;
+	ptslen=1; // store PTS only once, at first packet!
+    }
+
+//    printf("PES: draw frame!  pts=%d   size=%d  \n",timestamp,len);
+
 }
 
 void send_lpcm_packet(unsigned char* data,int len,int id,unsigned int timestamp,int freq_id){
-    send_mpeg_lpcm_packet(data, len, id, timestamp, freq_id, my_write);
+
+    int ptslen=timestamp?5:0;
+
+	      // startcode:
+	      pes_header[0]=pes_header[1]=0;
+	      pes_header[2]=1; pes_header[3]=0xBD;
+    
+    while(len>=4){
+	    int payload_size;
+	    
+	    payload_size=PES_MAX_SIZE-6-20; // max possible data len
+	    if(payload_size>len) payload_size=len;
+	    payload_size&=(~3); // align!
+
+	    //if(6+payload_size>PES_MAX_SIZE) payload_size=PES_MAX_SIZE-6;
+	    
+	      // packetsize:
+	      pes_header[4]=(payload_size+3+ptslen+7)>>8;
+	      pes_header[5]=(payload_size+3+ptslen+7)&255;
+
+	      // stuffing:
+	      // TTCCxxxx  CC=css TT=type: 1=STD 0=mpeg1 2=vob
+	      pes_header[6]=0x81;
+	      
+	      // FFxxxxxx   FF=pts flags=2 vs 0
+	      pes_header[7]=ptslen ? 0x80 : 0;
+
+	      // hdrlen:
+	      pes_header[8]=ptslen;
+	      
+	  if(ptslen){
+	      int x;
+	      // presentation time stamp:
+	      x=(0x02 << 4) | (((timestamp >> 30) & 0x07) << 1) | 1;
+	      pes_header[9]=x;
+	      x=((((timestamp >> 15) & 0x7fff) << 1) | 1);
+	      pes_header[10]=x>>8; pes_header[11]=x&255;
+	      x=((((timestamp) & 0x7fff) << 1) | 1);
+	      pes_header[12]=x>>8; pes_header[13]=x&255;
+	  }
+	      
+// ============ LPCM header: (7 bytes) =================
+// Info by mocm@convergence.de
+
+//	   ID:
+	      pes_header[ptslen+9]=id;
+
+//	   number of frames:
+	      pes_header[ptslen+10]=0x07;
+
+//	   first acces unit pointer, i.e. start of audio frame:
+	      pes_header[ptslen+11]=0x00;
+	      pes_header[ptslen+12]=0x04;
+
+//	   audio emphasis on-off                                  1 bit
+//	   audio mute on-off                                      1 bit
+//	   reserved                                               1 bit
+//	   audio frame number                                     5 bit
+	      pes_header[ptslen+13]=0x0C;
+
+//	   quantization word length                               2 bit
+//	   audio sampling frequency (48khz = 0, 96khz = 1)        2 bit
+//	   reserved                                               1 bit
+//	   number of audio channels - 1 (e.g. stereo = 1)         3 bit
+	      pes_header[ptslen+14]=1|(freq_id<<4);
+
+//	   dynamic range control (0x80 if off)
+	      pes_header[ptslen+15]=0x80;
+
+	memcpy(&pes_header[6+3+ptslen+7],data,payload_size);
+	my_write(pes_header,6+3+ptslen+7+payload_size);
+
+	len-=payload_size; data+=payload_size;
+	ptslen=0; // store PTS only once, at first packet!
+    }
+
+//    printf("PES: draw frame!  pts=%d   size=%d  \n",timestamp,len);
+
 }
 
 

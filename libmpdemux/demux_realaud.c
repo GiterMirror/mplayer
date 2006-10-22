@@ -66,6 +66,8 @@ static int ra_check_file(demuxer_t* demuxer)
 
 
 
+void hexdump(char *, unsigned long);
+
 // return value:
 //     0 = EOF or no stream found
 //     1 = successfully read a packet
@@ -73,6 +75,8 @@ static int demux_ra_fill_buffer(demuxer_t *demuxer, demux_stream_t *dsds)
 {
 	ra_priv_t *ra_priv = demuxer->priv;
 	int len;
+	int timestamp;
+	int flags;
 	demux_stream_t *ds = demuxer->audio;
 	sh_audio_t *sh = ds->sh;
 	WAVEFORMATEX *wf = sh->wf;
@@ -151,7 +155,7 @@ static demuxer_t* demux_open_ra(demuxer_t* demuxer)
 	int i;
 	char *buf;
 
-  if ((ra_priv = malloc(sizeof(ra_priv_t))) == NULL) {
+  if ((ra_priv = (ra_priv_t *)malloc(sizeof(ra_priv_t))) == NULL) {
     mp_msg(MSGT_DEMUX, MSGL_ERR, "[RealAudio] Can't allocate memory for private data.\n");
     return 0;
   }

@@ -212,7 +212,8 @@ on the MPlayer-users mailing list for an MMX/3DNow! enabled driver.
 <title>nVidia cards</title>
 
 <para>
-nVidia isn't always a very good choice under Linux ... XFree86's
+nVidia isn't always a very good choice under Linux (according to nVidia, this
+is <link linkend="nvidia-opinions">not true</link>)... XFree86's
 open-source driver supports most of these cards, but for some cases, you'll
 have to use the binary closed-source nVidia driver, available at
 <ulink url="http://www.nvidia.com/object/linux.html">nVidia's web site</ulink>.
@@ -632,6 +633,64 @@ SDL video output supports displaying subtitles under the movie, on the (if
 present) black bar.
 </para>
 
+<variablelist>
+<title>There are several command line switches for SDL:</title>
+<varlistentry>
+  <term><option>-vo sdl:driver=<replaceable>name</replaceable></option></term>
+  <listitem><simpara>
+    specifies SDL video driver to use (i.e. <literal>aalib</literal>,
+    <literal>dga</literal>, <literal>x11</literal>)
+  </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-ao sdl:<replaceable>name</replaceable></option></term>
+  <listitem><simpara>
+    specifies SDL audio driver to use (i.e. <literal>dsp</literal>,
+    <literal>esd</literal>, <literal>artsc</literal>)
+  </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-noxv</option></term>
+  <listitem><simpara>
+    disables XVideo hardware acceleration
+  </simpara></listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-forcexv</option></term>
+  <listitem><simpara>
+    tries to force XVideo acceleration
+  </simpara></listitem>
+</varlistentry>
+</variablelist>
+
+<table>
+<title>SDL only keys</title>
+<tgroup cols="2">
+<thead>
+<row><entry>Key</entry><entry>Action</entry></row>
+</thead>
+<tbody>
+<row><entry><keycap>c</keycap></entry><entry>
+    cycles available fullscreen modes
+    </entry></row>
+<row><entry><keycap>n</keycap></entry><entry>
+    changes back to normal mode
+    </entry></row>
+</tbody>
+</tgroup>
+</table>
+
+<itemizedlist>
+<title>Known bugs:</title>
+<listitem><simpara>
+  Keys pressed under sdl:driver=aalib console driver repeat forever. (use
+  <option>-vo aa</option>!) It's bug in SDL, I can't change it (tested with
+  SDL 1.2.1).
+  </simpara></listitem>
+<listitem><simpara>
+  DO NOT USE SDL with GUI! It won't work as it should.
+  </simpara></listitem>
+</itemizedlist>
 </sect2>
 
 
@@ -813,8 +872,8 @@ framebuffer, and don't ask for it, since it's not an
 
 <para>
 This section is about the Matrox G200/G400/G450/G550 BES (Back-End Scaler)
-support, the <systemitem>mga_vid</systemitem> kernel driver.
-It has hardware VSYNC support with triple buffering. It works on both
+support, the mga_vid kernel driver. It's actively developed by A'rpi, and
+it has hardware VSYNC support with triple buffering. It works on both
 framebuffer console and under X.
 </para>
 
@@ -1444,6 +1503,13 @@ to enable driver autodetection.
 </para>
 
 <para>
+VIDIX is new technology and it's extremely possible that on your
+system it won't work. In this case only solution for you
+it's port it (mainly libdha). But there is hope that it will work on those
+systems where X11 does.
+</para>
+
+<para>
 Since VIDIX requires direct hardware access you can either run it as root
 or set the SUID bit on the <application>MPlayer</application> binary
 (<emphasis role="bold">Warning: This is a security risk!</emphasis>).
@@ -1531,15 +1597,43 @@ has tested it, so reports are welcome.
 
 <sect3 id="vidix-nvidia">
 <title>nVidia cards</title>
+<para>
+There's a relatively new nVidia driver out there, it's known to work on Riva
+128, TNT and GeForce2 chipsets, also others have been reported working.
+</para>
+
+<itemizedlist spacing="compact">
+<title>LIMITATIONS</title>
+<listitem><para>
+  It's recommended to use the binary nVidia drivers for X before using this
+  VIDIX driver, because some of the registers which need to be initialized
+  haven't been discovered yet, so it will probably fail with the Open Source
+  XFree86 <filename>nv.o</filename> driver.
+  </para></listitem>
+<listitem><para>
+  Currently only codecs capable of UYVY colorspace output
+  can work in conjunction with this driver. Unfortunately, this excludes
+  every single decoder from the
+  <systemitem class="library">libavcodec</systemitem> family. This leaves
+  us with the following usable popular codecs:
+  <systemitem>cvid, divxds, xvid, divx4, wmv7, wmv8</systemitem> and some
+  others. Please note that this is only
+  a temporal inconvenience. The usage syntax is as follows:
+  <screen>mplayer -vf format=uyvy -vc divxds <replaceable>divx3file.avi</replaceable> </screen>
+  </para></listitem>
+</itemizedlist>
 
 <para>
   An unique feature of the nvidia_vid driver is its ability to display video on
   <emphasis role="bold">plain, pure, text-only console</emphasis> - with no
   framebuffer or X magic whatsoever. For this purpose, we'll have to use the
   <option>cvidix</option> video output, as the following example shows:
-  <screen>mplayer -vo cvidix <replaceable>example.avi</replaceable></screen>
+  <screen>mplayer -vf format=uyvy -vc divxds -vo cvidix <replaceable>example.avi</replaceable> </screen>
 </para>
 
+<para>
+Reports awaited!
+</para>
 </sect3>
 
 <sect3 id="vidix-sis">
@@ -1776,14 +1870,6 @@ for a 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
   Other possible uses are: televideo pid, second audio track, etc.
 </para>
 
-<para>
-  If <application>MPlayer</application> complains frequently about
-  <screen>Too many video/audio packets in the buffer</screen> or
-  if you notice a growing desynchronization between audio and
-  video try to use the libavformat MPEG-TS demuxer by adding
-  <option>-demuxer lavf -lavfdopts probesize=128</option>
-  to your command line.
-</para>
 
 <para>
   To show the first of the channels present in your list, run
@@ -1812,8 +1898,8 @@ for a 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
 
 <para>
   To change channels press the <keycap>h</keycap> (next) and
-  <keycap>k</keycap> (previous) keys, or use the
-  <link linkend="osdmenu">OSD menu</link>.
+  <keycap>k</keycap> (previous) keys, or use the OSD menu (requires
+  a working <link linkend="subosd">OSD subsystem</link>).
 </para>
 
 <para>
@@ -1854,7 +1940,7 @@ for a 16:9 TV: -vf dvbscale=1024,scale=-1:0,expand=-1:576:-1:-1:1
 <para>
 If you have questions or want to hear feature announcements and take part in
 discussions on this subject, join our
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dvb">MPlayer-DVB</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dvb">MPlayer-DVB</ulink>
 mailing list. Please remember that the list language is English.
 </para>
 </formalpara>
@@ -2365,6 +2451,13 @@ itself only once during POST procedure.
 </para>
 </sect2>
 
+
+<sect2 id="tvout-voodoo">
+<title>Voodoo 3</title>
+<para>
+Check <ulink url="http://www.iki.fi/too/tvout-voodoo3-3000-xfree">this URL</ulink>.
+</para>
+</sect2>
 
 <sect2 id="tvout-nvidia">
 <title>nVidia</title>

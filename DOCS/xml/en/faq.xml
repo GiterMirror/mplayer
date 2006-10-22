@@ -25,7 +25,7 @@ How do I translate <application>MPlayer</application> to a new language?
 <answer><para>
 Read the <ulink url="../../tech/translations.txt">translation HOWTO</ulink>,
 it should explain everything. You can get further help on the
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer-translations</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer-translations</ulink>
 mailing list.
 </para></answer>
 </qandaentry>
@@ -49,10 +49,10 @@ How can I become an <application>MPlayer</application> developer?
 We always welcome coders and documenters. Read the
 <ulink url="../../tech/">technical documentation</ulink>
 to get a first grasp. Then you should subscribe to the
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
 mailing list and start coding. If you want to help out with the documentation,
 join the
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>
 mailing list.
 </para></answer>
 </qandaentry>
@@ -148,50 +148,6 @@ It's called <filename>XFree86-devel*</filename> under Red Hat, and
 can be a problem on Mandrake systems).
 </para></answer>
 </qandaentry>
-
-
-<qandaentry>
-<question><para>
-Building on Mac OS 10.3 leads to several link errors</para></question>
-<answer><para>
-The link error you're experiencing most likely looks like this:
-<screen>
-ld: Undefined symbols:
-_LLCStyleInfoCheckForOpenTypeTables referenced from QuartzCore expected to be defined in ApplicationServices
-_LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be defined in ApplicationServices
-</screen>
-This problem is the result of Apple developers using 10.4 to compile
-their software and distributing the binaries to 10.3 users via
-Software Update.
-The undefined symbols are present in Mac OS 10.4,
-but not 10.3.
-One solution can be to downgrade to QuickTime 7.0.1.
-Here is a better solution.
-</para><para>
-Get an <ulink url="http://rapidshare.de/files/20281171/CompatFrameworks.tgz.html">older copy of the frameworks</ulink>.
-This will give you a compressed file that contains the QuickTime
-7.0.1 Framework and a 10.3.9 QuartzCore Framework.
-</para><para>
-Uncompress the files somewhere that is not in your System folder.
-(i.e. do not install these frameworks into your
-<filename class="directory">/System/Library/Frameworks</filename>!
-Using this older copy is only meant to get around link errors!)
-<screen>
-gunzip &lt; CompatFrameworks.tgz | tar xvf -
-</screen>
-In config.mak, you should append 
-<systemitem>-F/path/to/where/you/extracted</systemitem>
-to the <systemitem>OPTFLAGS</systemitem> variable.
-If you use <application>X-Code</application>, you can just select these
-frameworks instead of the system ones.
-</para><para>
-The resulting <application>MPlayer</application> binary will actually
-use the framework that is installed on your system via dynamic links that
-are resolved at run-time.
-(You can verify this using <systemitem>otool -l</systemitem>).
-</para></answer>
-</qandaentry>
-
 </qandadiv>
 
 <qandadiv id="faq-general">
@@ -202,9 +158,8 @@ are resolved at run-time.
 Are there any mailing lists on <application>MPlayer</application>?
 </para></question>
 <answer><para>
-Yes. Look at the
-<ulink url="http://www.mplayerhq.hu/design7/mailing_lists.html">mailing lists section</ulink>
-of our homepage.
+Yes. See the <link linkend="mailinglists">mailing lists</link>
+section.
 </para></answer>
 </qandaentry>
 
@@ -236,7 +191,7 @@ When I start playing, I get this message but everything seems fine:
 <screen>Linux RTC init: ioctl (rtc_pie_on): Permission denied</screen>
 </para></question>
 <answer><para>
-You need a specially set up kernel to use the RTC timing
+You need root privileges or a specially set up kernel to use the new timing
 code. For details see the <link linkend="rtc">RTC</link> section of the documentation.
 </para></answer>
 </qandaentry>
@@ -322,7 +277,7 @@ There are error messages about file not found <filename>/usr/local/lib/codecs/</
 </para></question>
 <answer><para>
 Download and install the binary codecs from our
-<ulink url="http://www.mplayerhq.hu/design7/dload.html">download page</ulink>.
+<ulink url="http://www.mplayerhq.hu/design7/codecs.html">codecs page</ulink>.
 </para></answer>
 </qandaentry>
 
@@ -457,7 +412,7 @@ I'm having trouble getting my subtitles to display, help!!
 </para></question>
 <answer><para>
 Make sure you have installed fonts properly. Run through the steps in the
-<link linkend="fonts-osd">Fonts and OSD</link> part of the installation
+<link linkend="mpsub-install">OSD and subtitle</link> part of the installation
 section again. If you are using TrueType fonts, verify that you have the
 <systemitem class="library">FreeType</systemitem> library installed.
 Other things include checking your subtitles in a text editor or with other
@@ -556,7 +511,7 @@ I get very strange percentage values (way too big) while playing files on my not
 It's an effect of the power management / power saving system of your notebook
 (BIOS, not kernel). Plug the external power connector in
 <emphasis role="bold">before</emphasis> you power on your notebook. You can also
-try whether <ulink url="http://www.kernel.org/pub/linux/utils/kernel/cpufreq/cpufreq.html">cpufreq</ulink>
+try whether <ulink url="http://www.brodo.de/cpufreq/">cpufreq</ulink>
 (a SpeedStep interface for Linux) helps you.
 </para></answer>
 </qandaentry>
@@ -784,21 +739,6 @@ undertaking.
 
 <qandaentry>
 <question><para>
-I can't watch any recent DVDs from Sony Pictures/BMG.
-</para></question>
-<answer><para>
-This is normal; you've been ripped off and sold an intentionally defective disk.
-The only way to play these DVDs is to circumvent the bad blocks of the disk
-by using DVDnav instead of mpdvdkit2.
-You can do so by compiling MPlayer with DVDnav support and then replacing
-dvd:// by dvdnav:// on the command line.
-DVDnav is so far mutually exclusive with mpdvdkit2, so make sure you pass
-<option>--disable-mpdvdkit</option> to the configure script.
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
 What about subtitles? Can <application>MPlayer</application> display them?
 </para></question>
 <answer><para>
@@ -1005,30 +945,6 @@ mencoder <replaceable>input.avi</replaceable> -ovc copy -oac copy -o <replaceabl
 
 <qandaentry>
 <question><para>
-How can I backup and encode a VOB file with a broken beginning?
-</para></question>
-<answer><para>
-The main problem when you want to encode a VOB file which is corrupted
-<footnote id='fn-corrupted-files-or-copy-protection'><para>
-To some extent, some forms of copy protection used in DVDs can be
-assumed to be content corruption.
-</para></footnote>
-is that it will be hard to get an encode with perfect A/V sync.
-One workaround is to just shave off the corrupted part and encode just the
-clean part.
-First you need to find where the clean part starts:
-<screen>
-mplayer <replaceable>input.vob</replaceable> -sb <replaceable>nb_of_bytes_to_skip</replaceable>
-</screen>
-Then you can create a new file which contains just the clean part:
-<screen>
-dd if=<replaceable>input.vob</replaceable> of=<replaceable>output_cut.vob</replaceable> skip=1 ibs=<replaceable>nb_of_bytes_to_skip</replaceable>
-</screen>
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
 I can't encode DVD subtitles into the AVI!
 </para></question>
 <answer><para>
@@ -1051,43 +967,6 @@ I'm trying to work with 2GB+ files on a VFAT file system. Does it work?
 </para></question>
 <answer><para>
 No, VFAT doesn't support 2GB+ files.
-</para></answer>
-</qandaentry>
-
-<qandaentry>
-<question><para>
-What is the meaning of the numbers on the status line during the encoding process?
-</para></question>
-<answer><para>
-Example:
-<screen>Pos: 264.5s   6612f ( 2%)  7.12fps Trem: 576min 2856mb  A-V:0.065 [2126:192]</screen>
-<variablelist>
-<varlistentry><term><systemitem>Pos: 264.5s</systemitem></term>
-<listitem><para>time position in the encoded stream</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>6612f</systemitem></term>
-<listitem><para>number of video frames encoded</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>( 2%)</systemitem></term>
-<listitem><para>portion of the input stream encoded</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>7.12fps</systemitem></term>
-<listitem><para>encoding speed</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>Trem: 576min</systemitem></term>
-<listitem><para>estimated remaining encoding time</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>2856mb</systemitem></term>
-<listitem><para>estimated size of the final encode</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>A-V:0.065</systemitem></term>
-<listitem><para>current delay between audio and video streams</para></listitem>
-</varlistentry>
-<varlistentry><term><systemitem>[2126:192]</systemitem></term>
-<listitem>
-<para>average video bitrate (in Mb/s) and average audio bitrate (in Mb/s)</para></listitem>
-</varlistentry>
-</variablelist>
 </para></answer>
 </qandaentry>
 

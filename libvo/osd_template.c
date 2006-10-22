@@ -32,15 +32,6 @@ static inline void RENAME(vo_draw_alpha_yv12)(int w,int h, unsigned char* src, u
 #if defined(FAST_OSD) && !defined(HAVE_MMX)
     w=w>>1;
 #endif
-#ifdef HAVE_MMX
-    asm volatile(
-        "pcmpeqb %%mm5, %%mm5\n\t" // F..F
-        "movq %%mm5, %%mm4\n\t"
-        "movq %%mm5, %%mm7\n\t"
-        "psllw $8, %%mm5\n\t" //FF00FF00FF00
-        "psrlw $8, %%mm4\n\t" //00FF00FF00FF
-        ::);        
-#endif
     for(y=0;y<h;y++){
         register int x;
 #ifdef HAVE_MMX
@@ -48,6 +39,11 @@ static inline void RENAME(vo_draw_alpha_yv12)(int w,int h, unsigned char* src, u
 	PREFETCHW" %0\n\t"
 	PREFETCH" %1\n\t"
 	PREFETCH" %2\n\t"
+//	"pxor %%mm7, %%mm7\n\t"
+	"pcmpeqb %%mm5, %%mm5\n\t" // F..F
+	"movq %%mm5, %%mm4\n\t"
+	"psllw $8, %%mm5\n\t" //FF00FF00FF00
+	"psrlw $8, %%mm4\n\t" //00FF00FF00FF
 	::"m"(*dstbase),"m"(*srca),"m"(*src):"memory");
     for(x=0;x<w;x+=8){
 	asm volatile(
@@ -62,7 +58,7 @@ static inline void RENAME(vo_draw_alpha_yv12)(int w,int h, unsigned char* src, u
 		"pand %%mm4, %%mm0\n\t" 	//0Y0Y0Y0Y
 		"psrlw $8, %%mm1\n\t"		//0Y0Y0Y0Y
 		"movq	%1, %%mm2\n\t" 		//srca HGFEDCBA
-		"paddb	%%mm7, %%mm2\n\t"
+		"paddb	"MANGLE(bFF)", %%mm2\n\t"
 		"movq %%mm2, %%mm3\n\t"
 		"pand %%mm4, %%mm2\n\t" 	//0G0E0C0A
 		"psrlw $8, %%mm3\n\t"		//0H0F0D0B
@@ -102,16 +98,6 @@ static inline void RENAME(vo_draw_alpha_yuy2)(int w,int h, unsigned char* src, u
 #if defined(FAST_OSD) && !defined(HAVE_MMX)
     w=w>>1;
 #endif
-#ifdef HAVE_MMX
-    asm volatile(
-        "pxor %%mm7, %%mm7\n\t"
-        "pcmpeqb %%mm5, %%mm5\n\t" // F..F
-        "movq %%mm5, %%mm6\n\t"
-        "movq %%mm5, %%mm4\n\t"
-        "psllw $8, %%mm5\n\t" //FF00FF00FF00
-        "psrlw $8, %%mm4\n\t" //00FF00FF00FF
-        ::);        
-#endif
     for(y=0;y<h;y++){
         register int x;
 #ifdef HAVE_MMX
@@ -119,6 +105,11 @@ static inline void RENAME(vo_draw_alpha_yuy2)(int w,int h, unsigned char* src, u
 	PREFETCHW" %0\n\t"
 	PREFETCH" %1\n\t"
 	PREFETCH" %2\n\t"
+	"pxor %%mm7, %%mm7\n\t"
+	"pcmpeqb %%mm5, %%mm5\n\t" // F..F
+	"movq %%mm5, %%mm4\n\t"
+	"psllw $8, %%mm5\n\t" //FF00FF00FF00
+	"psrlw $8, %%mm4\n\t" //00FF00FF00FF
 	::"m"(*dstbase),"m"(*srca),"m"(*src));
     for(x=0;x<w;x+=4){
 	asm volatile(
@@ -132,7 +123,7 @@ static inline void RENAME(vo_draw_alpha_yuy2)(int w,int h, unsigned char* src, u
 		"movq	%%mm0, %%mm1\n\t"
 		"pand %%mm4, %%mm0\n\t" 	//0Y0Y0Y0Y
 		"movd	%%eax, %%mm2\n\t"	//srca 0000DCBA
-		"paddb	%%mm6, %%mm2\n\t"
+		"paddb	"MANGLE(bFF)", %%mm2\n\t"
 		"punpcklbw %%mm7, %%mm2\n\t"	//srca 0D0C0B0A
 		"pmullw	%%mm2, %%mm0\n\t"
 		"psrlw	$8, %%mm0\n\t"
@@ -195,12 +186,6 @@ static inline void RENAME(vo_draw_alpha_uyvy)(int w,int h, unsigned char* src, u
 
 static inline void RENAME(vo_draw_alpha_rgb24)(int w,int h, unsigned char* src, unsigned char *srca, int srcstride, unsigned char* dstbase,int dststride){
     int y;
-#ifdef HAVE_MMX
-    asm volatile(
-        "pxor %%mm7, %%mm7\n\t"
-        "pcmpeqb %%mm6, %%mm6\n\t" // F..F
-        ::);        
-#endif
     for(y=0;y<h;y++){
         register unsigned char *dst = dstbase;
         register int x;
@@ -210,6 +195,8 @@ static inline void RENAME(vo_draw_alpha_rgb24)(int w,int h, unsigned char* src, 
 	PREFETCHW" %0\n\t"
 	PREFETCH" %1\n\t"
 	PREFETCH" %2\n\t"
+	"pxor %%mm7, %%mm7\n\t"
+	"pcmpeqb %%mm6, %%mm6\n\t" // F..F
 	::"m"(*dst),"m"(*srca),"m"(*src):"memory");
     for(x=0;x<w;x+=2){
      if(srca[x] || srca[x+1])
@@ -306,22 +293,6 @@ static inline void RENAME(vo_draw_alpha_rgb32)(int w,int h, unsigned char* src, 
 #ifdef WORDS_BIGENDIAN
     dstbase++;
 #endif
-#ifdef HAVE_MMX
-#ifdef HAVE_3DNOW
-    asm volatile(
-        "pxor %%mm7, %%mm7\n\t"
-        "pcmpeqb %%mm6, %%mm6\n\t" // F..F
-        ::);
-#else /* HAVE_3DNOW */
-    asm volatile(
-        "pxor %%mm7, %%mm7\n\t"
-        "pcmpeqb %%mm5, %%mm5\n\t" // F..F
-        "movq %%mm5, %%mm4\n\t"
-        "psllw $8, %%mm5\n\t" //FF00FF00FF00
-        "psrlw $8, %%mm4\n\t" //00FF00FF00FF
-        ::);
-#endif /* HAVE_3DNOW */
-#endif /* HAVE_MMX */
     for(y=0;y<h;y++){
         register int x;
 #if defined(ARCH_X86) || defined(ARCH_X86_64)
@@ -331,6 +302,8 @@ static inline void RENAME(vo_draw_alpha_rgb32)(int w,int h, unsigned char* src, 
 	PREFETCHW" %0\n\t"
 	PREFETCH" %1\n\t"
 	PREFETCH" %2\n\t"
+	"pxor %%mm7, %%mm7\n\t"
+	"pcmpeqb %%mm6, %%mm6\n\t" // F..F
 	::"m"(*dstbase),"m"(*srca),"m"(*src):"memory");
     for(x=0;x<w;x+=2){
      if(srca[x] || srca[x+1])
@@ -366,6 +339,11 @@ static inline void RENAME(vo_draw_alpha_rgb32)(int w,int h, unsigned char* src, 
 	PREFETCHW" %0\n\t"
 	PREFETCH" %1\n\t"
 	PREFETCH" %2\n\t"
+	"pxor %%mm7, %%mm7\n\t"
+	"pcmpeqb %%mm5, %%mm5\n\t" // F..F
+	"movq %%mm5, %%mm4\n\t"
+	"psllw $8, %%mm5\n\t" //FF00FF00FF00
+	"psrlw $8, %%mm4\n\t" //00FF00FF00FF
 	::"m"(*dstbase),"m"(*srca),"m"(*src):"memory");
     for(x=0;x<w;x+=4){
 	asm volatile(

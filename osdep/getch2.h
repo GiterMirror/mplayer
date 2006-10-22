@@ -21,6 +21,3 @@ extern void getch2_disable(void);
 /* Read a character or a special key code (see keycodes.h) */
 extern int getch2(int halfdelay_time);
 
-#ifdef __MINGW32__
-extern int mp_input_win32_slave_cmd_func(int fd,char* dest,int size);
-#endif

@@ -6,6 +6,7 @@
 #include "config.h"
 #include "mp_msg.h"
 
+#if defined(USE_QTX_CODECS) || defined(MACOSX)
 #include "wine/windef.h"
 
 #include "ad_internal.h"
@@ -29,7 +30,7 @@ static ad_info_t info =  {
 
 LIBAD_EXTERN(qtaudio)
 
-#if !defined(MACOSX)
+#if defined(USE_QTX_CODECS) && !defined(MACOSX)
 typedef struct OpaqueSoundConverter*    SoundConverter;
 typedef unsigned long                   OSType;
 typedef unsigned long                   UnsignedFixed;
@@ -163,7 +164,7 @@ static int loader_init()
     mp_msg(MSGT_DECAUDIO,MSGL_DBG2,"loader_init DONE???\n");
 	return 0;
 }
-#endif /* #if !defined(MACOSX) */
+#endif /* USE_QTX_CODECS */
 
 static SoundConverter			   myConverter = NULL;
 static SoundComponentData		   InputFormatInfo,OutputFormatInfo;
@@ -333,3 +334,5 @@ static int control(sh_audio_t *sh,int cmd,void* arg, ...){
     // various optional functions you MAY implement:
   return CONTROL_UNKNOWN;
 }
+
+#endif

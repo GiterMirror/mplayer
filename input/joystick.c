@@ -1,6 +1,8 @@
 
 #include "config.h"
 
+#ifdef HAVE_JOYSTICK
+
 #include "joystick.h"
 #include "input.h"
 
@@ -36,7 +38,7 @@ int mp_input_joystick_init(char* dev) {
   int inited = 0;
   struct js_event ev;
   
-  mp_msg(MSGT_INPUT,MSGL_V,MSGTR_INPUT_JOYSTICK_Opening,dev ? dev : JS_DEV);
+  mp_msg(MSGT_INPUT,MSGL_INFO,MSGTR_INPUT_JOYSTICK_Opening,dev ? dev : JS_DEV);
 
   fd = open( dev ? dev : JS_DEV , O_RDONLY | O_NONBLOCK );
   if(fd < 0) {
@@ -159,5 +161,7 @@ int mp_input_joystick_read(int fd) {
   
   return MP_INPUT_NOTHING;
 }
+
+#endif
 
 #endif

@@ -14,7 +14,7 @@
 #include <stdarg.h>
 
 //#include "font_load.h"
-#include "libmpcodecs/img_format.h"
+#include "img_format.h"
 //#include "vidix/vidix.h"
 
 #define VO_EVENT_EXPOSE 1
@@ -58,12 +58,6 @@
 #define VOCTRL_ONTOP 25
 #define VOCTRL_ROOTWIN 26
 #define VOCTRL_BORDER 27
-#define VOCTRL_DRAW_EOSD 28
-#define VOCTRL_GET_EOSD_RES 29
-typedef struct {
-  int w, h; // screen dimensions, including black borders
-  int mt, mb, ml, mr; // borders (top, bottom, left, right)
-} mp_eosd_res_t;
 
 // Vo can be used by xover
 #define VOCTRL_XOVERLAY_SUPPORT 22
@@ -172,7 +166,7 @@ typedef struct vo_functions_s
 
 } vo_functions_t;
 
-const char *vo_format_name(int format);
+char *vo_format_name(int format);
 int vo_init(void);
 
 vo_functions_t* init_best_video_out(char** vo_list);

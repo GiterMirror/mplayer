@@ -32,7 +32,7 @@ If you feel have the necessary skills you are invited to have a go at fixing the
 bug yourself. Or maybe you already did that? Please read
 <ulink url="../../tech/patches.txt">this short document</ulink> to find out how to
 get your code included in <application>MPlayer</application>. The people on the
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
 mailing list will assist you if you have questions.
 </para>
 </sect1>
@@ -60,7 +60,7 @@ svn update -r {"2004-08-23"}
 The date format is YYYY-MM-DD HH:MM:SS.
 Using this date format ensure that you will be able to extract patches
 according to the date at which they were committed, as in the
-<ulink url="http://lists.mplayerhq.hu/pipermail/mplayer-cvslog/">MPlayer-cvslog archive</ulink>.
+<ulink url="http://mplayerhq.hu/pipermail/mplayer-cvslog/">MPlayer-cvslog archive</ulink>.
 </para>
 <para>
 Now proceed as for a normal update:
@@ -103,7 +103,7 @@ If you find the patch that is the cause of the problem, you have almost won;
 report about it to the
 <ulink url="http://bugzilla.mplayerhq.hu/">MPlayer Bugzilla</ulink> or
 subscribe to 
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-users">MPlayer-users</ulink>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-users">MPlayer-users</ulink>
 and post it there.
 There is a chance that the author will jump in to suggest a fix.
 You may also look hard at the patch until it is coerced to reveal where
@@ -162,7 +162,7 @@ or even an answer.
 <title>Where to report bugs</title>
 <para>
 Subscribe to the MPlayer-users mailing list:
-<ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-users"/>
+<ulink url="http://mplayerhq.hu/mailman/listinfo/mplayer-users"/>
 and send your bug report to
 <ulink url="mailto:mplayer-users@mplayerhq.hu"/> where you can discuss it.
 </para>
@@ -187,7 +187,7 @@ receive your answer.
 <para>
 You may need to include log, configuration or sample files in your bug report.
 If some of them are quite big then it is better to upload them to our
-<ulink url="ftp://upload.mplayerhq.hu/MPlayer/incoming/">FTP server</ulink> in a
+<ulink url="ftp://ftp.mplayerhq.hu/MPlayer/incoming/">FTP server</ulink> in a
 compressed format (gzip and bzip2 preferred) and include only the path and file
 name in your bug report. Our mailing lists have a message size limit of 80k, if
 you have something bigger you have to compress or upload it.
@@ -311,6 +311,12 @@ Please include these files:
 <listitem><para>config.h</para></listitem>
 <listitem><para>config.mak</para></listitem>
 </itemizedlist>
+Only if compilation fails below one of these directories, include these files:
+<itemizedlist>
+<listitem><para>Gui/config.mak</para></listitem>
+<listitem><para>libvo/config.mak</para></listitem>
+<listitem><para>libao2/config.mak</para></listitem>
+</itemizedlist>
 </para>
 </sect2>
 
@@ -326,7 +332,7 @@ diagnose a problem. You can direct the output into a file like this:
 
 <para>
 If your problem is specific to one or more files, then please upload the offender(s) to:
-<ulink url="ftp://upload.mplayerhq.hu/MPlayer/incoming/"/>
+<ulink url="ftp://ftp.mplayerhq.hu/MPlayer/incoming/"/>
 </para>
 
 <para>

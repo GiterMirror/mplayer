@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="KOI8-R"?>
-<!-- synced with r20085 -->
+<!-- synced with 1.11 -->
 <!-- FIXME: history really should be in the appendix -->
-<appendix id="history">
+<sect1 id="history">
 <title>История</title>
  
 <blockquote><para>
@@ -21,8 +21,8 @@ problems too. So I've decided to write/modify one...
 <application>xmps</application>, <application>dvdview</application>, <application>
 livid/oms</application>, <application>videolan</application>, <application>xine
 </application>, <application>xanim</application>, <application>avifile</application>,
-<application>xmmp), но у них у всех были какие-нибудь проблемы.</application>
-По большей части со специальными файлами или аудио/видео синхронизацией.
+<application>xmmp) но у них у всех были какие-нибудь проблемы.</application>
+По большей части со специальными файлами или аудио.видео синхронизацией.
 Большинство из них было не способно проигрывать как MPEG1, MPEG2, так и AVI
 (DivX) файлы. У многих плееров были проблемы с качеством изображения или
 со скоростью. Поэтому я решил написать/модифицировать свой...]
@@ -134,4 +134,4 @@ Windows Media 9, <application>MPlayer</application> - это первый в мире плеер, п
   </para></listitem>
 </itemizedlist>
 </para>
-</appendix>
+</sect1>

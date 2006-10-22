@@ -260,7 +260,7 @@ static void uninit(int immed)
 }
 
 /* stop playing and empty buffers (for seeking/pause) */
-static void reset(void)
+static void reset()
 {
     int err;
 
@@ -284,7 +284,7 @@ static void reset(void)
 }
 
 /* stop playing, keep buffers (for pause) */
-static void audio_pause(void)
+static void audio_pause()
 {
     int err;
 
@@ -302,7 +302,7 @@ static void audio_pause(void)
 }
 
 /* resume playing, after audio_pause() */
-static void audio_resume(void)
+static void audio_resume()
 {
     int err;
     if ((err = snd_pcm_channel_prepare(alsa_handler, SND_PCM_CHANNEL_PLAYBACK)) < 0)
@@ -348,7 +348,7 @@ static int play(void* data, int len, int flags)
 }
 
 /* how many byes are free in the buffer */
-static int get_space(void)
+static int get_space()
 {
     snd_pcm_channel_status_t ch_stat;
     
@@ -361,7 +361,7 @@ static int get_space(void)
 }
 
 /* delay in seconds between first and last sample in buffer */
-static float get_delay(void)
+static float get_delay()
 {
     snd_pcm_channel_status_t ch_stat;
     

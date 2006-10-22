@@ -147,9 +147,9 @@ void GetCpuCaps( CpuCaps *caps)
 		if(cl_size) caps->cl_size = cl_size;
 
 		ptmpstr=tmpstr=GetCpuFriendlyName(regs, regs2);
-		while(*ptmpstr == ' ')        // strip leading spaces
+		while(*ptmpstr == ' ')
 		    ptmpstr++;
-		mp_msg(MSGT_CPUDETECT,MSGL_INFO,"CPU: %s ", ptmpstr);
+		mp_msg(MSGT_CPUDETECT,MSGL_INFO,"CPU: %s ",tmpstr);
 		free(tmpstr);
 		mp_msg(MSGT_CPUDETECT,MSGL_INFO,"(Family: %d, Model: %d, Stepping: %d)\n",
 		    caps->cpuType, caps->cpuModel, caps->cpuStepping);
@@ -182,7 +182,7 @@ void GetCpuCaps( CpuCaps *caps)
 #endif
 
 		/* FIXME: Does SSE2 need more OS support, too? */
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__CYGWIN__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__CYGWIN__) || defined(__OpenBSD__) || defined(__DragonFly__)
 		if (caps->hasSSE)
 			check_os_katmai_support();
 		if (!caps->hasSSE)
@@ -235,7 +235,7 @@ char *GetCpuFriendlyName(unsigned int regs[], unsigned int regs2[]){
 	char *retname;
 	int i;
 
-	if (NULL==(retname=malloc(256))) {
+	if (NULL==(retname=(char*)malloc(256))) {
 		mp_msg(MSGT_CPUDETECT,MSGL_FATAL,"Error: GetCpuFriendlyName() not enough memory\n");
 		exit(1);
 	}
@@ -345,23 +345,16 @@ LONG CALLBACK win32_sig_handler_sse(EXCEPTION_POINTERS* ep)
  * and RedHat patched 2.2 kernels that have broken exception handling
  * support for user space apps that do SSE.
  */
- 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-#define SSE_SYSCTL_NAME "hw.instruction_sse"
-#elif defined(__APPLE__)
-#define SSE_SYSCTL_NAME "hw.optional.sse"
-#endif
-
 static void check_os_katmai_support( void )
 {
 #ifdef ARCH_X86_64
    gCpuCaps.hasSSE=1;
    gCpuCaps.hasSSE2=1;
-#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
    int has_sse=0, ret;
    size_t len=sizeof(has_sse);
 
-   ret = sysctlbyname(SSE_SYSCTL_NAME, &has_sse, &len, NULL, 0);
+   ret = sysctlbyname("hw.instruction_sse", &has_sse, &len, NULL, 0);
    if (ret || !has_sse)
       gCpuCaps.hasSSE=0;
 

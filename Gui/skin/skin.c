@@ -586,7 +586,7 @@ int cmd_decoration( char * in )
 
 typedef struct
 {
- const char * name;
+ char * name;
  int  (*func)( char * in );
 } _item;
 
@@ -682,7 +682,6 @@ int skinRead( char * dname )
        setname( skinMPlayerDir_obsolete,dname );
        if ( ( skinFile = fopen( fn,"rt" ) ) == NULL )
         {
-         setname( skinMPlayerDir,dname );
          mp_msg( MSGT_GPLAYER,MSGL_STATUS,MSGTR_SKIN_SkinFileNotFound,fn );
          return -1;
         }

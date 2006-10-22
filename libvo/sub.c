@@ -14,7 +14,6 @@
 #include "font_load.h"
 #include "sub.h"
 #include "spudec.h"
-#include "libavutil/common.h"
 
 #define NEW_SPLITTING
 
@@ -141,20 +140,6 @@ inline static void vo_draw_text_from_buffer(mp_osd_obj_t* obj,void (*draw_alpha)
     }
 }
 
-unsigned utf8_get_char(char **str) {
-  uint8_t *strp = (uint8_t *)*str;
-  unsigned c;
-  GET_UTF8(c, *strp++, goto no_utf8;);
-  *str = (char *)strp;
-  return c;
-
-no_utf8:
-  strp = (uint8_t *)*str;
-  c = *strp++;
-  *str = (char *)strp;
-  return c;
-}
-
 inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
 	unsigned char *cp=vo_osd_text;
 	int x=20;
@@ -165,7 +150,7 @@ inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
         obj->bbox.y1=obj->y=10;
 
         while (*cp){
-          uint16_t c=utf8_get_char(&cp);
+          int c=*cp++;
 	  render_one_glyph(vo_font, c);
 	  x+=vo_font->width[c]+vo_font->charspace;
 	  h=get_height(c,h);
@@ -180,7 +165,7 @@ inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
 	cp=vo_osd_text;
 	x = obj->x;
         while (*cp){
-          uint16_t c=utf8_get_char(&cp);
+          int c=*cp++;
           if ((font=vo_font->font[c])>=0)
             draw_alpha_buf(obj,x,obj->y,
 			   vo_font->width[c],
@@ -475,7 +460,6 @@ inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
 		char_position = 0;
 		xsize = -vo_font->charspace;
 	    }
-	    free(char_seq);
 
 	    if (osl != NULL) {
 		int value = 0, exit = 0, minimum = 0;
@@ -751,7 +735,7 @@ extern void vo_draw_alpha_init(void);
 
        mp_osd_obj_t* vo_osd_list=NULL;
 
-static mp_osd_obj_t* new_osd_obj(int type){
+mp_osd_obj_t* new_osd_obj(int type){
     mp_osd_obj_t* osd=malloc(sizeof(mp_osd_obj_t));
     memset(osd,0,sizeof(mp_osd_obj_t));
     osd->next=vo_osd_list;

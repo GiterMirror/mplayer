@@ -20,7 +20,7 @@ typedef int (*opt_test_f)(void *);
 /** simple structure for defining the option name, type and storage location */
 typedef struct opt_s
 {
-  const char * name; ///< string that identifies the option
+  char * name; ///< string that identifies the option
   int type;    ///< option type as defined in subopt-helper.h
   void * valp; ///< pointer to the mem where the value should be stored
   opt_test_f test; ///< argument test func ( optional )
@@ -44,7 +44,7 @@ typedef struct strarg_s
 int int_non_neg( int * i );
 int int_pos( int * i );
 
-int strargcmp(strarg_t *arg, const char *str);
+int strargcmp(strarg_t *arg, char *str);
 int strargcasecmp(strarg_t *arg, char *str);
 
 #endif

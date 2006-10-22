@@ -70,44 +70,14 @@ dvdnav <button>
         5 menu
         6 select
 
+dvdnav_event <value>
+    Send <value> as DVDNAV event. DVDNAV support in MPlayer is disabled.
+
 edl_mark
     Write the current position into the EDL file.
 
 frame_drop [value]
     Toggle/set frame dropping mode.
-
-get_audio_bitrate
-    Print out the audio bitrate of the current file.
-
-get_audio_codec
-    Print out the audio codec name of the current file.
-
-get_audio_samples
-    Print out the audio frequency and number of channels of the current file.
-
-get_file_name
-    Print out the name of the current file.
-
-get_meta_album
-    Print out the 'Album' metadata of the current file.
-
-get_meta_artist
-    Print out the 'Artist' metadata of the current file.
-
-get_meta_comment
-    Print out the 'Comment' metadata of the current file.
-
-get_meta_genre
-    Print out the 'Genre' metadata of the current file.
-
-get_meta_title
-    Print out the 'Title' metadata of the current file.
-
-get_meta_track
-    Print out the 'Track Number' metadata of the current file.
-
-get_meta_year
-    Print out the 'Year' metadata of the current file.
 
 get_percent_pos
     Print out the current position in the file, as integer percentage [0-100).
@@ -127,28 +97,17 @@ get_time_pos
 get_vo_fullscreen
     Print out fullscreen status (1 == fullscreened, 0 == windowed).
 
-get_video_bitrate
-    Print out the video bitrate of the current file.
-
-get_video_codec
-    Print out the video codec name of the current file.
-
-get_video_resolution
-    Print out the video resolution of the current file.
-
 grab_frames
     Currently unimplemented.
 
-screenshot <value>
+screenshot
     Take a screenshot. Requires the screenshot filter to be loaded.
-        0 Take a single screenshot.
-        1 Start/stop taking screenshot of each frame.
 
 gui_[about|loadfile|loadsubtitle|play|playlist|preferences|skinbrowser|stop]
     GUI actions
 
 key_down_event <value>
-    Inject <value> key code event into MPlayer.
+	Inject <value> key code event into MPlayer.
 
 loadfile <file|url> <append>
     Load the given file/URL, stopping playback of the current file/URL.
@@ -212,30 +171,11 @@ quit [value]
     Quit MPlayer. The optional integer [value] is used as the return code
     for the mplayer process (default: 0).
 
-radio_set_channel <channel>
-    Switch to <channel>. The 'channels' radio parameter needs to be set.
-
-radio_set_freq <frequency in MHz>
-    Set the radio tuner frequency.
-
-radio_step_channel <-1|1>
-    Step forwards (1) or backwards (-1) in channel list. Works only when the
-    'channels' radio parameter was set.
-
 seek <value> [type]
     Seek to some place in the movie.
         0 is a relative seek of +/- <value> seconds (default).
         1 is a seek to <value> % in the movie.
         2 is a seek to an absolute position of <value> seconds.
-
-seek_chapter <value> [type]
-    Seek to the start of a chapter.
-        0 is a relative seek of +/- <value> chapters (default).
-        1 is a seek to chapter <value>.
-
-set_mouse_pos <x> <y>
-    Tells MPlayer the coordinates of the mouse in the window.
-    This command doesn't move the mouse!
 
 set_property <property> <value>
     Set a property.

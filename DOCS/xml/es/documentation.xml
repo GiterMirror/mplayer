@@ -31,7 +31,7 @@ para LINUX</title>
 
   <para>Usted debería haber recibido una copia de la Licencia Pública General GNU
   junto a este programa; si no es así, escriba a la Free Software Foundation, Inc.,
-  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</para>
+  59 Temple Place, Suite 330, Boston, MA, 02111-1307, USA.</para>
 </legalnotice>
 -->
 </bookinfo>
@@ -48,8 +48,7 @@ Tabla de Contenidos</link> y busque el asunto particular, lea las <link
 linkend="faq">preguntas frecuentes</link>, o intente usando grep entre los
 archivos. La mayoría de las cuestiones debe estar contestadas en algún lugar de por
 aquí y el resto probablemente ya haya sido preguntado en nuestras
-<ulink url="http://www.mplayerhq.hu/design7/info.html#mailing_lists">listas de correo</ulink>.
-Compruebe los
+<link linkend="mailinglists">listas de correo</link>. Compruebe los
 <ulink url="http://www.mplayerhq.hu/cgi-bin/s-arch.cgi">archivos</ulink>, hay un montón
 de información valiosa allí.
 </para>
@@ -188,6 +187,8 @@ License Version 2 (GPL v.2).
 &cd-dvd.xml;
 &ports.xml;
 &mencoder.xml;
+&mail-lists.xml;
 &bugreports.xml;
 &bugs.xml;
 &skin.xml;
+&users-vs-dev.xml;
