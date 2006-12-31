@@ -40,7 +40,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "mp_msg.h"
 #include "asmrp.h"
 
 /*
@@ -419,13 +418,13 @@ static int asmrp_operand (asmrp_t *p) {
     asmrp_get_sym (p);
     
     if (p->sym != ASMRP_SYM_ID) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "error: identifier expected.\n");
-      break;
+      printf ("error: identifier expected.\n");
+      abort();
     }
 
     i = asmrp_find_id (p, p->str);
     if (i<0) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "error: unknown identifier %s\n", p->str);
+      printf ("error: unknown identifier %s\n", p->str);
     }
     ret = p->sym_tab[i].v;
 
@@ -444,15 +443,16 @@ static int asmrp_operand (asmrp_t *p) {
     ret = asmrp_condition (p);
 
     if (p->sym != ASMRP_SYM_RPAREN) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "error: ) expected.\n");
-      break;
+      printf ("error: ) expected.\n");
+      abort();
     }
 
     asmrp_get_sym (p);
     break;
 
   default:
-    mp_msg(MSGT_STREAM, MSGL_ERR, "syntax error, $ number or ( expected\n");
+    printf ("syntax error, $ number or ( expected\n");
+    abort();
   }
 
 #ifdef LOG
@@ -461,7 +461,6 @@ static int asmrp_operand (asmrp_t *p) {
   
   return ret;
 }
-
 
 static int asmrp_comp_expression (asmrp_t *p) {
 
@@ -560,21 +559,21 @@ static void asmrp_assignment (asmrp_t *p) {
   }
 
   if (p->sym != ASMRP_SYM_ID) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "error: identifier expected\n");
-    return;
+    printf ("error: identifier expected\n");
+    abort ();
   }
   asmrp_get_sym (p);
 
   if (p->sym != ASMRP_SYM_EQUALS) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "error: = expected\n");
-    return;
+    printf ("error: = expected\n");
+    abort ();
   }
   asmrp_get_sym (p);
 
   if ( (p->sym != ASMRP_SYM_NUM) && (p->sym != ASMRP_SYM_STRING) 
        && (p->sym != ASMRP_SYM_ID)) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "error: number or string expected\n");
-    return;
+    printf ("error: number or string expected\n");
+    abort ();
   }
   asmrp_get_sym (p);
 
@@ -621,8 +620,8 @@ static int asmrp_rule (asmrp_t *p) {
 #endif
 
   if (p->sym != ASMRP_SYM_SEMICOLON) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "semicolon expected.\n");
-    return ret;
+    printf ("semicolon expected.\n");
+    abort ();
   }
 
   asmrp_get_sym (p);
@@ -650,8 +649,7 @@ static int asmrp_eval (asmrp_t *p, int *matches) {
       if(num_matches < MAX_RULEMATCHES - 1)
         matches[num_matches++] = rule_num;
       else
-        mp_msg(MSGT_STREAM, MSGL_ERR,
-	  "Ignoring matched asm rule %d, too many matched rules.\n", rule_num);
+        printf("Ignoring matched asm rule %d, too many matched rules.\n", rule_num);
     }
 
     rule_num++;

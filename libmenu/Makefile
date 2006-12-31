@@ -13,6 +13,39 @@ SRCS= menu.c \
       menu_console.c \
       menu_param.c \
 
-SRCS-$(DVBIN) += menu_dvbin.c
+ifeq ($(DVBIN),yes)
+SRCS += menu_dvbin.c
+endif
+OBJS=$(SRCS:.c=.o)
 
-include ../mpcommon.mak
+CFLAGS  = -I. -I.. $(OPTFLAGS)
+
+.SUFFIXES: .c .o
+
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(LIBNAME):     $(OBJS)
+	$(AR) r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
+
+all:    $(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~
+
+distclean: clean
+	rm -f .depend
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

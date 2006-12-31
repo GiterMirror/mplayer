@@ -28,7 +28,6 @@
 
 #include "rmff.h"
 #include "xbuffer.h"
-#include "mp_msg.h"
 
 /*
 #define LOG
@@ -295,7 +294,7 @@ static rmff_fileheader_t *rmff_scan_fileheader(const char *data) {
   fileheader->object_version=BE_16(&data[8]);
   if (fileheader->object_version != 0)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "warning: unknown object version in .RMF: 0x%04x\n",
+    printf("warning: unknown object version in .RMF: 0x%04x\n",
       fileheader->object_version);
   }
   fileheader->file_version=BE_32(&data[10]);
@@ -313,7 +312,7 @@ static rmff_prop_t *rmff_scan_prop(const char *data) {
   prop->object_version=BE_16(&data[8]);
   if (prop->object_version != 0)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "warning: unknown object version in PROP: 0x%04x\n",
+    printf("warning: unknown object version in PROP: 0x%04x\n",
       prop->object_version);
   }
   prop->max_bit_rate=BE_32(&data[10]);
@@ -340,7 +339,7 @@ static rmff_mdpr_t *rmff_scan_mdpr(const char *data) {
   mdpr->object_version=BE_16(&data[8]);
   if (mdpr->object_version != 0)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "warning: unknown object version in MDPR: 0x%04x\n",
+    printf("warning: unknown object version in MDPR: 0x%04x\n",
       mdpr->object_version);
   }
   mdpr->stream_number=BE_16(&data[10]);
@@ -380,7 +379,7 @@ static rmff_cont_t *rmff_scan_cont(const char *data) {
   cont->object_version=BE_16(&data[8]);
   if (cont->object_version != 0)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "warning: unknown object version in CONT: 0x%04x\n",
+    printf("warning: unknown object version in CONT: 0x%04x\n",
       cont->object_version);
   }
   cont->title_len=BE_16(&data[10]);
@@ -415,7 +414,7 @@ static rmff_data_t *rmff_scan_dataheader(const char *data) {
   dh->object_version=BE_16(&data[8]);
   if (dh->object_version != 0)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "warning: unknown object version in DATA: 0x%04x\n",
+    printf("warning: unknown object version in DATA: 0x%04x\n",
       dh->object_version);
   }
   dh->num_packets=BE_32(&data[10]);
@@ -441,7 +440,7 @@ rmff_header_t *rmff_scan_header(const char *data) {
   chunk_type = BE_32(ptr);
   if (chunk_type != RMF_TAG)
   {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "rmff: not an real media file header (.RMF tag not found).\n");
+    printf("rmff: not an real media file header (.RMF tag not found).\n");
     free(header);
     return NULL;
   }
@@ -458,7 +457,7 @@ rmff_header_t *rmff_scan_header(const char *data) {
   
     if (ptr[0] == 0)
     {
-      mp_msg(MSGT_STREAM, MSGL_WARN, "rmff: warning: only %d of %d header found.\n", i, header->fileheader->num_headers);
+      printf("rmff: warning: only %d of %d header found.\n", i, header->fileheader->num_headers);
       break;
     }
     
@@ -482,7 +481,7 @@ rmff_header_t *rmff_scan_header(const char *data) {
       chunk_size=34;     /* hard coded header size */
       break;
     default:
-      mp_msg(MSGT_STREAM, MSGL_WARN, "unknown chunk\n");
+      printf("unknown chunk\n");
       hexdump(ptr,10);
       chunk_size=1;
       break;
@@ -519,7 +518,7 @@ rmff_header_t *rmff_scan_header_stream(int fd) {
 	index+=(chunk_size-8);
         break;
       default:
-        mp_msg(MSGT_STREAM, MSGL_WARN, "rmff_scan_header_stream: unknown chunk");
+        printf("rmff_scan_header_stream: unknown chunk");
         hexdump(buf+index-8, 8);
         chunk_type=DATA_TAG;
     }
@@ -760,12 +759,12 @@ void rmff_fix_header(rmff_header_t *h) {
   int num_streams=0;
 
   if (!h) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "rmff_fix_header: fatal: no header given.\n");
+    printf("rmff_fix_header: fatal: no header given.\n");
     return;
   }
 
   if (!h->streams) {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "rmff_fix_header: warning: no MDPR chunks\n");
+    printf("rmff_fix_header: warning: no MDPR chunks\n");
   } else
   {
     streams=h->streams;
@@ -796,13 +795,13 @@ void rmff_fix_header(rmff_header_t *h) {
     num_headers++;
     header_size+=50;
   } else
-    mp_msg(MSGT_STREAM, MSGL_WARN, "rmff_fix_header: warning: no PROP chunk.\n");
+    printf("rmff_fix_header: warning: no PROP chunk.\n");
 
   if (h->cont) {
     num_headers++;
     header_size+=h->cont->size;
   } else
-    mp_msg(MSGT_STREAM, MSGL_WARN, "rmff_fix_header: warning: no CONT chunk.\n");
+    printf("rmff_fix_header: warning: no CONT chunk.\n");
 
   if (!h->data) {
 #ifdef LOG

@@ -21,18 +21,29 @@
 #ifndef __ASS_CACHE_H__
 #define __ASS_CACHE_H__
 
-void ass_font_cache_init(void);
-ass_font_t* ass_font_cache_find(ass_font_desc_t* desc);
-void ass_font_cache_add(ass_font_t* font);
-void ass_font_cache_done(void);
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_STROKER_H
+#include FT_GLYPH_H
+
+// font cache
+typedef struct face_desc_s {
+	char* family;
+	unsigned bold;
+	unsigned italic;
+} face_desc_t;
+
+void ass_face_cache_init(void);
+int ass_new_face(FT_Library library, void* fontconfig_priv, face_desc_t* desc, /*out*/ FT_Face* face);
+void ass_face_cache_done(void);
 
 
 // describes a glyph; glyphs with equivalents structs are considered identical
 typedef struct glyph_hash_key_s {
 	char bitmap; // bool : true = bitmap, false = outline
-	ass_font_t* font;
+	FT_Face face;
 	int size; // font size
-	uint32_t ch; // character code
+	int index; // glyph index in the face
 	unsigned outline; // border width, 16.16 fixed point value
 	int bold, italic;
 	char be; // blur edges

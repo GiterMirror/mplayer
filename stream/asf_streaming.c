@@ -745,7 +745,8 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 			int r = send( fd, http_hdr->buffer+i, http_hdr->buffer_size-i, 0 );
 			if(r <0) {
 				mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_ASF_SocketWriteError,strerror(errno));
-				goto err_out;
+				http_free( http_hdr );
+				return -1;
 			}
 			i += r;
 		}       
@@ -756,7 +757,8 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 //printf("read: %d\n", i );
 			if( i<=0 ) {
 				perror("read");
-				goto err_out;
+				http_free( http_hdr );
+				return -1;
 			}
 			http_response_append( http_hdr, buffer, i );
 		} while( !http_is_header_entire( http_hdr ) );
@@ -767,7 +769,8 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 		ret = asf_http_parse_response(asf_http_ctrl, http_hdr);
 		if( ret<0 ) {
 			mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_ASF_HeaderParseFailed);
-			goto err_out;
+			http_free( http_hdr );
+			return -1;
 		}
 		switch( asf_http_ctrl->streaming_type ) {
 			case ASF_Live_e:
@@ -775,17 +778,18 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 			case ASF_PlainText_e:
 				if( http_hdr->body_size>0 ) {
 					if( streaming_bufferize( stream->streaming_ctrl, http_hdr->body, http_hdr->body_size )<0 ) {
-						goto err_out;
+						http_free( http_hdr );
+						return -1;
 					}
 				}
 				if( asf_http_ctrl->request==1 ) {
 					if( asf_http_ctrl->streaming_type!=ASF_PlainText_e ) {
 						// First request, we only got the ASF header.
 						ret = asf_streaming_parse_header(fd,stream->streaming_ctrl);
-						if(ret < 0) goto err_out;
+						if(ret < 0) return -1;
 						if(asf_http_ctrl->n_audio == 0 && asf_http_ctrl->n_video == 0) {
 							mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_ASF_NoStreamFound);
-							goto err_out;
+							return -1;
 						}
 						asf_http_ctrl->request++;
 						done = 0;
@@ -797,7 +801,8 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 			case ASF_Redirector_e:
 				if( http_hdr->body_size>0 ) {
 					if( streaming_bufferize( stream->streaming_ctrl, http_hdr->body, http_hdr->body_size )<0 ) {
-						goto err_out;
+						http_free( http_hdr );
+						return -1;
 					}
 				}
 				*demuxer_type = DEMUXER_TYPE_PLAYLIST;
@@ -811,7 +816,9 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 			case ASF_Unknown_e:
 			default:
 				mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_ASF_UnknownASFStreamingType);
-				goto err_out;
+				closesocket(fd);
+				http_free( http_hdr );
+				return -1;
 		}
 	// Check if we got a redirect.	
 	} while(!done);
@@ -830,13 +837,6 @@ static int asf_http_streaming_start( stream_t *stream, int *demuxer_type ) {
 
 	http_free( http_hdr );
 	return 0;
-
-err_out:
-	if (fd > 0)
-		closesocket(fd);
-	stream->fd = -1;
-	http_free(http_hdr);
-	return -1;
 }
 
 static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {

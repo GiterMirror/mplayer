@@ -46,7 +46,7 @@ else
 endif
 	depmod -a
 
-dep depend:
+dep:
 
 clean: 
 	rm -f *.o *.a *~

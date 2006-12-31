@@ -6,8 +6,6 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "libavutil/common.h"
-#include "libavutil/intreadwrite.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 
@@ -20,7 +18,8 @@
 #ifdef ARCH_X86
 #define	ASF_LOAD_GUID_PREFIX(guid)	(*(uint32_t *)(guid))
 #else
-#define	ASF_LOAD_GUID_PREFIX(guid)	LE_32(guid)
+#define	ASF_LOAD_GUID_PREFIX(guid)	\
+	((guid)[3] << 24 | (guid)[2] << 16 | (guid)[1] << 8 | (guid)[0])
 #endif
 
 #define ASF_GUID_PREFIX_audio_stream	0xF8699E40
@@ -60,36 +59,22 @@ const char asf_ext_stream_audio[16] = {0x9d, 0x8c, 0x17, 0x31,
   0xe1, 0x03, 0x28, 0x45, 0xb5, 0x82, 0x3d, 0xf9, 0xdb, 0x22, 0xf5, 0x03};
 const char asf_ext_stream_header[16] = {0xCB, 0xA5, 0xE6, 0x14,
   0x72, 0xC6, 0x32, 0x43, 0x83, 0x99, 0xA9, 0x69, 0x52, 0x06, 0x5B, 0x5A};
-const char asf_metadata_header[16] = {0xea, 0xcb, 0xf8, 0xc5,
-  0xaf, 0x5b, 0x77, 0x48, 0x84, 0x67, 0xaa, 0x8c, 0x44, 0xfa, 0x4c, 0xca};
 
-typedef struct {
-  // must be 0 for metadata record, might be non-zero for metadata lib record
-  uint16_t lang_list_index;
-  uint16_t stream_num;
-  uint16_t name_length;
-  uint16_t data_type;
-  uint32_t data_length;
-  uint16_t* name;
-  void* data;
-} ASF_meta_record_t;
 
-static char* get_ucs2str(const uint16_t* inbuf, uint16_t inlen)
-{
-  char* outbuf = calloc(inlen, 2);
-  char* q;
-  int i;
-
-  if (!outbuf) {
-    mp_msg(MSGT_HEADER, MSGL_ERR, MSGTR_MemAllocFailed);
-    return NULL;
+// the variable string is modify in this function
+void pack_asf_string(char* string, int length) {
+  int i,j;
+  if( string==NULL ) return;
+  for( i=0, j=0; i<length && string[i]!='\0'; i+=2, j++) {
+    string[j]=string[i];
   }
-  q = outbuf;
-  for (i = 0; i < inlen / 2; i++) {
-    uint8_t tmp;
-    PUT_UTF8(le2me_16(inbuf[i]), tmp, *q++ = tmp;)
-  }
-  return outbuf;
+  string[j]='\0';
+}
+
+// the variable string is modify in this function
+void print_asf_string(const char* name, char* string, int length) {
+  pack_asf_string(string, length);
+  mp_msg(MSGT_HEADER,MSGL_V,"%s%s\n", name, string);
 }
 
 static const char* asf_chunk_type(unsigned char* guid) {
@@ -202,11 +187,11 @@ static int get_ext_stream_properties(char *buf, int buf_len, int stream_num, dou
     // flags(4) (reliable,seekable,no_cleanpoints?,resend-live-cleanpoints, rest of bits reserved)
 
     buffer +=8+8+4+4+4+4+4+4+4+4;
-    this_stream_num=LE_16(buffer);buffer+=2;
+    this_stream_num=le2me_16(*(uint16_t*)buffer);buffer+=2;
 
     if (this_stream_num == stream_num) {
       buffer+=2; //skip stream-language-id-index
-      avg_ft = LE_32(buffer) | (uint64_t)LE_32(buffer + 4) << 32; // provided in 100ns units
+      avg_ft = le2me_64(*(uint64_t*)buffer); // provided in 100ns units
       *avg_frame_time = avg_ft/10000000.0f;
 
       // after this are values for stream-name-count and
@@ -214,71 +199,6 @@ static int get_ext_stream_properties(char *buf, int buf_len, int stream_num, dou
       // followed by associated info for each
       return 1;
     }
-  }
-  return 0;
-}
-
-#define CHECKDEC(l, n) if (((l) -= (n)) < 0) return 0
-static char* read_meta_record(ASF_meta_record_t* dest, char* buf,
-    int* buf_len)
-{
-  CHECKDEC(*buf_len, 2 + 2 + 2 + 2 + 4);
-  dest->lang_list_index = LE_16(buf);
-  dest->stream_num = LE_16(&buf[2]);
-  dest->name_length = LE_16(&buf[4]);
-  dest->data_type = LE_16(&buf[6]);
-  dest->data_length = LE_32(&buf[8]);
-  buf += 2 + 2 + 2 + 2 + 4;
-  CHECKDEC(*buf_len, dest->name_length);
-  dest->name = (uint16_t*)buf;
-  buf += dest->name_length;
-  CHECKDEC(*buf_len, dest->data_length);
-  dest->data = buf;
-  buf += dest->data_length;
-  return buf;
-}
-
-static int get_meta(char *buf, int buf_len, int this_stream_num,
-    float* asp_ratio)
-{
-  int pos = 0;
-  uint16_t records_count;
-  uint16_t x = 0, y = 0;
-
-  if ((pos = find_asf_guid(buf, asf_metadata_header, pos, buf_len)) < 0)
-    return 0;
-
-  CHECKDEC(buf_len, pos);
-  buf += pos;
-  CHECKDEC(buf_len, 2);
-  records_count = LE_16(buf);
-  buf += 2;
-
-  while (records_count--) {
-    ASF_meta_record_t record_entry;
-    char* name;
-
-    if (!(buf = read_meta_record(&record_entry, buf, &buf_len)))
-        return 0;
-    /* reserved, must be zero */
-    if (record_entry.lang_list_index)
-      continue;
-    /* match stream number: 0 to match all */
-    if (record_entry.stream_num && record_entry.stream_num != this_stream_num)
-      continue;
-    if (!(name = get_ucs2str(record_entry.name, record_entry.name_length))) {
-      mp_msg(MSGT_HEADER, MSGL_ERR, MSGTR_MemAllocFailed);
-      continue;
-    }
-    if (strcmp(name, "AspectRatioX") == 0)
-      x = LE_16(record_entry.data);
-    else if (strcmp(name, "AspectRatioY") == 0)
-      y = LE_16(record_entry.data);
-    free(name);
-  }
-  if (x && y) {
-    *asp_ratio = (float)x / (float)y;
-    return 1;
   }
   return 0;
 }
@@ -311,7 +231,6 @@ static int asf_init_audio_stream(demuxer_t *demuxer,struct asf_priv* asf, sh_aud
 
 int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
   int hdr_len = asf->header.objh.size - sizeof(asf->header);
-  int hdr_skip = 0;
   char *hdr = NULL;
   char guid_buffer[16];
   int pos, start = stream_tell(demuxer->stream);
@@ -332,10 +251,9 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
   }
     
   if (hdr_len > 1024 * 1024) {
-    mp_msg(MSGT_HEADER, MSGL_ERR, MSGTR_MPDEMUX_ASFHDR_HeaderSizeOver1MB,
+    mp_msg(MSGT_HEADER, MSGL_FATAL, MSGTR_MPDEMUX_ASFHDR_HeaderSizeOver1MB,
 			hdr_len);
-    hdr_skip = hdr_len - 1024 * 1024;
-    hdr_len = 1024 * 1024;
+    return 0;
   }
   hdr = malloc(hdr_len);
   if (!hdr) {
@@ -344,8 +262,6 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
     return 0;
   }
   stream_read(demuxer->stream, hdr, hdr_len);
-  if (hdr_skip)
-    stream_skip(demuxer->stream, hdr_skip);
   if (stream_eof(demuxer->stream)) {
     mp_msg(MSGT_HEADER, MSGL_FATAL, MSGTR_MPDEMUX_ASFHDR_EOFWhileReadingHeader);
     goto err_out;
@@ -414,7 +330,6 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
       case ASF_GUID_PREFIX_video_stream: {
         sh_video_t* sh_video=new_sh_video(demuxer,streamh->stream_no & 0x7F);
         unsigned int len=streamh->type_size-(4+4+1+2);
-        float asp_ratio;
 	++video_streams;
 //        sh_video->bih=malloc(chunksize); memset(sh_video->bih,0,chunksize);
         sh_video->bih=calloc((len<sizeof(BITMAPINFOHEADER))?sizeof(BITMAPINFOHEADER):len,1);
@@ -436,10 +351,6 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
 	  asf->avg_vid_frame_time=0.0; // only used for dvr-ms when > 0.0
 	  sh_video->fps=1000.0f;
 	  sh_video->frametime=0.001f;
-        }
-        if (get_meta(hdr, hdr_len, streamh->stream_no, &asp_ratio)) {
-          sh_video->aspect = asp_ratio * sh_video->bih->biWidth /
-            sh_video->bih->biHeight;
         }
 
         if( mp_msg_test(MSGT_DEMUX,MSGL_V) ) print_video_header(sh_video->bih, MSGL_V);
@@ -476,65 +387,61 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
   if (pos >= 0) {
         ASF_content_description_t *contenth = (ASF_content_description_t *)&hdr[pos];
         char *string=NULL;
-        uint16_t* wstring = NULL;
-        uint16_t len;
         pos += sizeof(ASF_content_description_t);
         if (pos > hdr_len) goto len_err_out;
 	le2me_ASF_content_description_t(contenth);
 	mp_msg(MSGT_HEADER,MSGL_V,"\n");
         // extract the title
-        if((len = contenth->title_size) != 0) {
-          wstring = (uint16_t*)&hdr[pos];
-          pos += len;
+        if( contenth->title_size!=0 ) {
+          string = &hdr[pos];
+          pos += contenth->title_size;
           if (pos > hdr_len) goto len_err_out;
-          if ((string = get_ucs2str(wstring, len))) {
-            mp_msg(MSGT_HEADER,MSGL_V," Title: %s\n", string);
-            demux_info_add(demuxer, "name", string);
-            free(string);
-          }
+          if( mp_msg_test(MSGT_HEADER,MSGL_V) )
+            print_asf_string(" Title: ", string, contenth->title_size);
+	  else
+	    pack_asf_string(string, contenth->title_size);
+	  demux_info_add(demuxer, "name", string);
         }
         // extract the author 
-        if((len = contenth->author_size) != 0) {
-          wstring = (uint16_t*)&hdr[pos];
-          pos += len;
+        if( contenth->author_size!=0 ) {
+          string = &hdr[pos];
+          pos += contenth->author_size;
           if (pos > hdr_len) goto len_err_out;
-          if ((string = get_ucs2str(wstring, len))) {
-            mp_msg(MSGT_HEADER,MSGL_V," Author: %s\n", string);
-            demux_info_add(demuxer, "author", string);
-            free(string);
-          }
+          if( mp_msg_test(MSGT_HEADER,MSGL_V) )
+            print_asf_string(" Author: ", string, contenth->author_size);
+	  else
+	    pack_asf_string(string, contenth->author_size);
+	  demux_info_add(demuxer, "author", string);
         }
         // extract the copyright
-        if((len = contenth->copyright_size) != 0) {
-          wstring = (uint16_t*)&hdr[pos];
-          pos += len;
+        if( contenth->copyright_size!=0 ) {
+          string = &hdr[pos];
+          pos += contenth->copyright_size;
           if (pos > hdr_len) goto len_err_out;
-          if ((string = get_ucs2str(wstring, len))) {
-            mp_msg(MSGT_HEADER,MSGL_V," Copyright: %s\n", string);
-            demux_info_add(demuxer, "copyright", string);
-            free(string);
-          }
+          if( mp_msg_test(MSGT_HEADER,MSGL_V) )
+            print_asf_string(" Copyright: ", string, contenth->copyright_size);
+	  else
+	    pack_asf_string(string, contenth->copyright_size);
+	  demux_info_add(demuxer, "copyright", string);
         }
         // extract the comment
-        if((len = contenth->comment_size) != 0) {
-          wstring = (uint16_t*)&hdr[pos];
-          pos += len;
+        if( contenth->comment_size!=0 ) {
+          string = &hdr[pos];
+          pos += contenth->comment_size;
           if (pos > hdr_len) goto len_err_out;
-          if ((string = get_ucs2str(wstring, len))) {
-            mp_msg(MSGT_HEADER,MSGL_V," Comment: %s\n", string);
-            demux_info_add(demuxer, "comments", string);
-            free(string);
-          }
+          if( mp_msg_test(MSGT_HEADER,MSGL_V) )
+            print_asf_string(" Comment: ", string, contenth->comment_size);
+	  else
+	    pack_asf_string(string, contenth->comment_size);
+	  demux_info_add(demuxer, "comments", string);
         }
         // extract the rating
-        if((len = contenth->rating_size) != 0) {
-          wstring = (uint16_t*)&hdr[pos];
-          pos += len;
+        if( contenth->rating_size!=0 ) {
+          string = &hdr[pos];
+          pos += contenth->rating_size;
           if (pos > hdr_len) goto len_err_out;
-          if ((string = get_ucs2str(wstring, len))) {
-            mp_msg(MSGT_HEADER,MSGL_V," Rating: %s\n", string);
-            free(string);
-          }
+          if( mp_msg_test(MSGT_HEADER,MSGL_V) )
+            print_asf_string(" Rating: ", string, contenth->rating_size);
         }
 	mp_msg(MSGT_HEADER,MSGL_V,"\n");
   }
@@ -546,14 +453,14 @@ int read_asf_header(demuxer_t *demuxer,struct asf_priv* asf){
         uint32_t max_bitrate;
         char *ptr = &hdr[pos];
         mp_msg(MSGT_HEADER,MSGL_V,"============ ASF Stream group == START ===\n");
-        stream_count = LE_16(ptr);
+        stream_count = le2me_16(*(uint16_t*)ptr);
         ptr += sizeof(uint16_t);
         if (ptr > &hdr[hdr_len]) goto len_err_out;
         if(stream_count > 0)
               streams = malloc(2*stream_count*sizeof(uint32_t));
         mp_msg(MSGT_HEADER,MSGL_V," stream count=[0x%x][%u]\n", stream_count, stream_count );
         for( i=0 ; i<stream_count ; i++ ) {
-          stream_id = LE_16(ptr);
+          stream_id = le2me_16(*(uint16_t*)ptr);
           ptr += sizeof(uint16_t);
           if (ptr > &hdr[hdr_len]) goto len_err_out;
           memcpy(&max_bitrate, ptr, sizeof(uint32_t));// workaround unaligment bug on sparc

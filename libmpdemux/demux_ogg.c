@@ -33,6 +33,20 @@ extern int _ilog (unsigned int); /* defined in many places in theora/lib/ */
 
 #define BLOCK_SIZE 4096
 
+/// Vorbis decoder context : we need the vorbis_info for vorbis timestamping
+/// Shall we put this struct def in a common header ?
+typedef struct ov_struct_st {
+  vorbis_info      vi; /* struct that stores all the static vorbis bitstream
+			  settings */
+  vorbis_comment   vc; /* struct that stores all the bitstream user comments */
+  vorbis_dsp_state vd; /* central working state for the packet->PCM decoder */
+  vorbis_block     vb; /* local working space for packet->PCM decode */
+  float            rg_scale; /* replaygain scale */
+#ifdef TREMOR
+  int              rg_scale_int;
+#endif
+} ov_struct_t;
+
 /* Theora decoder context : we won't be able to interpret granule positions
  * without using theora_granule_time with the theora_state of the stream.
  * This is duplicated in `vd_theora.c'; put this in a common header?
@@ -109,9 +123,6 @@ typedef struct ogg_stream {
   int text;
   int id;
 
-  vorbis_info      vi;
-  int vi_inited;
-
   void *ogg_d;
 } ogg_stream_t;
 
@@ -132,6 +143,10 @@ typedef struct ogg_demuxer {
   int n_text;
   int *text_ids;
   char **text_langs;
+
+  vorbis_info      vi;
+  vorbis_comment   vc;
+  int vi_inited;
 } ogg_demuxer_t;
 
 #define NUM_VORBIS_HDR_PACKETS 3
@@ -210,14 +225,20 @@ uint64_t get_uint64 (const void *buf)
   return (ret);
 }
 
+void demux_ogg_init_sub (void) {
+  int lcv;
+  if(!ogg_sub.text[0]) // not yet allocated
+  for (lcv = 0; lcv < SUB_MAX_TEXT; lcv++) {
+    ogg_sub.text[lcv] = malloc(OGG_SUB_MAX_LINE);
+  }
+}
+
 void demux_ogg_add_sub (ogg_stream_t* os,ogg_packet* pack) {
   int lcv;
   int line_pos = 0;
   int ignoring = 0;
   char *packet = pack->packet;
 
-  if (pack->bytes < 4)
-    return;
   mp_msg(MSGT_DEMUX,MSGL_DBG2,"\ndemux_ogg_add_sub %02X %02X %02X '%s'\n",
       (unsigned char)packet[0],
       (unsigned char)packet[1],
@@ -231,8 +252,6 @@ void demux_ogg_add_sub (ogg_stream_t* os,ogg_packet* pack) {
     int16_t hdrlen = (*packet & PACKET_LEN_BITS01)>>6, i;
     hdrlen |= (*packet & PACKET_LEN_BITS2) <<1;
     lcv = 1 + hdrlen;
-    if (pack->bytes < lcv)
-      return;
     for (i = hdrlen; i > 0; i--) {
       duration <<= 8;
       duration |= (unsigned char)packet[i];
@@ -244,15 +263,11 @@ void demux_ogg_add_sub (ogg_stream_t* os,ogg_packet* pack) {
       pts = (float)pack->granulepos/(float)os->samplerate;
       clear_sub = 1.0 + pts + (float)duration/1000.0;
     }
-    ogg_sub.text[0] = realloc(ogg_sub.text[0], OGG_SUB_MAX_LINE);
     while (1) {
-      int c = lcv < pack->bytes ? packet[lcv++] : 0;
+      int c = packet[lcv++];
       if(c=='\n' || c==0 || line_pos >= OGG_SUB_MAX_LINE-1){
 	  ogg_sub.text[ogg_sub.lines][line_pos] = 0; // close sub
-          if(line_pos) {
-              ogg_sub.lines++;
-              ogg_sub.text[ogg_sub.lines] = realloc(ogg_sub.text[ogg_sub.lines], OGG_SUB_MAX_LINE);
-          }
+          if(line_pos) ogg_sub.lines++;
 	  if(!c || ogg_sub.lines>=SUB_MAX_TEXT) break; // EOL or TooMany
           line_pos = 0;
       }
@@ -328,13 +343,13 @@ static unsigned char* demux_ogg_read_packet(ogg_stream_t* os,ogg_packet* pack,vo
   if(os->vorbis) {
     if(*pack->packet & PACKET_TYPE_HEADER)
       os->hdr_packets++;
-    else if (os->vi_inited)
+    else if (ogg_d->vi_inited)
     {
        vorbis_info *vi;
        int32_t blocksize;
        
        // When we dump the audio, there is no vi, but we don't care of timestamp in this case
-       vi = &(os->vi);
+       vi = &(ogg_d->vi);
        blocksize = vorbis_packet_blocksize(vi,pack) / samplesize;
        // Calculate the timestamp if the packet don't have any
        if(pack->granulepos == -1) {
@@ -378,8 +393,6 @@ static unsigned char* demux_ogg_read_packet(ogg_stream_t* os,ogg_packet* pack,vo
 #endif /* HAVE_OGGTHEORA */
   } else if (os->flac) {
      /* we pass complete packets to flac, mustn't strip the header! */
-     if (os->flac == 2 && pack->packet[0] != 0xff)
-       return NULL;
   } else {
     if(*pack->packet & PACKET_TYPE_HEADER)
       os->hdr_packets++;
@@ -471,9 +484,9 @@ static void demux_ogg_check_comments(demuxer_t *d, ogg_stream_t *os, int id, vor
 	ogg_d->text_langs[index] = strdup(val);
       }
       // check for -slang if subs are uninitialized yet
-      if (os->text && d->sub->id < 0 && demux_ogg_check_lang(val, dvdsub_lang))
+      if (os->text && d->sub->id == -1 && demux_ogg_check_lang(val, dvdsub_lang))
       {
-	d->sub->id = index;
+	d->sub->id = id;
 	dvdsub_id = index;
         mp_msg(MSGT_DEMUX, MSGL_V, "Ogg demuxer: Displaying subtitle stream id %d which matched -slang %s\n", id, val);
       }
@@ -523,7 +536,7 @@ static int demux_ogg_add_packet(demux_stream_t* ds,ogg_stream_t* os,int id,ogg_p
     vorbis_info_clear(&vi);
   }
   if (os->text) {
-    if (id == demux_ogg_sub_id(d, d->sub->id)) // don't want to add subtitles to the demuxer for now
+    if (id == d->sub->id) // don't want to add subtitles to the demuxer for now
       demux_ogg_add_sub(os,pack);
     return 0;
   }
@@ -552,8 +565,6 @@ static int demux_ogg_add_packet(demux_stream_t* ds,ogg_stream_t* os,int id,ogg_p
   if (ds == d->video && ((sh_audio_t*)ds->sh)->format == FOURCC_THEORA)
      context = ((sh_video_t *)ds->sh)->context;
   data = demux_ogg_read_packet(os,pack,context,&pts,&flags,samplesize);
-  if (!data)
-    return 0;
 
   /// Clear subtitles if necessary (for broken files)
   if ((clear_sub > 0) && (pts >= clear_sub)) {
@@ -593,7 +604,7 @@ void demux_ogg_scan_stream(demuxer_t* demuxer) {
   stream_seek(s,demuxer->movi_start);
   } else {
     //the 270000 are just a wild guess
-    stream_seek(s,FFMAX(ogg_d->pos,demuxer->movi_end-270000));
+    stream_seek(s,max(ogg_d->pos,demuxer->movi_end-270000));
   }
   ogg_sync_reset(sync);
 
@@ -703,6 +714,16 @@ extern void print_video_header(BITMAPINFOHEADER *h, int verbose_level);
 /* defined in demux_mov.c */
 extern unsigned int store_ughvlc(unsigned char *s, unsigned int v);
 
+/** \brief Return the number of subtitle tracks in the file.
+
+  \param demuxer The demuxer for which the number of subtitle tracks
+  should be returned.
+*/
+int demux_ogg_num_subs(demuxer_t *demuxer) {
+  ogg_demuxer_t *ogg_d = (ogg_demuxer_t *)demuxer->priv;
+  return ogg_d->n_text;
+}
+
 /** \brief Change the current subtitle stream and return its ID.
 
   \param demuxer The demuxer whose subtitle stream will be changed.
@@ -748,11 +769,9 @@ static void fixup_vorbis_wf(sh_audio_t *sh, ogg_demuxer_t *od)
   unsigned char *buf[3];
   unsigned char *ptr;
   unsigned int len;
-  ogg_stream_t *os = &od->subs[sh->ds->id];
-  vorbis_comment vc;
 
-  vorbis_info_init(&os->vi);
-  vorbis_comment_init(&vc);
+  vorbis_info_init(&od->vi);
+  vorbis_comment_init(&od->vc);
   for(i = 0; i < 3; i++) {
     op[i].bytes = ds_get_packet(sh->ds, &(op[i].packet));
     mp_msg(MSGT_DEMUX,MSGL_V, "fixup_vorbis_wf: i=%d, size=%ld\n", i, op[i].bytes);
@@ -766,15 +785,14 @@ static void fixup_vorbis_wf(sh_audio_t *sh, ogg_demuxer_t *od)
     memcpy(buf[i], op[i].packet, op[i].bytes);
 
     op[i].b_o_s = (i==0);
-    ris = vorbis_synthesis_headerin(&(os->vi),&vc,&(op[i]));
+    ris = vorbis_synthesis_headerin(&(od->vi),&(od->vc),&(op[i]));
     if(ris < 0) {
       init_error = 1;
       mp_msg(MSGT_DECAUDIO,MSGL_ERR,"DEMUX_OGG: header n. %d broken! len=%ld, code: %d\n", i, op[i].bytes, ris);
     }
   }
-  vorbis_comment_clear(&vc);
   if(!init_error)
-    os->vi_inited = 1;
+    od->vi_inited = 1;
 
   len = op[0].bytes + op[1].bytes + op[2].bytes;
   sh->wf = calloc(1, sizeof(WAVEFORMATEX) + len + len/255 + 64);
@@ -982,8 +1000,6 @@ int demux_ogg_open(demuxer_t* demuxer) {
 		   n_video - 1);
 	    if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_video_header(sh_v->bih,MSGL_V);
 	}
-	theora_comment_clear(&cc);
-	theora_info_clear(&inf);
 #   endif /* HAVE_OGGTHEORA */
     } else if (pack.bytes >= 4 && !strncmp (&pack.packet[0], "fLaC", 4)) {
 	sh_a = new_sh_audio_aid(demuxer,ogg_d->num_sub, n_audio);
@@ -993,17 +1009,6 @@ int demux_ogg_open(demuxer_t* demuxer) {
 	ogg_d->subs[ogg_d->num_sub].flac = 1;
 	sh_a->wf = NULL;
 	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (FLAC), -aid %d\n",ogg_d->num_sub,n_audio-1);
-    } else if (pack.bytes >= 51 && !strncmp(&pack.packet[1], "FLAC", 4)) {
-	sh_a = new_sh_audio_aid(demuxer,ogg_d->num_sub, n_audio);
-	sh_a->format =  mmioFOURCC('f', 'L', 'a', 'C');
-	ogg_d->subs[ogg_d->num_sub].id = n_audio;
-	n_audio++;
-	ogg_d->subs[ogg_d->num_sub].flac = 2;
-	sh_a->wf = calloc(1, sizeof(WAVEFORMATEX) + 34);
-	sh_a->wf->wFormatTag = sh_a->format;
-	sh_a->wf->cbSize = 34;
-	memcpy(&sh_a->wf[1], &pack.packet[17], 34);
-	mp_msg(MSGT_DEMUX,MSGL_INFO,"[Ogg] stream %d: audio (FLAC, try 2), -aid %d\n",ogg_d->num_sub,n_audio-1);
 
       /// Check for old header
     } else if(pack.bytes >= 142 && ! strncmp(&pack.packet[1],"Direct Show Samples embedded in Ogg",35) ) {
@@ -1126,15 +1131,16 @@ int demux_ogg_open(demuxer_t* demuxer) {
           mp_msg(MSGT_DEMUX, MSGL_INFO, "[Ogg] stream %d: subtitles (SRT-like text subtitles), -sid %d\n", ogg_d->num_sub, ogg_d->n_text);
 	  ogg_d->subs[ogg_d->num_sub].samplerate= get_uint64(&st->time_unit)/10;
 	  ogg_d->subs[ogg_d->num_sub].text = 1;
+	  mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_SUBTITLE_ID=%d\n", ogg_d->n_text);
           ogg_d->subs[ogg_d->num_sub].id = ogg_d->n_text;
           if (demuxer->sub->id == ogg_d->n_text)
             text_id = ogg_d->num_sub;
-          new_sh_sub(demuxer, ogg_d->n_text);
           ogg_d->n_text++;
           ogg_d->text_ids = (int *)realloc(ogg_d->text_ids, sizeof(int) * ogg_d->n_text);
           ogg_d->text_ids[ogg_d->n_text - 1] = ogg_d->num_sub;
           ogg_d->text_langs = (char **)realloc(ogg_d->text_langs, sizeof(char *) * ogg_d->n_text);
           ogg_d->text_langs[ogg_d->n_text - 1] = NULL;
+          demux_ogg_init_sub();
 	//// Unknown header type
       } else
 	mp_msg(MSGT_DEMUX,MSGL_ERR,"Ogg stream %d has a header marker but is of an unknown type\n",ogg_d->num_sub);
@@ -1438,7 +1444,7 @@ static void demux_ogg_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
     /* demux_ogg_read_packet needs decoder context for Vorbis streams */
     if(((sh_audio_t*)demuxer->audio->sh)->format == FOURCC_VORBIS)
       context = ((sh_audio_t*)demuxer->audio->sh)->context;
-    vi = &(os->vi);
+    vi = &(ogg_d->vi);
     rate = (float)vi->rate;
     samplesize = ((sh_audio_t*)ds->sh)->samplesize;
   }
@@ -1586,7 +1592,6 @@ static void demux_ogg_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_de
 
 static void demux_close_ogg(demuxer_t* demuxer) {
   ogg_demuxer_t* ogg_d = demuxer->priv;
-  ogg_stream_t* os = NULL;
   int i;
 
   if(!ogg_d)
@@ -1612,11 +1617,6 @@ static void demux_close_ogg(demuxer_t* demuxer) {
       if (ogg_d->text_langs[i]) free(ogg_d->text_langs[i]);
     free(ogg_d->text_langs);
   }
-  if(demuxer->audio->id > -1 && demuxer->audio->id < ogg_d->num_sub) {
-    os = &ogg_d->subs[demuxer->audio->id];
-    if(os->vi_inited)
-      vorbis_info_clear(&os->vi);
-  }
   free(ogg_d);
 }
 
@@ -1630,7 +1630,7 @@ static int demux_ogg_control(demuxer_t *demuxer,int cmd, void *arg){
     rate = os->samplerate;
   } else {
     os = &ogg_d->subs[demuxer->audio->id];
-    rate = os->vi.rate;
+    rate = ogg_d->vi.rate;
   }
 
 

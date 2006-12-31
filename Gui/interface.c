@@ -12,7 +12,7 @@
 
 #include "mplayer/gtk/eq.h"
 #include "mplayer/widgets.h"
-#include "mplayer/gmplayer.h"
+#include "mplayer/mplayer.h"
 #include "mplayer/play.h"
 
 #include "mplayer.h"
@@ -216,13 +216,6 @@ void guiInit( void )
  else if ( stream_cache_size == 0 ) gtkCacheOn = 0;
  if ( autosync && autosync != gtkAutoSync ) { gtkAutoSyncOn=1; gtkAutoSync=autosync; }
    
-#ifdef USE_ASS
- gtkASS.enabled = ass_enabled;
- gtkASS.use_margins = ass_use_margins;
- gtkASS.top_margin = ass_top_margin;
- gtkASS.bottom_margin = ass_bottom_margin;
-#endif
-
  gtkInit();
 // --- initialize X 
  wsXInit( (void *)mDisplay );
@@ -380,7 +373,9 @@ void guiInit( void )
  if ( filename ) mplSetFileName( NULL,filename,STREAMTYPE_FILE );
  if ( plCurrent && !filename ) mplSetFileName( plCurrent->path,plCurrent->name,STREAMTYPE_FILE );
  if ( subdata ) guiSetFilename( guiIntfStruct.Subtitlename, subdata->filename );
+#if defined( USE_OSD ) || defined( USE_SUB )
  guiLoadFont();
+#endif
 }
 
 void guiDone( void )
@@ -393,13 +388,6 @@ void guiDone( void )
    gui_main_pos_x=appMPlayer.mainWindow.X; gui_main_pos_y=appMPlayer.mainWindow.Y;
    gui_sub_pos_x=appMPlayer.subWindow.X; gui_sub_pos_y=appMPlayer.subWindow.Y;
   }
- 
-#ifdef USE_ASS
- ass_enabled = gtkASS.enabled;
- ass_use_margins = gtkASS.use_margins;
- ass_top_margin = gtkASS.top_margin;
- ass_bottom_margin = gtkASS.bottom_margin;
-#endif
 
  cfg_write();
  wsXDone();
@@ -423,8 +411,9 @@ extern vo_functions_t * video_out;
 extern int    		frame_dropping;
 extern int              stream_dump_type;
 extern int  		vcd_track;
-extern m_obj_settings_t * vf_settings;
+extern m_obj_settings_t*vo_plugin_args;
 
+#if defined( USE_OSD ) || defined( USE_SUB )
 void guiLoadFont( void )
 {
 #ifdef HAVE_FREETYPE
@@ -466,7 +455,9 @@ void guiLoadFont( void )
    }
 #endif
 }
+#endif
 
+#ifdef USE_SUB
 extern mp_osd_obj_t* vo_osd_list;
 
 extern char **sub_name;
@@ -513,37 +504,38 @@ void guiLoadSubtitle( char * name )
  update_set_of_subtitles();
 
 }
+#endif
 
-static void add_vf( char * str )
+static void add_vop( char * str )
 {
  mp_msg( MSGT_GPLAYER,MSGL_STATUS,MSGTR_AddingVideoFilter,str );
- if ( vf_settings )
+ if ( vo_plugin_args )
   {
    int i = 0;
-   while ( vf_settings[i].name ) if ( !gstrcmp( vf_settings[i++].name,str ) ) { i=-1; break; }
+   while ( vo_plugin_args[i].name ) if ( !gstrcmp( vo_plugin_args[i++].name,str ) ) { i=-1; break; }
    if ( i != -1 )
-     { vf_settings=realloc( vf_settings,( i + 2 ) * sizeof( m_obj_settings_t ) ); vf_settings[i].name=strdup( str );vf_settings[i].attribs = NULL; vf_settings[i+1].name=NULL; }
-  } else { vf_settings=malloc( 2 * sizeof(  m_obj_settings_t ) ); vf_settings[0].name=strdup( str );vf_settings[0].attribs = NULL; vf_settings[1].name=NULL; }
+     { vo_plugin_args=realloc( vo_plugin_args,( i + 2 ) * sizeof( m_obj_settings_t ) ); vo_plugin_args[i].name=strdup( str );vo_plugin_args[i].attribs = NULL; vo_plugin_args[i+1].name=NULL; }
+  } else { vo_plugin_args=malloc( 2 * sizeof(  m_obj_settings_t ) ); vo_plugin_args[0].name=strdup( str );vo_plugin_args[0].attribs = NULL; vo_plugin_args[1].name=NULL; }
 }
 
-static void remove_vf( char * str )
+static void remove_vop( char * str )
 {
  int n = 0;
 
- if ( !vf_settings ) return;
+ if ( !vo_plugin_args ) return;
 
  mp_msg( MSGT_GPLAYER,MSGL_STATUS,MSGTR_RemovingVideoFilter,str );
 
- while ( vf_settings[n++].name ); n--;
+ while ( vo_plugin_args[n++].name ); n--;
  if ( n > -1 )
   {
    int i = 0,m = -1;
-   while ( vf_settings[i].name ) if ( !gstrcmp( vf_settings[i++].name,str ) ) { m=i - 1; break; }
+   while ( vo_plugin_args[i].name ) if ( !gstrcmp( vo_plugin_args[i++].name,str ) ) { m=i - 1; break; }
    i--;
    if ( m > -1 )
     {
-     if ( n == 1 ) { free( vf_settings[0].name );free( vf_settings[0].attribs ); free( vf_settings ); vf_settings=NULL; }
-     else { free( vf_settings[i].name );free( vf_settings[i].attribs ); memcpy( &vf_settings[i],&vf_settings[i + 1],( n - i ) * sizeof( m_obj_settings_t ) ); }
+     if ( n == 1 ) { free( vo_plugin_args[0].name );free( vo_plugin_args[0].attribs ); free( vo_plugin_args ); vo_plugin_args=NULL; }
+     else { free( vo_plugin_args[i].name );free( vo_plugin_args[i].attribs ); memcpy( &vo_plugin_args[i],&vo_plugin_args[i + 1],( n - i ) * sizeof( m_obj_settings_t ) ); }
     }
   }
 }
@@ -724,11 +716,14 @@ int guiGetEvent( int type,char * arg )
 #ifdef HAVE_DXR3
 	if ( video_driver_list && !gstrcmp( video_driver_list[0],"dxr3" ) && guiIntfStruct.FileFormat != DEMUXER_TYPE_MPEG_PS
 #ifdef USE_LIBAVCODEC
-	 && !gtkVfLAVC
+	 && !gtkVopLAVC
+#endif
+#ifdef USE_LIBFAME
+	 && !gtkVopFAME 
 #endif
 	 )
 	 {
-	  gtkMessageBox( GTK_MB_FATAL,MSGTR_NEEDLAVC );
+	  gtkMessageBox( GTK_MB_FATAL,MSGTR_NEEDLAVCFAME );
 	  guiIntfStruct.Playing=0;
 	  return True;
 	 }
@@ -812,21 +807,27 @@ int guiGetEvent( int type,char * arg )
 
 #ifdef HAVE_DXR3
 #ifdef USE_LIBAVCODEC
-	remove_vf( "lavc" );
+	remove_vop( "lavc" );
+#endif
+#ifdef USE_LIBFAME
+	remove_vop( "fame" );
 #endif
 	if ( video_driver_list && !gstrcmp( video_driver_list[0],"dxr3" ) )
 	 {
 	  if ( ( guiIntfStruct.StreamType != STREAMTYPE_DVD)&&( guiIntfStruct.StreamType != STREAMTYPE_VCD ) )
 	   {
 #ifdef USE_LIBAVCODEC
-	    if ( gtkVfLAVC ) add_vf( "lavc" );
+	    if ( gtkVopLAVC ) add_vop( "lavc" );
+#endif
+#ifdef USE_LIBFAME
+	    if ( gtkVopFAME ) add_vop( "fame" );
 #endif
 	   }
 	 }
 #endif
 // ---	 
-	if ( gtkVfPP ) add_vf( "pp" );
-	 else remove_vf( "pp" );
+	if ( gtkVopPP ) add_vop( "pp" );
+	 else remove_vop( "pp" );
 		 
 // --- audio opts
 //	if ( ao_plugin_cfg.plugin_list ) { free( ao_plugin_cfg.plugin_list ); ao_plugin_cfg.plugin_list=NULL; }
@@ -899,12 +900,16 @@ int guiGetEvent( int type,char * arg )
 	 }
 #endif
 // -- subtitle
+#ifdef USE_SUB
 	//subdata->filename=gstrdup( guiIntfStruct.Subtitlename );
 	stream_dump_type=0;
 	if ( gtkSubDumpMPSub ) stream_dump_type=4;
 	if ( gtkSubDumpSrt ) stream_dump_type=6;
 	gtkSubDumpMPSub=gtkSubDumpSrt=0;
+#endif
+#if defined( USE_OSD ) || defined( USE_SUB )
         guiLoadFont();
+#endif
 
 // --- misc		    
 	if ( gtkCacheOn ) stream_cache_size=gtkCacheSize;
@@ -917,13 +922,6 @@ int guiGetEvent( int type,char * arg )
         guiIntfStruct.DiskChanged=0;
         guiIntfStruct.FilenameChanged=0;
         guiIntfStruct.NewPlay=0;
-
-#ifdef USE_ASS
-        ass_enabled = gtkASS.enabled;
-        ass_use_margins = gtkASS.use_margins;
-        ass_top_margin = gtkASS.top_margin;
-        ass_bottom_margin = gtkASS.bottom_margin;
-#endif
 
 	break;
   }

@@ -897,9 +897,6 @@ static void draw_osd(void)
 
 static void flip_page(void)
 {
-	int curTime;
-	static int lastTime;
-
 	if(theWindow == NULL)
 		return;
 		
@@ -983,8 +980,8 @@ static void flip_page(void)
 
 	//update activity every 30 seconds to prevent
 	//screensaver from starting up.
-	curTime  = TickCount()/60;
-	lastTime = 0;
+	int curTime = TickCount()/60;
+	static int lastTime = 0;
 		
 	if( ((curTime/ - lastTime) >= 5) || (lastTime == 0) )
 	{

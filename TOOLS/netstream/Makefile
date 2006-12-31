@@ -20,7 +20,7 @@ all: netstream
 # it does not work with either GUI, LIVE555 or libavformat enabled
 DEPS = $(MPROOT)/libmpdemux/libmpdemux.a \
 	$(MPROOT)/stream/stream.a \
-	$(MPROOT)/dvdread/libdvdread.a \
+	$(MPROOT)/libmpdvdkit2/libmpdvdkit.a \
 	$(MPROOT)/libmpcodecs/native/minilzo.o \
 	$(MPROOT)/libvo/aclib.o \
 	$(MPROOT)/libmpcodecs/img_format.o \
@@ -32,6 +32,7 @@ DEPS = $(MPROOT)/libmpdemux/libmpdemux.a \
 	$(MPROOT)/osdep/shmem.o \
 	$(MPROOT)/osdep/timer-*.o \
 	$(MPROOT)/osdep/strl.o \
+	$(COMMON_LIBS) \
 	-lm \
 
 ifeq ($(TARGET_WIN32),yes)
@@ -48,9 +49,14 @@ clean:
 distclean: clean
 	rm -f .depend test
 
-dep depend:
+dep:    depend
+
+depend:
 	$(CC) -MM $(CFLAGS) test.c $(SRCS) 1>.depend
 
+#
+# include dependency files if they exist
+#
 ifneq ($(wildcard .depend),)
 include .depend
 endif

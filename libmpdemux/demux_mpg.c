@@ -57,7 +57,7 @@ static int parse_psm(demuxer_t *demux, int len) {
   prog_len = stream_read_word(demux->stream);		//length of program descriptors
   stream_skip(demux->stream, prog_len);			//.. that we ignore
   es_map_len = stream_read_word(demux->stream);		//length of elementary streams map
-  es_map_len = FFMIN(es_map_len, len - prog_len - 8);	//sanity check
+  es_map_len = min(es_map_len, len - prog_len - 8);	//sanity check
   while(es_map_len > 0) {
     type = stream_read_char(demux->stream);
     id = stream_read_char(demux->stream);
@@ -91,7 +91,7 @@ static int parse_psm(demuxer_t *demux, int len) {
       mp_dbg(MSGT_DEMUX,MSGL_V, "PSM ES, id=0x%x, type=%x, stype: %x\n", id, type, priv->es_map[idoffset]);
     }
     plen = stream_read_word(demux->stream);		//length of elementary stream descriptors
-    plen = FFMIN(plen, es_map_len);			//sanity check
+    plen = min(plen, es_map_len);			//sanity check
     stream_skip(demux->stream, plen);			//skip descriptors for now
     es_map_len -= 4 + plen;
   }
@@ -191,10 +191,7 @@ static int demux_mpg_read_packet(demuxer_t *demux,int id){
   unsigned char c=0;
   unsigned long long pts=0;
   unsigned long long dts=0;
-  int l;
-  double stream_pts = MP_NOPTS_VALUE;
   demux_stream_t *ds=NULL;
-  demux_packet_t* dp;
   mpg_demuxer_t *priv = (mpg_demuxer_t *) demux->priv;
   
   mp_dbg(MSGT_DEMUX,MSGL_DBG3,"demux_read_packet: %X\n",id);
@@ -301,7 +298,7 @@ static int demux_mpg_read_packet(demuxer_t *demux,int id){
 
         if(!demux->s_streams[aid]){
             mp_msg(MSGT_DEMUX,MSGL_V,"==> Found subtitle: %d\n",aid);
-            new_sh_sub(demux, aid);
+            demux->s_streams[aid]=1;
         }
 
         if(demux->sub->id > -1)
@@ -408,22 +405,7 @@ static int demux_mpg_read_packet(demuxer_t *demux,int id){
   if(ds){
     mp_dbg(MSGT_DEMUX,MSGL_DBG2,"DEMUX_MPG: Read %d data bytes from packet %04X\n",len,id);
 //    printf("packet start = 0x%X  \n",stream_tell(demux->stream)-packet_start_pos);
-
-    dp=new_demux_packet(len);
-    if(!dp) {
-      mp_dbg(MSGT_DEMUX,MSGL_ERR,"DEMUX_MPG ERROR: couldn't create demux_packet(%d bytes)\n",len);
-      stream_skip(demux->stream,len);
-      return 0;
-    }
-    l = stream_read(demux->stream,dp->buffer,len);
-    if(l<len)
-      resize_demux_packet(dp, l);
-    len = l;
-    dp->pts=pts/90000.0f;
-    dp->pos=demux->filepos;
-    if(stream_control(demux->stream, STREAM_CTRL_GET_CURRENT_TIME,(void *)&stream_pts)!=STREAM_UNSUPORTED)
-      dp->stream_pts = stream_pts;
-    ds_add_packet(ds,dp);
+    ds_read_packet(ds,demux->stream,len,pts/90000.0f,demux->filepos,0);
     if (demux->priv) ((mpg_demuxer_t*)demux->priv)->last_pts = pts/90000.0f;
 //    if(ds==demux->sub) parse_dvdsub(ds->last->buffer,ds->last->len);
     return 1;
@@ -820,11 +802,15 @@ void demux_seek_mpg(demuxer_t *demuxer,float rel_seek_secs,float audio_delay, in
 
 int demux_mpg_control(demuxer_t *demuxer,int cmd, void *arg){
     mpg_demuxer_t *mpg_d=(mpg_demuxer_t*)demuxer->priv;
+    int msec = 0;
 
     switch(cmd) {
 	case DEMUXER_CTRL_GET_TIME_LENGTH:
-            if(stream_control(demuxer->stream, STREAM_CTRL_GET_TIME_LENGTH, arg) != STREAM_UNSUPORTED) {
-              mp_msg(MSGT_DEMUXER,MSGL_DBG2,"\r\nDEMUX_MPG_CTRL, (%.3lf)\r\n", *((double*)arg));
+            msec = stream_control(demuxer->stream, STREAM_CTRL_GET_TIME_LENGTH, arg);
+            if(msec != STREAM_UNSUPORTED) {
+              msec = *((unsigned int*)arg);
+              *((double *)arg)=(double)msec/1000.0f;
+              mp_msg(MSGT_DEMUXER,MSGL_DBG2,"\r\nDEMUX_MPG_CTRL, stream len: %d (%.3lf)\r\n", msec, *((double*)arg));
               return DEMUXER_CTRL_GUESS;
             }
             if (mpg_d && mpg_d->has_valid_timestamps) {

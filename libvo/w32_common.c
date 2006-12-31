@@ -29,8 +29,8 @@ uint32_t o_dwidth;
 uint32_t o_dheight;
 
 static HINSTANCE hInstance;
-#define vo_window vo_w32_window
 HWND vo_window = 0;
+static int cursor = 1;
 static int event_flags;
 static int mon_cnt;
 
@@ -79,7 +79,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		case VK_DOWN:    mplayer_put_key(KEY_DOWN);      break;
 		case VK_TAB:     mplayer_put_key(KEY_TAB);       break;
 		case VK_CONTROL: mplayer_put_key(KEY_CTRL);      break;
-		case VK_BACK:    mplayer_put_key(KEY_BS);        break;
 		case VK_DELETE:  mplayer_put_key(KEY_DELETE);    break;
 		case VK_INSERT:  mplayer_put_key(KEY_INSERT);    break;
 		case VK_HOME:    mplayer_put_key(KEY_HOME);      break;
@@ -148,7 +147,7 @@ static BOOL CALLBACK mon_enum(HMONITOR hmon, HDC hdc, LPRECT r, LPARAM p) {
     return TRUE;
 }
 
-void w32_update_xinerama_info(void) {
+void update_xinerama_info(void) {
     xinerama_x = xinerama_y = 0;
     if (xinerama_screen < -1) {
         int tmp;
@@ -187,7 +186,7 @@ static void updateScreenProperties() {
     vo_screenwidth = dm.dmPelsWidth;
     vo_screenheight = dm.dmPelsHeight;
     vo_depthonscreen = dm.dmBitsPerPel;
-    w32_update_xinerama_info();
+    update_xinerama_info();
 }
 
 static void changeMode(void) {
@@ -240,10 +239,16 @@ static int createRenderingContext(void) {
     if (vo_fs || vo_ontop) layer = HWND_TOPMOST;
     if (vo_fs) {
 	changeMode();
-	while (ShowCursor(0) >= 0) /**/ ;
+	if (cursor) {
+	    ShowCursor(0);
+	    cursor = 0;
+	}
     } else {
 	resetMode();
-	while (ShowCursor(1) < 0) /**/ ;
+	if (!cursor) {
+	    ShowCursor(1);
+	    cursor = 1;
+	}
     }
     updateScreenProperties();
     ShowWindow(vo_window, SW_HIDE);
@@ -262,11 +267,6 @@ static int createRenderingContext(void) {
         vo_dheight = prev_height;
         vo_dx = prev_x;
         vo_dy = prev_y;
-        // HACK around what probably is a windows focus bug:
-        // when pressing 'f' on the console, then 'f' again to
-        // return to windowed mode, any input into the video
-        // window is lost forever.
-        SetFocus(vo_window);
     }
     r.left = vo_dx;
     r.right = r.left + vo_dwidth;
@@ -311,7 +311,7 @@ int vo_w32_config(uint32_t width, uint32_t height, uint32_t flags) {
     return createRenderingContext();
 }
 
-int vo_w32_init(void) {
+int vo_init(void) {
     HICON 	mplayerIcon = 0;
     char 	exedir[MAX_PATH];
     HINSTANCE	user32;

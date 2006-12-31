@@ -5,7 +5,7 @@
  * Artur Zaprzala <zybi@fanthom.irc.pl>
  *
  * ported inside mplayer by Jindrich Makovicka 
- * <makovick@gmail.com>
+ * <makovick@kmlinux.fjfi.cvut.cz>
  *
  */
 
@@ -28,8 +28,7 @@
 #include <fontconfig/fontconfig.h>
 #endif
 
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "font_load.h"
 #include "mp_msg.h"
 #include "mplayer.h"
@@ -796,8 +795,6 @@ static int prepare_charset(char *charmap, char *encoding, FT_ULong *charset, FT_
 static int prepare_charset_unicode(FT_Face face, FT_ULong *charset, FT_ULong *charcodes) {
 #ifdef HAVE_FREETYPE21
     FT_ULong  charcode;
-#else
-    int j;
 #endif
     FT_UInt   gindex;
     int i;
@@ -819,6 +816,7 @@ static int prepare_charset_unicode(FT_Face face, FT_ULong *charset, FT_ULong *ch
     }
 #else
     // for FT < 2.1 we have to use brute force enumeration
+    int j;
     i = 0;
     for (j = 33; j < 65536; j++) {
 	gindex = FT_Get_Char_Index(face, j);
@@ -1141,7 +1139,6 @@ void load_font_ft(int width, int height)
 {
 #ifdef HAVE_FONTCONFIG
     FcPattern *fc_pattern;
-    FcPattern *fc_pattern2;
     FcChar8 *s;
     FcBool scalable;
 #endif
@@ -1153,6 +1150,7 @@ void load_font_ft(int width, int height)
 
     if (vo_font) free_font_desc(vo_font);
 
+#ifdef USE_OSD
 #ifdef HAVE_FONTCONFIG
     if (font_fontconfig)
     {
@@ -1162,25 +1160,21 @@ void load_font_ft(int width, int height)
 	fc_pattern = FcNameParse(font_name);
 	FcConfigSubstitute(0, fc_pattern, FcMatchPattern);
 	FcDefaultSubstitute(fc_pattern);
-	fc_pattern2 = fc_pattern;
 	fc_pattern = FcFontMatch(0, fc_pattern, 0);
-	FcPatternDestroy(fc_pattern2);
 	FcPatternGetBool(fc_pattern, FC_SCALABLE, 0, &scalable);
 	if (scalable != FcTrue) {
-	    FcPatternDestroy(fc_pattern);
     	    fc_pattern = FcNameParse("sans-serif");
     	    FcConfigSubstitute(0, fc_pattern, FcMatchPattern);
     	    FcDefaultSubstitute(fc_pattern);
-	    fc_pattern2 = fc_pattern;
     	    fc_pattern = FcFontMatch(0, fc_pattern, 0);
-	    FcPatternDestroy(fc_pattern2);
 	}
 	// s doesn't need to be freed according to fontconfig docs
 	FcPatternGetString(fc_pattern, FC_FILE, 0, &s);
 	vo_font=read_font_desc_ft(s, width, height);
-	FcPatternDestroy(fc_pattern);
+	free(fc_pattern);
     }
     else
 #endif
     vo_font=read_font_desc_ft(font_name, width, height);
+#endif
 }

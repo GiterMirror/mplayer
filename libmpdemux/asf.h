@@ -3,8 +3,7 @@
 
 //#include "config.h"	/* for WORDS_BIGENDIAN */
 #include <inttypes.h>
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))

@@ -24,15 +24,14 @@
 #include "mpg123.h"
 #include "huffman.h"
 #include "mp3.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "cpudetect.h"
 //#include "liba52/mm_accel.h"
 #include "mp_msg.h"
 
 #include "libvo/fastmemcpy.h"
 
-#ifdef ARCH_X86_32
+#ifdef ARCH_X86
 #define CAN_COMPILE_X86_ASM
 #endif
 

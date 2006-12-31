@@ -11,10 +11,43 @@ SRCS    = crc.c \
           imdct.c \
           parse.c \
 
-include ../mpcommon.mak
+OBJS	= $(SRCS:.c=.o)
+
+CFLAGS  = -I.. $(OPTFLAGS)
+
+.SUFFIXES: .c .o
+
+# .PHONY: all clean
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(LIBNAME):	$(OBJS)
+	$(AR) r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
 
 test:        $(LIBNAME) test.c
 	$(CC) $(CFLAGS)  test.c ../cpudetect.c -o test ../osdep/libosdep.a ./liba52.a -lm
 
-distclean::
-	rm -f test
+test2:        $(LIBNAME) test.c
+	$(CC) $(CFLAGS) test.c -o test2 ../libac3/libac3.a ./liba52.a -lm
+
+all:	$(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~
+
+distclean: clean
+	rm -f .depend test
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

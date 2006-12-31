@@ -6,8 +6,7 @@
 
 #include <png.h>
 
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "libvo/fastmemcpy.h"
 
 #include "vd_internal.h"

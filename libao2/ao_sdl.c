@@ -40,7 +40,7 @@ LIBAO_EXTERN(sdl)
 #undef USE_SDL_INTERNAL_MIXER
 
 // Samplesize used by the SDLlib AudioSpec struct
-#if defined(WIN32) || defined(SYS_AMIGAOS4)
+#ifdef WIN32
 #define SAMPLESIZE 2048
 #else
 #define SAMPLESIZE 1024

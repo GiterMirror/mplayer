@@ -60,8 +60,7 @@
 #include "help_mp.h"
 #include "m_option.h"
 #include "m_struct.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #include "netstream.h"
 #include "tcp.h"

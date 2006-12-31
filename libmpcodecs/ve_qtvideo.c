@@ -10,8 +10,7 @@
 
 #include "config.h"
 #include "mp_msg.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #ifdef WIN32_LOADER 
 #include "ldt_keeper.h" 
@@ -25,7 +24,6 @@
 #include "demuxer.h"
 #include "stheader.h"
 
-#include "stream.h"
 #include "muxer.h"
 
 #include "img_format.h"

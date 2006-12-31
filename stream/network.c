@@ -89,10 +89,6 @@ mime_struct_t mime_type_table[] = {
 	// NullSoft Streaming Video
 	{ "video/nsv", DEMUXER_TYPE_NSV},
 	{ "misc/ultravox", DEMUXER_TYPE_NSV},
-#ifdef USE_LIBAVFORMAT
-	// Flash Video
-	{ "video/x-flv", DEMUXER_TYPE_LAVF},
-#endif
 	{ NULL, DEMUXER_TYPE_UNKNOWN},
 };
 
@@ -182,7 +178,7 @@ http_send_request( URL_t *url, off_t pos ) {
 	HTTP_header_t *http_hdr;
 	URL_t *server_url;
 	char str[256];
-	int fd = -1;
+	int fd;
 	int ret;
 	int proxy = 0;		// Boolean
 
@@ -249,7 +245,6 @@ http_send_request( URL_t *url, off_t pos ) {
 
 	return fd;
 err_out:
-	if (fd > 0) closesocket(fd);
 	http_free(http_hdr);
 	if (proxy && server_url)
 		url_free(server_url);

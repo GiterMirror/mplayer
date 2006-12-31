@@ -31,6 +31,7 @@ Video codecs: (supported by RealPlayer8 for Linux)
 #include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
+#include "bswap.h"
 
 #ifdef USE_LIBAVCODEC_SO
 #include <ffmpeg/avcodec.h>
@@ -570,10 +571,6 @@ static int demux_real_fill_buffer(demuxer_t *demuxer, demux_stream_t *dsds)
     int x, sps, cfs, sph, spc, w;
     int audioreorder_getnextpk = 0;
 
-  // Don't demux video if video codec init failed
-  if (demuxer->video->id >= 0 && !demuxer->video->sh)
-    demuxer->video->id = -2;
-
   while(!stream_eof(demuxer->stream)){
 
     /* Handle audio/video demxing switch for multirate files (non-interleaved) */
@@ -688,8 +685,7 @@ got_audio:
 		for (i = 0; i < sub_packets; i++) {
 		    demux_packet_t *dp = new_demux_packet(sub_packet_lengths[i]);
 		    stream_read(demuxer->stream, dp->buffer, sub_packet_lengths[i]);
-		    if (priv->a_pts != timestamp)
-			dp->pts = timestamp / 1000.0;
+		    dp->pts = (priv->a_pts == timestamp) ? 0 : (timestamp / 1000.0f);
 		    priv->a_pts = timestamp;
 		    dp->pos = demuxer->filepos;
 		    ds_add_packet(ds, dp);
@@ -746,7 +742,7 @@ got_audio:
                     break;
             }
             priv->audio_need_keyframe = 0;
-            priv->audio_timestamp[priv->sub_packet_cnt] = (priv->a_pts==timestamp) ? (correct_pts ? MP_NOPTS_VALUE : 0) : (timestamp/1000.0);
+            priv->audio_timestamp[priv->sub_packet_cnt] = (priv->a_pts==timestamp) ? 0 : (timestamp/1000.0f);
             priv->a_pts = timestamp;
             if (priv->sub_packet_cnt == 0)
                 priv->audio_filepos = demuxer->filepos;
@@ -761,8 +757,7 @@ got_audio:
                     dp = new_demux_packet(apk_usize);
                     memcpy(dp->buffer, priv->audio_buf + x * apk_usize, apk_usize);
                     /* Put timestamp only on packets that correspond to original audio packets in file */
-		    if (x * apk_usize % w == 0)
-			dp->pts = priv->audio_timestamp[x * apk_usize / w];
+                    dp->pts = (x * apk_usize % w) ? 0 : priv->audio_timestamp[x * apk_usize / w];
                     dp->pos = priv->audio_filepos; // all equal
                     dp->flags = x ? 0 : 0x10; // Mark first packet as keyframe
                     ds_add_packet(ds, dp);
@@ -804,9 +799,10 @@ got_audio:
 	    }
 #endif
 	    if (priv->audio_need_keyframe == 1) {
+	    	dp->pts = 0;
 		priv->audio_need_keyframe = 0;
-	    } else if(priv->a_pts != timestamp)
-	        dp->pts = timestamp/1000.0;
+	    }else 
+	        dp->pts = (priv->a_pts==timestamp) ? 0 : (timestamp/1000.0f);
 	    priv->a_pts=timestamp;
 	    dp->pos = demuxer->filepos;
 	    dp->flags = (flags & 0x2) ? 0x10 : 0;
@@ -931,8 +927,8 @@ got_video:
 				priv->kf_base = 0;
 				priv->kf_pts = dp_hdr->timestamp;
 				priv->video_after_seek = 0;
-			} else if (dp_hdr->len >= 3)
-			    dp->pts =
+			} else 
+			dp->pts=(dp_hdr->len<3)?0:
 			    real_fix_timestamp(priv,dp_data,dp_hdr->timestamp,sh_video->frametime,sh_video->format);
 			ds_add_packet(ds,dp);
 			ds->asf_packet=NULL;
@@ -968,8 +964,8 @@ got_video:
 				    priv->kf_base = 0;
 				    priv->kf_pts = dp_hdr->timestamp;
 				    priv->video_after_seek = 0;
-			    } else if (dp_hdr->len >= 3)
-				dp->pts =
+			    } else 
+			    dp->pts=(dp_hdr->len<3)?0:
 				real_fix_timestamp(priv,dp_data,dp_hdr->timestamp,sh_video->frametime,sh_video->format);
 			    ds_add_packet(ds,dp);
 			    ds->asf_packet=NULL;
@@ -989,6 +985,7 @@ got_video:
 		// create new packet!
 		dp = new_demux_packet(sizeof(dp_hdr_t)+vpkg_length+8*(1+2*(vpkg_header&0x3F)));
 	    	// the timestamp seems to be in milliseconds
+		dp->pts = 0; // timestamp/1000.0f; //timestamp=0;
                 dp->pos = demuxer->filepos;
                 dp->flags = (flags & 0x2) ? 0x10 : 0;
 		ds->asf_seq = vpkg_seqnum;
@@ -1024,8 +1021,8 @@ got_video:
 			priv->kf_base = 0;
 			priv->kf_pts = dp_hdr->timestamp;
 			priv->video_after_seek = 0;
-		} else if (dp_hdr->len >= 3)
-		    dp->pts =
+		} else 
+		dp->pts=(dp_hdr->len<3)?0:
 		    real_fix_timestamp(priv,dp_data,dp_hdr->timestamp,sh_video->frametime,sh_video->format);
 		ds_add_packet(ds,dp);
 
@@ -1513,9 +1510,9 @@ static demuxer_t* demux_open_real(demuxer_t* demuxer)
 		    mp_msg(MSGT_DEMUX,MSGL_V,"video fourcc: %.4s (%x)\n", (char *)&sh->format, sh->format);
 
 		    /* emulate BITMAPINFOHEADER */
-		    sh->bih = malloc(sizeof(BITMAPINFOHEADER));
-		    memset(sh->bih, 0, sizeof(BITMAPINFOHEADER));
-	    	    sh->bih->biSize = sizeof(BITMAPINFOHEADER);
+		    sh->bih = malloc(sizeof(BITMAPINFOHEADER)+16);
+		    memset(sh->bih, 0, sizeof(BITMAPINFOHEADER)+16);
+	    	    sh->bih->biSize = 48;
 		    sh->disp_w = sh->bih->biWidth = stream_read_word(demuxer->stream);
 		    sh->disp_h = sh->bih->biHeight = stream_read_word(demuxer->stream);
 		    sh->bih->biPlanes = 1;
@@ -1547,19 +1544,57 @@ static demuxer_t* demux_open_real(demuxer_t* demuxer)
 		    }
 		    stream_skip(demuxer->stream, 2);
 		    
+		    // read codec sub-format (to make difference between low and high rate codec)
+		    ((unsigned int*)(sh->bih+1))[0]=stream_read_dword(demuxer->stream);
+
+		    /* h263 hack */
+		    tmp = stream_read_dword(demuxer->stream);
+		    ((unsigned int*)(sh->bih+1))[1]=tmp;
+		    mp_msg(MSGT_DEMUX,MSGL_V,"H.263 ID: %x\n", tmp);
+		    switch (tmp)
 		    {
-			    // read and store codec extradata
+			case 0x10000000:
+			    /* sub id: 0 */
+			    /* codec id: rv10 */
+			    break;
+			case 0x10003000:
+			case 0x10003001:
+			    /* sub id: 3 */
+			    /* codec id: rv10 */
+			    sh->bih->biCompression = sh->format = mmioFOURCC('R', 'V', '1', '3');
+			    break;
+			case 0x20001000:
+			case 0x20100001:
+			case 0x20200002:
+			    /* codec id: rv20 */
+			    break;
+			case 0x30202002:
+			    /* codec id: rv30 */
+			    break;
+			case 0x40000000:
+			    /* codec id: rv40 */
+			    break;
+			default:
+			    /* codec id: none */
+			    mp_msg(MSGT_DEMUX,MSGL_V,"unknown id: %x\n", tmp);
+		    }
+
+		    if((sh->format<=0x30335652) && (tmp>=0x20200002)){
+			    // read data for the cmsg24[] (see vd_realvid.c)
 			    unsigned int cnt = codec_data_size - (stream_tell(demuxer->stream) - codec_pos);
-			    if (cnt > 0x7fffffff - sizeof(BITMAPINFOHEADER)) {
-			        mp_msg(MSGT_DEMUX, MSGL_ERR,"Extradata too big (%u)\n", cnt);
+			    if (cnt < 2) {
+			        mp_msg(MSGT_DEMUX, MSGL_ERR,"realvid: cmsg24 data too short (size %u)\n", cnt);
 			    } else  {
-				sh->bih = realloc(sh->bih, sizeof(BITMAPINFOHEADER) + cnt);
+			        int ii;
+			        if (cnt > 8) {
+			            mp_msg(MSGT_DEMUX, MSGL_WARN,"realvid: cmsg24 data too big, please report (size %u)\n", cnt);
+			            cnt = 8;
+			        }
+			        for (ii = 0; ii < cnt; ii++)
+			            ((unsigned char*)(sh->bih+1))[8+ii]=(unsigned short)stream_read_char(demuxer->stream);
 			        sh->bih->biSize += cnt;
-				stream_read(demuxer->stream, ((unsigned char*)(sh->bih+1)), cnt);
 			    }
 		    } 
-		    if(sh->format == 0x30315652 && ((unsigned char*)(sh->bih+1))[6] == 0x30)
-			    sh->bih->biCompression = sh->format = mmioFOURCC('R', 'V', '1', '3');
 		    
 		    /* Select video stream with highest bitrate if multirate file*/
 		    if (priv->is_multirate && ((demuxer->video->id == -1) ||
@@ -1806,8 +1841,6 @@ static void demux_seek_real(demuxer_t *demuxer, float rel_seek_secs, float audio
     if (flags & 1)
 	/* seek absolute */
 	priv->current_apacket = priv->current_vpacket = 0;
-    if (flags & 2) // percent seek
-        rel_seek_secs *= priv->duration;
 
     if ((streams & 1) && priv->current_vpacket >= priv->index_table_size[vid])
 	priv->current_vpacket = priv->index_table_size[vid] - 1;

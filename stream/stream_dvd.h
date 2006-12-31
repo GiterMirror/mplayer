@@ -1,11 +1,11 @@
 
 #ifdef USE_DVDREAD
 
-#ifdef USE_DVDREAD_INTERNAL
-#include "dvdread/dvd_reader.h"
-#include "dvdread/ifo_types.h"
-#include "dvdread/ifo_read.h"
-#include "dvdread/nav_read.h"
+#ifdef USE_MPDVDKIT
+#include "libmpdvdkit2/dvd_reader.h"
+#include "libmpdvdkit2/ifo_types.h"
+#include "libmpdvdkit2/ifo_read.h"
+#include "libmpdvdkit2/nav_read.h"
 #elif defined(USE_DVDNAV)
 #include <dvd_reader.h>
 #include <ifo_types.h>
@@ -32,12 +32,10 @@ typedef struct {
   int last_cell;
   int cur_pack;
   int cell_last_pack;
-  int cur_pgc_idx;
 // Navi:
   int packs_left;
   dsi_t dsi_pack;
   int angle_seek;
-  unsigned int *cell_times_table;
 // audio datas
   int nr_of_channels;
   stream_language_t audio_streams[32];

@@ -10,7 +10,6 @@ typedef struct mp_osd_bbox_s {
 #define OSDTYPE_SUBTITLE 2
 #define OSDTYPE_PROGBAR 3
 #define OSDTYPE_SPU 4
-#define OSDTYPE_DVDNAV 5
 
 #define OSDFLAG_VISIBLE 1
 #define OSDFLAG_CHANGED 2
@@ -59,13 +58,12 @@ static inline void vo_draw_text_osd(int dxs,int dys,void (*draw_alpha)(int x0,in
 
 #include "subreader.h"
 
-extern sub_data* subdata; //currently used subtitles
-extern subtitle* vo_sub;
-
 extern unsigned char* vo_osd_text;
 
 extern int vo_osd_progbar_type;
 extern int vo_osd_progbar_value;   // 0..255
+
+extern subtitle* vo_sub;
 
 extern void* vo_spudec;
 extern void* vo_vobsub;
@@ -123,12 +121,7 @@ void free_osd_list(void);
 
 extern int vo_osd_changed_flag;
 
-unsigned utf8_get_char(const char **str);
-
-#ifdef USE_DVDNAV
-#include <inttypes.h>
-void osd_set_nav_box (uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey);
-#endif
+unsigned utf8_get_char(char **str);
 
 #endif
 #endif

@@ -299,10 +299,6 @@ static void read_cmd(menu_t* menu,int cmd) {
 	  if(l <= 1) break;
 	  mpriv->dir[l-1] = '\0';
 	  slash = strrchr(mpriv->dir,'/');
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-	  if (!slash)
-	    slash = strrchr(mpriv->dir,'\\');
-#endif
 	  if(!slash) break;
 	  slash[1] = '\0';
 	  p = strdup(mpriv->dir);

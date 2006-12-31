@@ -14,8 +14,7 @@
 #include <fcntl.h>
 
 #include "../../config.h"
-#include "../../libavutil/common.h"
-#include "../../mpbswap.h"
+#include "../../bswap.h"
 #include "../vidix.h"
 #include "../fourcc.h"
 #include "../../libdha/libdha.h"

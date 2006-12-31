@@ -11,7 +11,7 @@
 #include "app.h"
 #include "wm/wskeys.h"
 #include "skin/skin.h"
-#include "mplayer/gmplayer.h"
+#include "mplayer/mplayer.h"
 #include "interface.h"
 
 evName evNames[] =

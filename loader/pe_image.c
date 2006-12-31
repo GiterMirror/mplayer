@@ -39,7 +39,6 @@
  *   to 4096 byte boundaries on disk.
  */
 #include "config.h"
-#include "debug.h"
 
 #include <errno.h>
 #include <assert.h>

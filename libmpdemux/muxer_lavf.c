@@ -9,11 +9,12 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+#include "bswap.h"
 #include "aviheader.h"
 #include "ms_hdr.h"
 
-#include "stream.h"
 #include "muxer.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "m_option.h"
@@ -26,7 +27,6 @@
 extern unsigned int codec_get_wav_tag(int id);
 extern enum CodecID codec_get_bmp_id(unsigned int tag);
 extern enum CodecID codec_get_wav_id(unsigned int tag);
-extern const int mp_wav_tags[];
 
 extern char *info_name;
 extern char *info_artist;
@@ -83,37 +83,21 @@ static int mp_close(URLContext *h)
 
 static int mp_read(URLContext *h, unsigned char *buf, int size)
 {
-	mp_msg(MSGT_MUXER, MSGL_WARN, "READ %d\n", size);
+	fprintf(stderr, "READ %d\n", size);
 	return -1;
 }
 
 static int mp_write(URLContext *h, unsigned char *buf, int size)
 {
 	muxer_t *muxer = (muxer_t*)h->priv_data;
-	return stream_write_buffer(muxer->stream, buf, size);
+	return fwrite(buf, 1, size, muxer->file);
 }
 
 static offset_t mp_seek(URLContext *h, offset_t pos, int whence)
 {
 	muxer_t *muxer = (muxer_t*)h->priv_data;
-	if(whence == SEEK_CUR)
-	{
-		off_t cur = stream_tell(muxer->stream);
-		if(cur == -1)
-			return -1;
-		pos += cur;
-	}
-	else if(whence == SEEK_END)
-	{
-		off_t size=0;
-		if(stream_control(muxer->stream, STREAM_CTRL_GET_SIZE, &size) == STREAM_UNSUPORTED || size < pos)
-			return -1;
-		pos = size - pos;
-	}
-	mp_msg(MSGT_MUXER, MSGL_DBG2, "SEEK %"PRIu64"\n", (int64_t)pos);
-	if(!stream_seek(muxer->stream, pos))
-		return -1;
-	return 0;
+	fprintf(stderr, "SEEK %"PRIu64"\n", (int64_t)pos);
+	return fseeko(muxer->file, pos, whence);
 }
 
 
@@ -210,8 +194,6 @@ static void fix_parameters(muxer_stream_t *stream)
 	if(stream->type == MUXER_TYPE_AUDIO)
 	{
 		ctx->codec_id = codec_get_wav_id(stream->wf->wFormatTag); 
-                if(!ctx->codec_id)
-                        ctx->codec_id = codec_get_id(mp_wav_tags, stream->wf->wFormatTag);
 #if 0 //breaks aac in mov at least
 		ctx->codec_tag = codec_get_wav_tag(ctx->codec_id);
 #endif

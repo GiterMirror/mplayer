@@ -4,7 +4,7 @@
  *
  * Common OpenGL routines.
  * Copyleft (C) Reimar Döffinger <Reimar.Doeffinger@stud.uni-karlsruhe.de>, 2005
- * Licensend under the GNU GPL v2 or later.
+ * Licensend under the GNU GPL v2.
  * Special thanks go to the xine team and Matthias Hopf, whose video_out_opengl.c
  * gave me lots of good ideas.
  */
@@ -473,7 +473,7 @@ int glFmt2bpp(GLenum format, GLenum type) {
  * \param target texture target, usually GL_TEXTURE_2D
  * \param format OpenGL format of data
  * \param type OpenGL type of data
- * \param dataptr data to upload
+ * \param data data to upload
  * \param stride data stride
  * \param x x offset in texture
  * \param y y offset in texture
@@ -483,9 +483,8 @@ int glFmt2bpp(GLenum format, GLenum type) {
  * \ingroup gltexture
  */
 void glUploadTex(GLenum target, GLenum format, GLenum type,
-                 const void *dataptr, int stride,
+                 const void *data, int stride,
                  int x, int y, int w, int h, int slice) {
-  const uint8_t *data = dataptr;
   int y_max = y + h;
   if (w <= 0 || h <= 0) return;
   if (slice <= 0)
@@ -1338,7 +1337,7 @@ int setGlWindow(int *vinfo, HGLRC *context, HWND win)
   }
 
   // set new values
-  vo_w32_window = win;
+  vo_window = win;
   vo_hdc = windc;
   {
     RECT rect;

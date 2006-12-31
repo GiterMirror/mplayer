@@ -12,8 +12,11 @@
 #include "demuxer.h"
 #include "stheader.h"
 
+#include "bswap.h"
 #include "aviheader.h"
-#include "libavutil/common.h"
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
 
 static MainAVIHeader avih;
 
@@ -179,26 +182,24 @@ while(1){
     case mmioFOURCC('I','D','I','T'): hdr="Digitization Time";break;
 
     case ckidAVIMAINHDR:          // read 'avih'
-      stream_read(demuxer->stream,(char*) &avih,FFMIN(size2,sizeof(avih)));
+      stream_read(demuxer->stream,(char*) &avih,MIN(size2,sizeof(avih)));
       le2me_MainAVIHeader(&avih); // swap to machine endian
-      chunksize-=FFMIN(size2,sizeof(avih));
+      chunksize-=MIN(size2,sizeof(avih));
       if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_avih(&avih,MSGL_V); // else print_avih_flags(&avih,MSGL_V);
       break;
     case ckidSTREAMHEADER: {      // read 'strh'
       AVIStreamHeader h;
-      stream_read(demuxer->stream,(char*) &h,FFMIN(size2,sizeof(h)));
+      stream_read(demuxer->stream,(char*) &h,MIN(size2,sizeof(h)));
       le2me_AVIStreamHeader(&h);  // swap to machine endian
-      chunksize-=FFMIN(size2,sizeof(h));
+      chunksize-=MIN(size2,sizeof(h));
       ++stream_id;
       if(h.fccType==streamtypeVIDEO){
         sh_video=new_sh_video(demuxer,stream_id);
         memcpy(&sh_video->video,&h,sizeof(h));
-        sh_video->stream_delay = (float)sh_video->video.dwStart * sh_video->video.dwScale/sh_video->video.dwRate;
       } else
       if(h.fccType==streamtypeAUDIO){
         sh_audio=new_sh_audio(demuxer,stream_id);
         memcpy(&sh_audio->audio,&h,sizeof(h));
-        sh_audio->stream_delay = (float)sh_audio->audio.dwStart * sh_audio->audio.dwScale/sh_audio->audio.dwRate;
       }
       last_fccType=h.fccType;
       if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_strh(&h,MSGL_V);
@@ -206,9 +207,6 @@ while(1){
     case mmioFOURCC('i', 'n', 'd', 'x'): {
       uint32_t i;
       avisuperindex_chunk *s;
-
-      if(!index_mode) break;
-
       if(chunksize<=24){
         break;
       }
@@ -267,8 +265,8 @@ while(1){
 	    sh_video->bih->biSize=chunksize;
         if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_video_header(sh_video->bih,MSGL_V);
         chunksize=0;
-        sh_video->fps=(float)sh_video->video.dwRate/(float)sh_video->video.dwScale;
-        sh_video->frametime=(float)sh_video->video.dwScale/(float)sh_video->video.dwRate;
+//        sh_video->fps=(float)sh_video->video.dwRate/(float)sh_video->video.dwScale;
+//        sh_video->frametime=(float)sh_video->video.dwScale/(float)sh_video->video.dwRate;
 //        if(demuxer->video->id==-1) demuxer->video->id=stream_id;
         // IdxFix:
         idxfix_videostream=stream_id;
@@ -319,8 +317,6 @@ while(1){
 	    wf_size < sizeof(WAVEFORMATEX)+sh_audio->wf->cbSize) {
 	    sh_audio->wf=realloc(sh_audio->wf, sizeof(WAVEFORMATEX)+sh_audio->wf->cbSize);
 	}
-	sh_audio->format=sh_audio->wf->wFormatTag;
-	sh_audio->i_bps=sh_audio->wf->nAvgBytesPerSec;
         chunksize=0;
         if( mp_msg_test(MSGT_HEADER,MSGL_V) ) print_wave_header(sh_audio->wf,MSGL_V);
 	++priv->audio_streams;
@@ -711,4 +707,7 @@ skip_chunk:
   }
 }
 }
+
+#undef MIN
+
 

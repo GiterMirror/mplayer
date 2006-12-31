@@ -463,7 +463,7 @@ static void filter(struct vf_priv_s *p, uint8_t *dst, uint8_t *src,
 	es=width+8-x0; //  8, ...      
 	if (es>8)
 	    row_fdct_s(block+8*8, p->src + y*stride+8+x0 +2-(y&1), stride, (es-4)>>2);
-	column_fidct_s((int16_t*)(&p->threshold_mtx[0]), block, block3, es&(~1));
+	column_fidct_s((int16_t*)(&p->threshold_mtx[0]), block, block3, es-0);
 	row_idct_s(block3+0*8, p->temp + (y&15)*stride+x0+2-(y&1), stride, es>>2);
 	{const int y1=y-8+step;//l5-7  l4-6
 	    if (!(y1&7) && y1) {
@@ -531,8 +531,8 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
     vf->priv->mpeg2= mpi->qscale_type;
     if(mpi->pict_type != 3 && mpi->qscale && !vf->priv->qp){
 	if(!vf->priv->non_b_qp)
-	    vf->priv->non_b_qp= malloc(mpi->qstride * ((mpi->h + 15) >> 4));
-	memcpy(vf->priv->non_b_qp, mpi->qscale, mpi->qstride * ((mpi->h + 15) >> 4));
+	    vf->priv->non_b_qp= malloc(mpi->qstride * mpi->h);
+	memcpy(vf->priv->non_b_qp, mpi->qscale, mpi->qstride * mpi->h);
     }
     if(vf->priv->log2_count || !(mpi->flags&MP_IMGFLAG_DIRECT)){
 	char *qp_tab= vf->priv->non_b_qp;

@@ -26,8 +26,7 @@
 #endif
 
 
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "osdep/timer.h"
 
 #ifndef DEBUG

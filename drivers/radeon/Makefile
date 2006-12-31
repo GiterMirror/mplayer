@@ -27,7 +27,7 @@ radeon_vid.o: radeon_vid.c radeon.h radeon_vid.h
 rage128_vid.o: radeon_vid.c radeon.h radeon_vid.h
 	$(CC) $(CFLAGS) -DRAGE128 $(INCLUDES) -c radeon_vid.c -o $@
 
-dep depend:
+dep:
 
 clean: 
 	rm -f *.o *.a *~

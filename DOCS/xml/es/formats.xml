@@ -1,18 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="iso-8859-1"?>
 <!-- synced with 1.10 -->
 <sect1 id="formats">
 <title>Formatos soportados</title>
 
 <para>
-Es importante aclarar un error com√∫n. Cuando la gente ve un archivo con una
-extensi√≥n <filename>.AVI</filename>, inmediatamente llega a la conclusi√≥n
+Es importante aclarar un error com˙n. Cuando la gente ve un archivo con una
+extensiÛn <filename>.AVI</filename>, inmediatamente llega a la conclusiÛn
 de que no es un archivo MPEG. Esto no es cierto. Al menos no completamente.
 Contrariamente a lo que la gente cree, este tipo de archivo
 <emphasis>puede</emphasis> contener video MPEG1.
 </para>
 
 <para>
-D√©se cuenta de que un <emphasis role="bold">codec</emphasis> no es lo mismo
+DÈse cuenta de que un <emphasis role="bold">codec</emphasis> no es lo mismo
 que un <emphasis role="bold">formato de archivo</emphasis>.
 Ejemplos de <emphasis role="bold">codecs</emphasis> de video son:
 MPEG1, MPEG2, DivX, Indeo5, 3ivx.
@@ -20,13 +20,13 @@ Ejemplos de <emphasis role="bold">formatos</emphasis> de archivo son: MPG, AVI, 
 </para>
 
 <para>
-En teor√≠a, puede poner un video OpenDivX y audio MP3
+En teorÌa, puede poner un video OpenDivX y audio MP3
 dentro de un <emphasis role="bold">archivo de formato MPG</emphasis>. Sin
-embargo, la mayor√≠a de los reproductores no pueden reproducirlo, porque esperan
+embargo, la mayorÌa de los reproductores no pueden reproducirlo, porque esperan
 video MPEG1 y audio MP2 (al contrario que los <emphasis role="bold">AVI</emphasis>,
 los <emphasis role="bold">MPG</emphasis> no tienen los campos necesarios para
 describir sus flujos de video y audio).
-O puede tambi√©n poner video MPEG1 dentro de un archivo AVI.
+O puede tambiÈn poner video MPEG1 dentro de un archivo AVI.
 <ulink url="http://ffmpeg.sourceforge.net/">FFmpeg</ulink> y
 <link linkend="mencoder"><application>MEncoder</application></link> pueden
 crear estos archivos.
@@ -44,42 +44,42 @@ Los archivos MPEG vienen en diferentes formas:
 </para>
 
 <itemizedlist>
-<listitem><para>
-  MPG: Esta es la forma m√°s <emphasis role="bold">b√°sica</emphasis> de
+<listitem><simpara>
+  MPG: Esta es la forma m·s <emphasis role="bold">b·sica</emphasis> de
   los archivos de formato MPEG. Contiene video MPEG1, y audio MP2
   (MPEG-1 layer 2) o rara vez audio MP1.
-  </para></listitem>
-<listitem><para>
+  </simpara></listitem>
+<listitem><simpara>
   DAT: Este es exactamente el mismo formato que un MPG con la diferencia
-  en la extensi√≥n. Es usado en <emphasis role="bold">Video CDs</emphasis>.
-  Debido a la manera en la que se crean los VCDs y en la que Linux est√°
-  dise√±ado, los archivos DAT no pueden ser reproducidos ni copiados
+  en la extensiÛn. Es usado en <emphasis role="bold">Video CDs</emphasis>.
+  Debido a la manera en la que se crean los VCDs y en la que Linux est·
+  diseÒado, los archivos DAT no pueden ser reproducidos ni copiados
   desde VCDs como archivos regulares. Debe usar <option>vcd://</option>
   para reproducir un Video CD.
-  </para></listitem>
-<listitem><para>
+  </simpara></listitem>
+<listitem><simpara>
   VOB: Este es el formato de archivo MPEG en <emphasis role="bold">DVDs</emphasis>.
-  Es el mismo que MPG, sumando la capacidad para contener subt√≠tulos o audio
+  Es el mismo que MPG, sumando la capacidad para contener subtÌtulos o audio
   no-MPEG (AC3). Contiene video codificado con MPEG2 y normalmente audio en
-  AC3, pero DTS, MP2 y LPCM sin comprimir tambi√©n est√° permitido.
-  ¬°<emphasis role="bold">Lea la secci√≥n de <link linkend="dvd">DVD</link></emphasis>!
-  </para></listitem>
+  AC3, pero DTS, MP2 y LPCM sin comprimir tambiÈn est· permitido.
+  °<emphasis role="bold">Lea la secciÛn de <link linkend="dvd">DVD</link></emphasis>!
+  </simpara></listitem>
 </itemizedlist>
 
 <para>
 Series de marcos forman grupos independientes en archivos MPEG. Esto
-significa que puede cortar/unir un archivo MPEG con herramientas est√°ndar
+significa que puede cortar/unir un archivo MPEG con herramientas est·ndar
 de archivos (como <command>dd</command>, <command>cut</command>), y 
 permanece completamente funcional.
 </para>
 
 <para>
-Una caracter√≠stica importante de los MPGs es que tienen un campo para
-describir la raz√≥n de aspecto del flujo de video dentro de s√≠ mismos.
-Por ejemplo SVCDs tienen una resoluci√≥n de video de 480x480, y en la
+Una caracterÌstica importante de los MPGs es que tienen un campo para
+describir la razÛn de aspecto del flujo de video dentro de sÌ mismos.
+Por ejemplo SVCDs tienen una resoluciÛn de video de 480x480, y en la
 cabecera este campo se establece a 4:3, para que puedan reproducirse
 a 640x480. Los archivos AVI no tienen este campo, por lo que deben
-ser reescalados durante la codificaci√≥n o reproducidos con la opci√≥n
+ser reescalados durante la codificaciÛn o reproducidos con la opciÛn
 <option>-aspect</option>.
 </para>
 </sect3>
@@ -89,55 +89,55 @@ ser reescalados durante la codificaci√≥n o reproducidos con la opci√≥n
 <title>Archivos AVI</title>
 
 <para>
-Dise√±ados por Microsoft,
+DiseÒados por Microsoft,
 <emphasis role="bold">AVI (Audio Video Interleaved)</emphasis>
-es un formato amplio multiprop√≥sito actualmente usado por la mayor√≠a de
+es un formato amplio multipropÛsito actualmente usado por la mayorÌa de
 los videos DivX y DivX4. Tiene muchas desventajas y deficiencias conocidas
 (por ejemplo en streaming). Soporta solo un flujo de video y de 0 a 99 flujos
-de audio y puede ser de hasta 2GB de grande, pero existe una extensi√≥n que
-permite archivos m√°s grandes llamada <emphasis role="bold">OpenDML</emphasis>.
+de audio y puede ser de hasta 2GB de grande, pero existe una extensiÛn que
+permite archivos m·s grandes llamada <emphasis role="bold">OpenDML</emphasis>.
 Microsoft actualmente intenta fuertemente que la gente deje de usar
 este formato y anima a usar ASF/WMV. Lo que no quiere nadie.
 </para>
 
 <para>
 Hay un hack que permite que los archivos AVI contengan flujos de audio
-en Ogg Vorbis, pero los hace incompatibles con los AVI est√°ndar.
-<application>MPlayer</application> soporta la reproducci√≥n de este
-tipo de archivos. El posicionamiento tambi√©n est√° implementado pero
+en Ogg Vorbis, pero los hace incompatibles con los AVI est·ndar.
+<application>MPlayer</application> soporta la reproducciÛn de este
+tipo de archivos. El posicionamiento tambiÈn est· implementado pero
 seriamente entrabado por archivos mal codificados con cabeceras confusas.
-Desafortunadamente el √∫nico codificador actualmente capaz de crear
+Desafortunadamente el ˙nico codificador actualmente capaz de crear
 estos archivos, <application>NanDub</application>, tiene ese problema.
 </para>
 
 <note>
 <para>
-Las c√°maras DV crean flujos DV crudos que las utilidades de grabaci√≥n
+Las c·maras DV crean flujos DV crudos que las utilidades de grabaciÛn
 de DV convierten a dos tipos diferentes de archivos AVI. Los AVI entonces
 contienen flujos separados de audio y video que
 <application>MPlayer</application> puede reproducir o el flujo DV crudo
-para el que el soporte est√° siendo desarrollado.
+para el que el soporte est· siendo desarrollado.
 </para>
 </note>
 
 <para>
 Hay dos tipos de archivos AVI:
 <itemizedlist>
-<listitem><para>
+<listitem><simpara>
   <emphasis role="bold">Interpolado:</emphasis> El contenido de audio y video
-  es interpolado. Este es el uso est√°ndar. Recomentado y mayormente usado.
-  Algunas herramientas crean AVis interpolados con mala sincronizaci√≥n.
+  es interpolado. Este es el uso est·ndar. Recomentado y mayormente usado.
+  Algunas herramientas crean AVis interpolados con mala sincronizaciÛn.
   <application>MPlayer</application> detecta estos como interpolados, y
-  resulta en p√©rdida de sincron√≠a A/V, probablemente en los posicionamientos.
+  resulta en pÈrdida de sincronÌa A/V, probablemente en los posicionamientos.
   Estos archivos deben ser reproducidos como no-interpolados (con la
-  opci√≥n <option>-ni</option>).
-  </para></listitem>
-<listitem><para>
+  opciÛn <option>-ni</option>).
+  </simpara></listitem>
+<listitem><simpara>
   <emphasis role="bold">No-interpolado:</emphasis> Primero tiene el flujo
-  de video completo, despu√©s el de audio completo. Por ello necesita un
-  mont√≥n de posicionamientos, haciendo la reproducci√≥n desde la red o
-  CD-ROM dif√≠cil.
-  </para></listitem>
+  de video completo, despuÈs el de audio completo. Por ello necesita un
+  montÛn de posicionamientos, haciendo la reproducciÛn desde la red o
+  CD-ROM difÌcil.
+  </simpara></listitem>
 </itemizedlist>
 </para>
 
@@ -145,32 +145,32 @@ Hay dos tipos de archivos AVI:
 <application>MPlayer</application> soporta dos tipos de temporizaciones
 para archivos AVI:
 <itemizedlist>
-<listitem><para>
-  <emphasis role="bold">bps-based:</emphasis> Est√° basado en la tasa
-  de bits/muestreo del flujo de video/audio. Este m√©todo es usado por
-  la mayor√≠a de los reproductores, incluyendo
+<listitem><simpara>
+  <emphasis role="bold">bps-based:</emphasis> Est· basado en la tasa
+  de bits/muestreo del flujo de video/audio. Este mÈtodo es usado por
+  la mayorÌa de los reproductores, incluyendo
   <ulink url="http://avifile.sourceforge.net">avifile</ulink>
   y <application>Windows Media Player</application>. Los archivos con
   cabecera en mal estado, y los archivos creados con audio en VBR pero
-  no con un codificador VBR-compliant resultan en desincronizaci√≥n A/V
-  con √©ste m√©todo (la mayor√≠a de las veces en las b√∫squedas).
-  </para></listitem>
-<listitem><para>
+  no con un codificador VBR-compliant resultan en desincronizaciÛn A/V
+  con Èste mÈtodo (la mayorÌa de las veces en las b˙squedas).
+  </simpara></listitem>
+<listitem><simpara>
   <emphasis role="bold">interleaving-based:</emphasis> No usa como valor
-  de tasa de bits la de la cabecera, en lugar de eso usa una posici√≥n
+  de tasa de bits la de la cabecera, en lugar de eso usa una posiciÛn
   relativa de trozos de audio y video interpolados, creando archivos mal
   codificados con audio VBR reproducible.
-  </para></listitem>
+  </simpara></listitem>
 </itemizedlist>
 </para>
 
 <para>
-Cualquier codec de audio y de video est√° permitido, pero note que el audio
-en VBR no est√° muy bien soportado por la mayor√≠a de los reproductores. El
-formato de archivo hace posible usar audio VBR, pero la mayor√≠a de los
+Cualquier codec de audio y de video est· permitido, pero note que el audio
+en VBR no est· muy bien soportado por la mayorÌa de los reproductores. El
+formato de archivo hace posible usar audio VBR, pero la mayorÌa de los
 reproductores esperan audio en CBR, y por eso fallan con VBR. VBR no es
-muy com√∫n y los AVI de Microsoft solo describen audio CBR. Tambi√©n he
-notado que la mayor√≠a de los codificadores/multiplexores de AVI crean
+muy com˙n y los AVI de Microsoft solo describen audio CBR. TambiÈn he
+notado que la mayorÌa de los codificadores/multiplexores de AVI crean
 archivos mal cuando usan audio VBR. Solo hay dos excepciones:
 <application>NanDub</application> y
 <link linkend="mencoder"><application>MEncoder</application></link>.
@@ -185,11 +185,11 @@ ASF (Active Streaming Format) viene de Microsoft. Han desarrollado dos
 variantes de ASF, v1.0 y v2.0. v1.0 se usa por sus herramientas de medios
 (<application>Windows Media Player</application> y
 <application>Windows Media Encoder</application>) y es muy secreto. v2.0
-est√° publicado y patentado :). Por supuesto son diferentes,
-no son nada compatibles (se trata de otro juego legal s√≠mplemente).
+est· publicado y patentado :). Por supuesto son diferentes,
+no son nada compatibles (se trata de otro juego legal sÌmplemente).
 <application>MPlayer</application> soporta solo v1.0, ya que nadie ha
-visto nunca archivos v2.0 :). Note que los archivos ASF hoy en d√≠a vienen
-con la extensi√≥n 
+visto nunca archivos v2.0 :). Note que los archivos ASF hoy en dÌa vienen
+con la extensiÛn 
 <filename>.WMA</filename> o <filename>.WMV</filename>.
 </para>
 </sect3>
@@ -199,11 +199,11 @@ con la extensi√≥n
 <title>Archivos QuickTime/MOV</title>
 
 <para>
-Estos formatos han sido dise√±ados por Apple y pueden contener cualquier
-codec, CBR o VBR. Normalmente tienen extensi√≥n <filename>.QT</filename> o
-<filename>.MP4</filename>. Note que desde que el grupo MPEG4 eligi√≥
+Estos formatos han sido diseÒados por Apple y pueden contener cualquier
+codec, CBR o VBR. Normalmente tienen extensiÛn <filename>.QT</filename> o
+<filename>.MP4</filename>. Note que desde que el grupo MPEG4 eligiÛ
 QuickTime como el formato de archivo recomendado para MPEG4, sus archivos
-MOV vienen con extensi√≥n <filename>.MPG</filename> o <filename>.MP4</filename>
+MOV vienen con extensiÛn <filename>.MPG</filename> o <filename>.MP4</filename>
 (Interesadamente los flujos de video y audio en estos archivos son archivos
 reales MPG y AAC. Puede incluso extraerlos con las opciones
 <option>-dumpvideo</option> y <option>-dumpaudio</option>.).
@@ -211,9 +211,9 @@ reales MPG y AAC. Puede incluso extraerlos con las opciones
 
 <note>
 <para>
-La mayor√≠a de los archivos QuickTime usan video
+La mayorÌa de los archivos QuickTime usan video
 <emphasis role="bold">Sorenson</emphasis> y audio QDesign Music.
-Vea nuestra secci√≥n de codec sobre<link linkend="sorenson">Sorenson</link>.
+Vea nuestra secciÛn de codec sobre<link linkend="sorenson">Sorenson</link>.
 </para>
 </note>
 </sect3>
@@ -225,18 +225,18 @@ Vea nuestra secci√≥n de codec sobre<link linkend="sorenson">Sorenson</link>.
 <para>
 <application>MPlayer</application> felizmente demultiplexa formatos de
 archivo VIVO. La gran desventaja de este formato es que no tiene un
-bloque de √≠ndice, no tiene un tama√±o fijo de paquete o bytes de
-sincronizaci√≥n y la mayor√≠a de los archivos incluso pierden marcos
-clave, ¬°no olvide las b√∫squedas!
+bloque de Ìndice, no tiene un tamaÒo fijo de paquete o bytes de
+sincronizaciÛn y la mayorÌa de los archivos incluso pierden marcos
+clave, °no olvide las b˙squedas!
 </para>
 
 <para>
 El codec de video de los archivos VIVO/1.0 es
-<emphasis role="bold">h.263</emphasis> est√°ndar.
-El codec de video de los achivos VIVO/2.0 es una versi√≥n
-<emphasis role="bold">h.263v2</emphasis> modificada y no est√°ndar.
+<emphasis role="bold">h.263</emphasis> est·ndar.
+El codec de video de los achivos VIVO/2.0 es una versiÛn
+<emphasis role="bold">h.263v2</emphasis> modificada y no est·ndar.
 El audio es igual, puede ser
-<emphasis role="bold">g.723 (est√°ndar)</emphasis>, o
+<emphasis role="bold">g.723 (est·ndar)</emphasis>, o
 <emphasis role="bold">Vivo Siren</emphasis>.
 </para>
 
@@ -244,7 +244,7 @@ El audio es igual, puede ser
 Vea las secciones de
 <link linkend="vivo-video">codec de video VIVO</link> y
 <link linkend="vivo-audio">codec de audio VIVO</link>
-para instrucciones sobre la instalaci√≥n.
+para instrucciones sobre la instalaciÛn.
 </para>
 </sect3>
 
@@ -253,12 +253,12 @@ para instrucciones sobre la instalaci√≥n.
 <title>Archivos FLI</title>
 <para>
 <emphasis role="bold">FLI</emphasis> es un formato de archivo muy antiguo
-usado por Autodesk Animator, pero es un formato de archivo com√∫n para
-animaciones peque√±as en la red.<application>MPlayer</application> demultiplexa
-y decodifica pel√≠culas FLI y es incluso capaz de hacer b√∫squedas dentro
-(√∫til cuando hay bucles con la opci√≥n <option>-loop</option>). Los archivos
+usado por Autodesk Animator, pero es un formato de archivo com˙n para
+animaciones pequeÒas en la red.<application>MPlayer</application> demultiplexa
+y decodifica pelÌculas FLI y es incluso capaz de hacer b˙squedas dentro
+(˙til cuando hay bucles con la opciÛn <option>-loop</option>). Los archivos
 FLI no tienen marcos clave, por lo que la imagen se puede estropear durante
-un corto lapso de tiempo despu√©s de una b√∫squeda.
+un corto lapso de tiempo despuÈs de una b˙squeda.
 </para>
 </sect3>
 
@@ -267,10 +267,10 @@ un corto lapso de tiempo despu√©s de una b√∫squeda.
 <title>Archivos RealMedia (RM)</title>
 
 <para>
-S√≠, <application>MPlayer</application> puede leer (demultiplexar) archivos
-RealMedia (<filename>.rm</filename>). La b√∫squeda funciona, pero debe
-especificar la opci√≥n <option>-forceidx</option> (el formato soporta
-marcos clave). Aqu√≠ hay una lista de los codecs soportados de
+SÌ, <application>MPlayer</application> puede leer (demultiplexar) archivos
+RealMedia (<filename>.rm</filename>). La b˙squeda funciona, pero debe
+especificar la opciÛn <option>-forceidx</option> (el formato soporta
+marcos clave). AquÌ hay una lista de los codecs soportados de
 <link linkend="realvideo">RealVideo</link> y
 <link linkend="realaudio">RealAudio</link>.
 </para>
@@ -283,11 +283,11 @@ marcos clave). Aqu√≠ hay una lista de los codecs soportados de
 <ulink url="http://mars.tuwien.ac.at/~roman/nuppelvideo">NuppelVideo</ulink>
 es una herramienta para grabar TV (AFAIK:). <application>MPlayer</application>
 puede leer sus archivos <filename>.NUV</filename> (solo NuppelVideo 5.0).
-Estos archivos pueden contener marcos o im√°genes YV12 sin comprimir,
+Estos archivos pueden contener marcos o im·genes YV12 sin comprimir,
 YV12+RTJpeg comprimido, YV12 RTJpeg+lzo comprimido, y YV12+lzo comprimido.
-¬°<application>MPlayer</application> los decodifica (y tambi√©n
+°<application>MPlayer</application> los decodifica (y tambiÈn
 <emphasis role="bold">codifica</emphasis> con <application>MEncoder</application>
-a DivX/etc!). La b√∫squeda funciona.
+a DivX/etc!). La b˙squeda funciona.
 </para>
 </sect3>
 
@@ -300,13 +300,13 @@ es un formato de archivo usado por los
 <ulink url="http://mjpeg.sf.net">programas mjpegtools</ulink>.
 Puede grabar, producir, filtrar o codificar video en este formato usando
 esas herramientas. El formato de archivo es realmente una secuencia
-de im√°genes YUV 4:2:0 sin comprimir.
+de im·genes YUV 4:2:0 sin comprimir.
 </para>
 </sect3>
 
 
 <sect3 id="film">
-<title>Pel√≠culas FILM</title>
+<title>PelÌculas FILM</title>
 <para>
 Este formato es usado en juegos en CD-ROM de Sega Saturn antiguos.
 </para>
@@ -339,7 +339,7 @@ de compilar <application>MPlayer</application> para poder reproducirlos.
 <title>Archivos SDP</title>
 <para>
 <ulink url="ftp://ftp.rfc-editor.org/in-notes/rfc2327.txt">SDP</ulink> es un
-formato est√°ndar IETF para describir flujos de video y/o audio RTP.
+formato est·ndar IETF para describir flujos de video y/o audio RTP.
 (Se requiere &quot;<ulink url="http://www.live555.com/mplayer/">LIVE.COM Streaming Media</ulink>&quot;.)
 </para>
 </sect3>
@@ -354,7 +354,7 @@ Windows).
 </para>
 
 <para>
-Las especificaciones de PVA pueden descargarse desde la siguiente direcci√≥n:
+Las especificaciones de PVA pueden descargarse desde la siguiente direcciÛn:
 <ulink url="http://www.technotrend.de/download/av_format_v1.pdf"/>
 </para>
 </sect3>
@@ -363,39 +363,39 @@ Las especificaciones de PVA pueden descargarse desde la siguiente direcci√≥n:
 <sect3 id="gif">
 <title>Archivos GIF</title>
 <para>
-El formato <emphasis role="bold">GIF</emphasis> es un formato com√∫n para
-gr√°ficos para la web. Hay dos versiones de la especificaci√≥n GIF, GIF87a y
-GIF89a. La principal diferencia es que GIF89a permite animaci√≥n.
+El formato <emphasis role="bold">GIF</emphasis> es un formato com˙n para
+gr·ficos para la web. Hay dos versiones de la especificaciÛn GIF, GIF87a y
+GIF89a. La principal diferencia es que GIF89a permite animaciÛn.
 <application>MPlayer</application> soporta ambos formatos usando
 <systemitem class="library">libungif</systemitem> u otra biblioteca
 compatible con libgif. Los GIFs no animagos son mostrados
 como marcos de video simples. (Use las opciones <option>-loop</option> y
-<option>-fixed-vo</option> para mostrarlas durante m√°s tiempo.)
+<option>-fixed-vo</option> para mostrarlas durante m·s tiempo.)
 </para>
 
 <para>
-<application>MPlayer</application> no soporta actualmente b√∫squeda en archivos
-GIF. Los archivos GIF no tienen necesariamente un tama√±o de marco fijo, ni
-un n√∫mero de im√°genes por segundo fijo. En lugar de eso, cada imagen tiene un
-tama√±o independiente y se supone que se posiciona en un lugar concreto dentro
-de un campo de tama√±o-fijo. La tasa de bits por segundo es controlada por
-un bloque opcional antes de cada im√°gen que especifica el retardo de la
+<application>MPlayer</application> no soporta actualmente b˙squeda en archivos
+GIF. Los archivos GIF no tienen necesariamente un tamaÒo de marco fijo, ni
+un n˙mero de im·genes por segundo fijo. En lugar de eso, cada imagen tiene un
+tamaÒo independiente y se supone que se posiciona en un lugar concreto dentro
+de un campo de tamaÒo-fijo. La tasa de bits por segundo es controlada por
+un bloque opcional antes de cada im·gen que especifica el retardo de la
 siguiente imagen en centisegundos.
 </para>
 
 <para>
-Los archivos GIF est√°ndar contienen marcos 24-bit RGB con como mucho una
-paleta 8-bit indexada. Estos marcos normalmente est√°n comprimidos con LZW,
+Los archivos GIF est·ndar contienen marcos 24-bit RGB con como mucho una
+paleta 8-bit indexada. Estos marcos normalmente est·n comprimidos con LZW,
 aunque algunos codificadores de GIF producen marcos sin comprimir para
-evitar problemas de patentes con la compresi√≥n LZW.
+evitar problemas de patentes con la compresiÛn LZW.
 </para>
 
 <para>
-Si su distribuci√≥n no viene con <systemitem class="library">libungif</systemitem>,
+Si su distribuciÛn no viene con <systemitem class="library">libungif</systemitem>,
 descargue una copia desde
 <ulink url="http://prtr-13.ucsc.edu/~badger/software/libungif/index.shtml">la
-p√°gina web de libungif</ulink>. Para informaci√≥n t√©cnica detallada, consulte la
-<ulink url="http://www.w3.org/Graphics/GIF/spec-gif89a.txt">especificaci√≥n
+p·gina web de libungif</ulink>. Para informaciÛn tÈcnica detallada, consulte la
+<ulink url="http://www.w3.org/Graphics/GIF/spec-gif89a.txt">especificaciÛn
 GIF89a</ulink>.
 </para>
 </sect3>
@@ -408,10 +408,10 @@ GIF89a</ulink>.
 
 <para>
 <application>MPlayer</application> es un reproductor de
-<emphasis role="bold">pel√≠culas</emphasis> y no de 
+<emphasis role="bold">pelÌculas</emphasis> y no de 
 <emphasis role="bold">media</emphasis> , sin embargo puede reproducir
-algunos formatos de archivo de audio (los que est√°n listados en las secciones
-que se encuentran m√°s abajo). Esta no es una forma recomendada para usar
+algunos formatos de archivo de audio (los que est·n listados en las secciones
+que se encuentran m·s abajo). Esta no es una forma recomendada para usar
 <application>MPlayer</application>, mejor use
 <ulink url="http://www.xmms.org">XMMS</ulink>.
 </para>
@@ -423,8 +423,8 @@ Puede tener problemas reproduciendo algunos archivos MP3 que
 <application>MPlayer</application> puede detectar incorrectamente
 como MPEGs y reproducirlos de manera incorrecta o no reproducirlos.
 Esto no puede arreglarse sin soporte de saltos para algunos archivos
-en mal estado MPEG y por eso puede que esto siga as√≠ en el futuro
-predecible. La bandera <option>-demuxer</option> descrita en la p√°gina
+en mal estado MPEG y por eso puede que esto siga asÌ en el futuro
+predecible. La bandera <option>-demuxer</option> descrita en la p·gina
 de manual puede ayudarle en estos casos.
 </para>
 </sect3>
@@ -459,12 +459,12 @@ Requiere
 <title>CD de audio</title>
 <para>
 <application>MPlayer</application> puede usar <application>cdparanoia</application>
-para reproducir CDDA (Audio CD). El objetivo de esta secci√≥n no es hacer una
-enumeraci√≥n de las caracter√≠sticas de <application>cdparanoia</application>.
+para reproducir CDDA (Audio CD). El objetivo de esta secciÛn no es hacer una
+enumeraciÛn de las caracterÌsticas de <application>cdparanoia</application>.
 </para>
 
 <para>
-Vea la opci√≥n <option>-cdda</option> en la p√°gina de manual para ver las opciones
+Vea la opciÛn <option>-cdda</option> en la p·gina de manual para ver las opciones
 que puede pasar a <application>cdparanoia</application>.
 </para>
 </sect3>
@@ -474,19 +474,19 @@ que puede pasar a <application>cdparanoia</application>.
 <para>
 <application>MPlayer</application> puede usar los aditivos de entrada de
 <application>XMMS</application> para reproducir varios formatos de archivo.
-Hay aditivos para m√∫sica de juegos SNES, m√∫sica SID (de Commodore 64), algunos
+Hay aditivos para m˙sica de juegos SNES, m˙sica SID (de Commodore 64), algunos
 formatos de Amiga, .xm, .it, VQF, musepack, Bonk, shorten y muchos otros.
 Puede encontrarlos en
-<ulink url="http://www.xmms.org/plugins_input.html">La p√°gina de aditivos
+<ulink url="http://www.xmms.org/plugins_input.html">La p·gina de aditivos
 de entrada de XMMS</ulink>.
 </para>
 
 <para>
-Para usar √©sta caracter√≠stica necesita tener<application>XMMS</application>
+Para usar Èsta caracterÌstica necesita tener<application>XMMS</application>
 y compilar <application>MPlayer</application> con
 <filename>./configure --enable-xmms</filename>.
-Si √©sto no funciona, puede que sea necesario establecer la ruta de los
-aditivos de <application>XMMS</application> de manera expl√≠cita con las opciones
+Si Èsto no funciona, puede que sea necesario establecer la ruta de los
+aditivos de <application>XMMS</application> de manera explÌcita con las opciones
 <option>--with-xmmsplugindir</option> y <option>--with-xmmslibdir</option>.
 </para>
 </sect3>

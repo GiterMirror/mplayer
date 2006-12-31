@@ -27,58 +27,39 @@
 #include "ass.h"
 #include "ass_utils.h"
 #include "ass_mp.h"
-#include "ass_library.h"
-
-#ifdef HAVE_FONTCONFIG
-#include <fontconfig/fontconfig.h>
-#endif
 
 // libass-related command line options
-ass_library_t* ass_library;
 int ass_enabled = 0;
 float ass_font_scale = 1.;
 float ass_line_spacing = 0.;
 int ass_top_margin = 0;
 int ass_bottom_margin = 0;
-#if defined(FC_VERSION) && (FC_VERSION >= 20402)
-int extract_embedded_fonts = 1;
-#else
 int extract_embedded_fonts = 0;
-#endif
 char **ass_force_style_list = NULL;
 int ass_use_margins = 0;
 char* ass_color = NULL;
 char* ass_border_color = NULL;
 char* ass_styles_file = NULL;
 
-#ifdef HAVE_FONTCONFIG
 extern int font_fontconfig;
-#else
-static int font_fontconfig = 0;
-#endif
 extern char* font_name;
 extern float text_font_scale_factor;
 extern int subtitle_autoscale;
 
-#ifdef USE_ICONV
-extern char* sub_cp;
-#else
-static char* sub_cp = 0;
-#endif
-
 extern double ass_internal_font_size_coeff; 
 extern void process_force_style(ass_track_t* track);
 
-ass_track_t* ass_default_track(ass_library_t* library) {
-	ass_track_t* track = ass_new_track(library);
+ass_track_t* ass_default_track() {
+	ass_track_t* track = ass_new_track();
 
 	track->track_type = TRACK_TYPE_ASS;
 	track->Timer = 100.;
+	track->PlayResX = 384;
 	track->PlayResY = 288;
 	track->WrapStyle = 0;
 
 	if (ass_styles_file)
-		ass_read_styles(track, ass_styles_file, sub_cp);
+		ass_read_styles(track, ass_styles_file);
 
 	if (track->n_styles == 0) {
 		ass_style_t* style;
@@ -173,9 +154,9 @@ int ass_process_subtitle(ass_track_t* track, subtitle* sub)
 		p += snprintf(p, end - p, "{\\an%d}", sub->alignment);
 
 	for (j = 0; j < sub->lines; ++j)
-		p += snprintf(p, end - p, "%s\\N", sub->text[j]);
+		p += snprintf(p, end - p, "%s ", sub->text[j]);
 
-	p-=2; // remove last ' '
+	p--; // remove last ' '
 	*p = 0;
 
 	if (check_duplicate_plaintext_event(track)) {
@@ -184,7 +165,7 @@ int ass_process_subtitle(ass_track_t* track, subtitle* sub)
 		return -1;
 	}
 
-	mp_msg(MSGT_ASS, MSGL_V, "plaintext event at %" PRId64 ", +%" PRId64 ": %s  \n",
+	mp_msg(MSGT_GLOBAL, MSGL_V, "plaintext event at %" PRId64 ", +%" PRId64 ": %s  \n",
 			(int64_t)event->Start, (int64_t)event->Duration, event->Text);
 	
 	return eid;
@@ -197,11 +178,11 @@ int ass_process_subtitle(ass_track_t* track, subtitle* sub)
  * \param fps video framerate
  * \return newly allocated ass_track, filled with subtitles from subdata
  */
-ass_track_t* ass_read_subdata(ass_library_t* library, sub_data* subdata, double fps) {
+ass_track_t* ass_read_subdata(sub_data* subdata, double fps) {
 	ass_track_t* track;
 	int i;
 
-	track = ass_default_track(library);
+	track = ass_default_track();
 	track->name = subdata->filename ? strdup(subdata->filename) : 0;
 
 	for (i = 0; i < subdata->sub_num; ++i) {
@@ -216,37 +197,3 @@ ass_track_t* ass_read_subdata(ass_library_t* library, sub_data* subdata, double 
 	return track;
 }
 
-char *get_path(char *);
-
-void ass_configure(ass_renderer_t* priv, int w, int h) {
-	ass_set_frame_size(priv, w, h);
-	ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
-	ass_set_use_margins(priv, ass_use_margins);
-	ass_set_font_scale(priv, ass_font_scale);
-}
-
-void ass_configure_fonts(ass_renderer_t* priv) {
-	char *dir, *path, *family;
-	dir = get_path("fonts");
-	if (!font_fontconfig && font_name) path = strdup(font_name);
-	else path = get_path("subfont.ttf");
-	if (font_fontconfig && font_name) family = strdup(font_name);
-	else family = 0;
-
-	ass_set_fonts(priv, path, family);
-
-	free(dir);
-	free(path);
-	free(family);
-}
-
-ass_library_t* ass_init() {
-	ass_library_t* priv;
-	char* path = get_path("fonts");
-	priv = ass_library_init();
-	ass_set_fonts_dir(priv, path);
-	ass_set_extract_fonts(priv, extract_embedded_fonts);
-	ass_set_style_overrides(priv, ass_force_style_list);
-	free(path);
-	return priv;
-}

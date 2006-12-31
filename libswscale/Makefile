@@ -7,19 +7,14 @@ LIBVERSION=$(SWSVERSION)
 LIBMAJOR=$(SWSMAJOR)
 endif
 
-EXTRALIBS := -L$(BUILD_ROOT)/libavutil -lavutil$(BUILDSUF) $(EXTRALIBS)
-
-OBJS= swscale.o rgb2rgb.o
+OBJS= swscale.o rgb2rgb.o yuv2rgb.o
 ifeq ($(TARGET_ALTIVEC),yes)
 OBJS+=  yuv2rgb_altivec.o
-endif
-ifeq ($(CONFIG_GPL),yes)
-OBJS+=  yuv2rgb.o
 endif
 
 HEADERS = swscale.h rgb2rgb.h
 
-include ../common.mak
+include $(SRC_PATH)/common.mak
 
 cs_test: cs_test.c $(LIB)
 

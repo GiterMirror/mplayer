@@ -426,7 +426,7 @@ void dct64_sse(real *a,real *b,real *c)
         "fist  480(%4)\n\t"
         "fadds  92(%1)\n\t"
         "fistp 416(%4)\n\t"
-        ".byte 0xdf, 0xc0\n\t" // ffreep %%st(0)
+        "ffreep %%st(0)\n\t"
         :
         :"m"(costab_mmx[30]), "r"(b1), "r"(b2), "r"(a), "r"(b)
         :"memory"

@@ -25,7 +25,8 @@
 #include <ft2build.h>
 #include FT_GLYPH_H
 
-#include "mputils.h"
+#include "mp_msg.h"
+#include "libvo/font_load.h" // for blur()
 #include "ass_bitmap.h"
 
 struct ass_synth_priv_s {
@@ -163,14 +164,14 @@ static bitmap_t* glyph_to_bitmap_internal(FT_Glyph glyph, int bord)
 
 	error = FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_NORMAL, 0, 0);
 	if (error) {
-		mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_FT_Glyph_To_BitmapError, error);
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "FT_Glyph_To_Bitmap error %d \n", error);
 		return 0;
 	}
 
 	bg = (FT_BitmapGlyph)glyph;
 	bit = &(bg->bitmap);
 	if (bit->pixel_mode != FT_PIXEL_MODE_GRAY) {
-		mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_UnsupportedPixelMode, (int)(bit->pixel_mode));
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "Unsupported pixel mode: %d\n", (int)(bit->pixel_mode));
 		FT_Done_Glyph(glyph);
 		return 0;
 	}
@@ -218,7 +219,7 @@ static bitmap_t* fix_outline_and_shadow(bitmap_t* bm_g, bitmap_t* bm_o)
 			unsigned char c_g, c_o;
 			c_g = g[x];
 			c_o = o[x];
-			o[x] = (c_o > c_g) ? c_o : 0;
+			o[x] = (c_o > c_g) ? c_o - c_g : 0;
 			s[x] = (c_o < 0xFF - c_g) ? c_o + c_g : 0xFF;
 		}
 		g += bm_g->w;

@@ -29,7 +29,7 @@ SRCS=libdha.c \
 
 OBJS=$(SRCS:.c=.o)
 
-CFLAGS  = -fPIC -I. -I.. $(OPTFLAGS)
+CFLAGS  = -I. -I.. $(OPTFLAGS) -fPIC
 
 ifeq ($(TARGET_OS),OpenBSD)
 ifeq ($(TARGET_ARCH_X86),yes)
@@ -76,7 +76,9 @@ distclean: clean
 	rm -f .depend test
 	rm -f pci_dev_ids.c pci_ids.h pci_names.c pci_names.h pci_vendors.h pci.db
 
-dep depend: pci_names.c
+dep:    depend
+
+depend: pci_names.c
 	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
 
 install:
@@ -98,6 +100,9 @@ else
 	-ldconfig
 endif
 
+#
+# include dependency files if they exist
+#
 ifneq ($(wildcard .depend),)
 include .depend
 endif

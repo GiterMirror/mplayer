@@ -16,6 +16,7 @@
 #include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
+#include "bswap.h"
 
 typedef struct __FrameInfo
 {

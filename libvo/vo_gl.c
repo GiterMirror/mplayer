@@ -17,7 +17,6 @@
 #include "Gui/interface.h"
 #endif
 #include "libass/ass.h"
-#include "libass/ass_mp.h"
 
 static vo_info_t info = 
 {
@@ -32,9 +31,6 @@ LIBVO_EXTERN(gl)
 #ifdef GL_WIN32
 static int gl_vinfo = 0;
 static HGLRC gl_context = 0;
-#define update_xinerama_info w32_update_xinerama_info
-#define vo_init vo_w32_init
-#define vo_window vo_w32_window
 #else
 static XVisualInfo *gl_vinfo = NULL;
 static GLXContext gl_context = 0;
@@ -250,21 +246,14 @@ static void clearEOSD(void) {
  * \param img image list to create OSD from.
  *            A value of NULL has the same effect as clearEOSD()
  */
-static void genEOSD(mp_eosd_images_t *imgs) {
+static void genEOSD(ass_image_t *img) {
   int sx, sy;
   int tinytexcur = 0;
   int smalltexcur = 0;
   GLuint *curtex;
   GLint scale_type = (scaled_osd) ? GL_LINEAR : GL_NEAREST;
-  ass_image_t *img = imgs->imgs;
   ass_image_t *i;
   int cnt;
-
-  if (imgs->changed == 0) // there are elements, but they are unchanged
-      return;
-  if (img && imgs->changed == 1) // there are elements, but they just moved
-      goto skip_upload;
-
   clearEOSD();
   if (!img)
     return;
@@ -318,7 +307,6 @@ static void genEOSD(mp_eosd_images_t *imgs) {
                 x, y, i->w, i->h, 0);
   }
   eosdDispList = glGenLists(1);
-skip_upload:
   glNewList(eosdDispList, GL_COMPILE);
   tinytexcur = smalltexcur = 0;
   for (i = img, curtex = eosdtex; i; i = i->next) {
@@ -597,7 +585,7 @@ static void create_osd_texture(int x0, int y0, int w, int h,
   char *tmp = malloc(stride * h);
   // convert alpha from weird MPlayer scale.
   // in-place is not possible since it is reused for future OSDs
-  for (i = h * stride - 1; i >= 0; i--)
+  for (i = h * stride - 1; i > 0; i--)
     tmp[i] = srca[i] - 1;
   glUploadTex(gl_target, GL_ALPHA, GL_UNSIGNED_BYTE, tmp, stride,
               0, 0, w, h, 0);
@@ -948,8 +936,6 @@ static int control(uint32_t request, void *data, ...)
   case VOCTRL_DRAW_IMAGE:
     return draw_image(data);
   case VOCTRL_DRAW_EOSD:
-    if (!data)
-      return VO_FALSE;
     genEOSD(data);
     return VO_TRUE;
   case VOCTRL_GET_EOSD_RES:

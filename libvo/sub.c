@@ -8,12 +8,6 @@
 #include <malloc.h>
 #endif
 
-#ifdef USE_DVDNAV
-#include "stream/stream.h"
-#include "stream/stream_dvdnav.h"
-#define OSD_NAV_BOX_ALPHA 0x7f
-#endif
-
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "video_out.h"
@@ -74,9 +68,6 @@ int sub_visibility=1;
 int sub_bg_color=0; /* subtitles background color */
 int sub_bg_alpha=0;
 int sub_justify=0;
-#ifdef USE_DVDNAV
-static nav_highlight_t nav_hl;
-#endif
 
 // return the real height of a char:
 static inline int get_height(int c,int h){
@@ -150,22 +141,22 @@ inline static void vo_draw_text_from_buffer(mp_osd_obj_t* obj,void (*draw_alpha)
     }
 }
 
-unsigned utf8_get_char(const char **str) {
-  const uint8_t *strp = (const uint8_t *)*str;
+unsigned utf8_get_char(char **str) {
+  uint8_t *strp = (uint8_t *)*str;
   unsigned c;
   GET_UTF8(c, *strp++, goto no_utf8;);
-  *str = (const char *)strp;
+  *str = (char *)strp;
   return c;
 
 no_utf8:
-  strp = (const uint8_t *)*str;
+  strp = (uint8_t *)*str;
   c = *strp++;
-  *str = (const char *)strp;
+  *str = (char *)strp;
   return c;
 }
 
 inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
-	const char *cp=vo_osd_text;
+	unsigned char *cp=vo_osd_text;
 	int x=20;
 	int h=0;
 	int font;
@@ -200,32 +191,6 @@ inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
           x+=vo_font->width[c]+vo_font->charspace;
         }
 }
-
-#ifdef USE_DVDNAV
-void osd_set_nav_box (uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey) {
-  nav_hl.sx = sx;
-  nav_hl.sy = sy;
-  nav_hl.ex = ex;
-  nav_hl.ey = ey;
-}
-
-inline static void vo_update_nav (mp_osd_obj_t *obj, int dxs, int dys) {
-  int len;
-
-  obj->bbox.x1 = obj->x = nav_hl.sx;
-  obj->bbox.y1 = obj->y = nav_hl.sy;
-  obj->bbox.x2 = nav_hl.ex;
-  obj->bbox.y2 = nav_hl.ey;
-  
-  alloc_buf (obj);
-  len = obj->stride * (obj->bbox.y2 - obj->bbox.y1);
-  memset (obj->bitmap_buffer, OSD_NAV_BOX_ALPHA, len);
-  memset (obj->alpha_buffer, OSD_NAV_BOX_ALPHA, len);
-  obj->flags |= OSDFLAG_BBOX | OSDFLAG_CHANGED;
-  if (obj->bbox.y2 > obj->bbox.y1 && obj->bbox.x2 > obj->bbox.x1)
-    obj->flags |= OSDFLAG_VISIBLE;
-}
-#endif
 
 int vo_osd_progbar_type=-1;
 int vo_osd_progbar_value=100;   // 0..256
@@ -383,6 +348,7 @@ subtitle* vo_sub=NULL;
 inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
    unsigned char *t;
    int c,i,j,l,x,y,font,prevc,counter;
+   int len;
    int k;
    int lastStripPosition;
    int xsize;
@@ -416,8 +382,9 @@ inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
 	    xsize = -vo_font->charspace;
 	  l--;
 	  t=vo_sub->text[i++];	  
+	  len=strlen(t)-1;
 	    char_position = 0;
-	    char_seq = calloc(strlen(t), sizeof(int));
+	    char_seq = (int *) malloc((len + 1) * sizeof(int));
 
 	  prevc = -1;
 
@@ -426,13 +393,20 @@ inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
 	    x = 1;
 
 	    // reading the subtitle words from vo_sub->text[]
-          while (*t) {
-            if (sub_utf8)
-              c = utf8_get_char(&t);
-            else if ((c = *t++) >= 0x80 && sub_unicode)
-              c = (c<<8) + *t++;
+	  for (j=0;j<=len;j++){
+	      if ((c=t[j])>=0x80){
+		 if (sub_utf8){
+		    if ((c & 0xe0) == 0xc0)    /* 2 bytes U+00080..U+0007FF*/
+		       c = (c & 0x1f)<<6 | (t[++j] & 0x3f);
+		    else if((c & 0xf0) == 0xe0){ /* 3 bytes U+00800..U+00FFFF*/
+		       c = (((c & 0x0f)<<6) | (t[++j] & 0x3f))<<6;
+		       c |= (t[++j] & 0x3f);
+		    }
+		 } else if (sub_unicode) 
+		       c = (c<<8) + t[++j]; 
+	      }
 	      if (k==MAX_UCS){
-		 t += strlen(t); // end here
+		 len=j; // end here
 		 mp_msg(MSGT_OSD,MSGL_WARN,"\nMAX_UCS exceeded!\n");
 	      }
 	      if (!c) c++; // avoid UCS 0
@@ -843,11 +817,6 @@ int vo_update_osd(int dxs,int dys){
         int vis=obj->flags&OSDFLAG_VISIBLE;
 	obj->flags&=~OSDFLAG_BBOX;
 	switch(obj->type){
-#ifdef USE_DVDNAV
-        case OSDTYPE_DVDNAV:
-           vo_update_nav(obj,dxs,dys);
-           break;
-#endif
 	case OSDTYPE_SUBTITLE:
 	    vo_update_text_sub(obj,dxs,dys);
 	    break;
@@ -915,9 +884,6 @@ void vo_init_osd(void){
     new_osd_obj(OSDTYPE_SUBTITLE);
     new_osd_obj(OSDTYPE_PROGBAR);
     new_osd_obj(OSDTYPE_SPU);
-#ifdef USE_DVDNAV
-    new_osd_obj(OSDTYPE_DVDNAV);
-#endif
 #ifdef HAVE_FREETYPE
     force_load_font = 1;
 #endif
@@ -953,9 +919,6 @@ void vo_draw_text(int dxs,int dys,void (*draw_alpha)(int x0,int y0, int w,int h,
 	case OSDTYPE_SPU:
 	    vo_draw_spudec_sub(obj, draw_alpha); // FIXME
 	    break;
-#ifdef USE_DVDNAV
-        case OSDTYPE_DVDNAV:
-#endif
 	case OSDTYPE_OSD:
 	case OSDTYPE_SUBTITLE:
 	case OSDTYPE_PROGBAR:
@@ -996,9 +959,7 @@ int vo_osd_check_range_update(int x1,int y1,int x2,int y2){
     while(obj){
 	if(obj->flags&OSDFLAG_VISIBLE){
 	    if(	(obj->bbox.x1<=x2 && obj->bbox.x2>=x1) &&
-		(obj->bbox.y1<=y2 && obj->bbox.y2>=y1) &&
-		obj->bbox.y2 > obj->bbox.y1 && obj->bbox.x2 > obj->bbox.x1
-		) return 1;
+		(obj->bbox.y1<=y2 && obj->bbox.y2>=y1) ) return 1;
 	}
 	obj=obj->next;
     }

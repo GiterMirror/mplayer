@@ -248,13 +248,10 @@ static void uninit(void)
 			mp_msg(MSGT_VO, MSGL_FATAL, "uninit: shmctl failed\n");
 	}
 
-    SetSystemUIMode( kUIModeNormal, 0);
-    CGDisplayShowCursor(kCGDirectMainDisplay);
-    
-    if(mpGLView)
-    {
-        [autoreleasepool release];
-    }
+	SetSystemUIMode( kUIModeNormal, 0);
+	CGDisplayShowCursor(kCGDirectMainDisplay);
+	
+	[autoreleasepool release];
 }
 
 static int preinit(const char *arg)
@@ -330,7 +327,7 @@ static int control(uint32_t request, void *data, ...)
 		case VOCTRL_QUERY_FORMAT: return query_format(*((uint32_t*)data));
 		case VOCTRL_ONTOP: vo_ontop = (!(vo_ontop)); [mpGLView ontop]; return VO_TRUE;
 		case VOCTRL_ROOTWIN: vo_rootwin = (!(vo_rootwin)); [mpGLView rootwin]; return VO_TRUE;
-		case VOCTRL_FULLSCREEN: vo_fs = (!(vo_fs)); [mpGLView fullscreen: NO]; return VO_TRUE;
+		case VOCTRL_FULLSCREEN: vo_fs = (!(vo_fs)); [mpGLView fullscreen: YES]; return VO_TRUE;
 		case VOCTRL_GET_PANSCAN: return VO_TRUE;
 		case VOCTRL_SET_PANSCAN: [mpGLView panscan]; return VO_TRUE;
 	}
@@ -416,7 +413,7 @@ static int control(uint32_t request, void *data, ...)
 */
 - (void)initMenu
 {
-	NSMenu *menu, *aspectMenu;
+	NSMenu *menu;
 	NSMenuItem *menuItem;
 	
 	[NSApp setMainMenu:[[NSMenu alloc] init]];
@@ -433,6 +430,7 @@ static int control(uint32_t request, void *data, ...)
 	kFullScreenCmd = menuItem;
 	menuItem = (NSMenuItem *)[NSMenuItem separatorItem]; [menu addItem:menuItem];
 	
+		NSMenu	*aspectMenu;
 		aspectMenu = [[NSMenu alloc] initWithTitle:@"Aspect Ratio"];
 		menuItem = [[NSMenuItem alloc] initWithTitle:@"Keep" action:@selector(menuAction:) keyEquivalent:@""]; [aspectMenu addItem:menuItem];
 		if(vo_keepaspect) [menuItem setState:NSOnState];
@@ -492,7 +490,7 @@ static int control(uint32_t request, void *data, ...)
 	if(sender == kHalfScreenCmd)
 	{
 		if(isFullscreen) {
-			vo_fs = (!(vo_fs)); [self fullscreen:NO];
+			vo_fs = (!(vo_fs)); [self fullscreen:YES];
 		}
 		
 		winSizeMult = 0.5;
@@ -504,7 +502,7 @@ static int control(uint32_t request, void *data, ...)
 	if(sender == kNormalScreenCmd)
 	{
 		if(isFullscreen) {
-			vo_fs = (!(vo_fs)); [self fullscreen:NO];
+			vo_fs = (!(vo_fs)); [self fullscreen:YES];
 		}
 		
 		winSizeMult = 1;
@@ -516,7 +514,7 @@ static int control(uint32_t request, void *data, ...)
 	if(sender == kDoubleScreenCmd)
 	{
 		if(isFullscreen) {
-			vo_fs = (!(vo_fs)); [self fullscreen:NO];
+			vo_fs = (!(vo_fs)); [self fullscreen:YES];
 		}
 		
 		winSizeMult = 2;
@@ -528,7 +526,7 @@ static int control(uint32_t request, void *data, ...)
 	if(sender == kFullScreenCmd)
 	{
 		vo_fs = (!(vo_fs));
-		[self fullscreen:NO];
+		[self fullscreen:YES];
 	}
 
 	if(sender == kKeepAspectCmd)
@@ -668,9 +666,6 @@ static int control(uint32_t request, void *data, ...)
 */ 
 - (void) render
 {
-	int curTime;
-	static int lastTime;
-
 	glClear(GL_COLOR_BUFFER_BIT);	
 	
 	glEnable(CVOpenGLTextureGetTarget(texture));
@@ -726,8 +721,8 @@ static int control(uint32_t request, void *data, ...)
 	
 	//update activity every 30 seconds to prevent
 	//screensaver from starting up.
-	curTime  = TickCount()/60;
-	lastTime = 0;
+	int curTime = TickCount()/60;
+	static int lastTime = 0;
 		
 	if( ((curTime - lastTime) >= 30) || (lastTime == 0) )
 	{
@@ -1001,7 +996,6 @@ static int control(uint32_t request, void *data, ...)
 
 - (void)windowWillClose:(NSNotification *)aNotification
 {
-    mpGLView = NULL;
 	mplayer_put_key(KEY_ESC);
 }
 @end

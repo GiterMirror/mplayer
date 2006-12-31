@@ -151,7 +151,7 @@ static void convert_matrix(MpegEncContext *s, int (*qmat)[64],
  * So 16           <= qscale * quant_matrix[i]             <= 7905
  * so (1<<19) / 16 >= (1<<19) / (qscale * quant_matrix[i]) >= (1<<19) / 7905
  * so 32768        >= (1<<19) / (qscale * quant_matrix[i]) >= 67 */
-				qmat[qscale][i] = (int)((UINT64_C(1) <<
+				qmat[qscale][i] = (int)((uint64_t_C(1) <<
 						QMAT_SHIFT_MMX) / (qscale
 							*quant_matrix[j]));
 				qmat16[qscale][0][i] = (1 << QMAT_SHIFT_MMX)
@@ -315,7 +315,7 @@ typedef struct {
  * macroblocks and it outputs the huffman code for 'no change' (dc) and
  * 'all zero' (ac)) and it takes 4 macroblocks (422) instead of 6 (420)
  */
-static av_always_inline void zr_mjpeg_encode_mb(jpeg_enc_t *j) {
+static always_inline void zr_mjpeg_encode_mb(jpeg_enc_t *j) {
 
 	MJpegContext *m = j->s->mjpeg_ctx;
 
@@ -354,7 +354,7 @@ static av_always_inline void zr_mjpeg_encode_mb(jpeg_enc_t *j) {
  * \param u_data pointer to the U plane
  * \param v_data pointer to the V plane
  */
-static av_always_inline void fill_block(jpeg_enc_t *j, int x, int y,
+static always_inline void fill_block(jpeg_enc_t *j, int x, int y,
 		unsigned char *y_data, unsigned char *u_data,
 		unsigned char *v_data)
 {

@@ -222,9 +222,6 @@ radio_step_channel <-1|1>
     Step forwards (1) or backwards (-1) in channel list. Works only when the
     'channels' radio parameter was set.
 
-radio_step_freq <value>
-    Tune frequency by the <value> (positive - up, negative - down). 
-
 seek <value> [type]
     Seek to some place in the movie.
         0 is a relative seek of +/- <value> seconds (default).
@@ -251,9 +248,6 @@ speed_mult <value>
 
 speed_set <value>
     Set the speed to <value>.
-
-step_property <property> [<value>]
-    Change property by value, or increase by a default if value is not given.
 
 sub_alignment [value]
     Toggle/set subtitle alignment.

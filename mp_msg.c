@@ -131,10 +131,8 @@ void mp_msg(int mod, int lev, const char *format, ... ){
                                 "V",
                                 "DGB2",
                                 "DGB3",
-                                "DGB4",
-                                "DBG5",
-        };
-        static const char *mod_text[MSGT_MAX]= {
+                                "DGB4"};
+        static const char *mod_text[]= {
                                 "GLOBAL",
                                 "CPLAYER",
                                 "GPLAYER",
@@ -174,13 +172,7 @@ void mp_msg(int mod, int lev, const char *format, ... ){
                                 "SUBREADER",
                                 "AFILTER",
                                 "NETST",
-                                "MUXER",
-                                "OSDMENU",
-                                "IDENTIFY",
-                                "RADIO",
-                                "ASS",
-                                "LOADER",
-        };
+                                "MUXER"};
 
         int c=v_colors[lev];
         int c2=(mod+1)%15+1;

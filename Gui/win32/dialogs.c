@@ -30,7 +30,6 @@
 #include "gui.h"
 #include "wincfg.h"
 #include "dialogs.h"
-#include "libvo/sub.h"
 
 WNDPROC OldUrlWndProc;
 LRESULT CALLBACK SubUrlWndProc(HWND, UINT, WPARAM, LPARAM);
@@ -44,6 +43,7 @@ extern int get_video_colors(sh_video_t *sh_video, char *item, int *value);
 guiInterface_t guiIntfStruct;
 int addurl = 0;
 
+#ifdef USE_SUB
 extern mp_osd_obj_t* vo_osd_list;
 extern char **sub_name;
 
@@ -89,6 +89,7 @@ void guiLoadSubtitle(char *name)
     }
     update_set_of_subtitles();
 }
+#endif
 
 int display_openfilewindow(gui_t *gui, int add)
 {
@@ -143,7 +144,7 @@ int display_openfilewindow(gui_t *gui, int add)
             {
                 if (GetFullPathName(filename, MAX_PATH, filename, &filepart))
                 {
-                    if(!parse_filename(filename, playtree, mconfig, 0))
+                    if(!parse_filename(filename, playtree, mconfig, add? 0 : 1))
                         gui->playlist->add_track(gui->playlist, filename, NULL, filepart, 0);
                     mp_msg(MSGT_GPLAYER, MSGL_V, "[GUI] Adding file: %s - path %s\n", filespec, filename);
                     result++;
@@ -155,6 +156,7 @@ int display_openfilewindow(gui_t *gui, int add)
     return result;
 }
 
+#ifdef USE_SUB
 void display_opensubtitlewindow(gui_t *gui)
 {
     OPENFILENAME subtitleopen;
@@ -181,6 +183,7 @@ void display_opensubtitlewindow(gui_t *gui)
     if(GetOpenFileName(&subtitleopen))
         guiLoadSubtitle(subtitlefile);
 }
+#endif
 
 void display_loadplaylistwindow(gui_t *gui)
 {

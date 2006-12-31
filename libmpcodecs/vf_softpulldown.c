@@ -10,6 +10,7 @@
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
+#include "libvo/sub.h"
 
 struct vf_priv_s {
 	int state;

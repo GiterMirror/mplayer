@@ -26,19 +26,27 @@
 
 #include <assert.h>
 
-#include "mputils.h"
-#include "ass.h"
+#include "mp_msg.h"
 #include "ass_fontconfig.h"
-#include "ass_font.h"
 #include "ass_bitmap.h"
 #include "ass_cache.h"
 
-#define MAX_FONT_CACHE_SIZE 100
 
-static ass_font_t** font_cache;
-static int font_cache_size;
+typedef struct face_cache_item_s {
+	face_desc_t desc;
+	char* path;
+	int index;
+	FT_Face face;
+} face_cache_item_t;
 
-static int font_compare(ass_font_desc_t* a, ass_font_desc_t* b) {
+#define MAX_FACE_CACHE_SIZE 100
+
+static face_cache_item_t* face_cache;
+static int face_cache_size;
+
+extern int no_more_font_messages;
+
+static int font_compare(face_desc_t* a, face_desc_t* b) {
 	if (strcmp(a->family, b->family) != 0)
 		return 0;
 	if (a->bold != b->bold)
@@ -49,52 +57,67 @@ static int font_compare(ass_font_desc_t* a, ass_font_desc_t* b) {
 }
 
 /**
- * \brief Get a face struct from cache.
+ * \brief Get a face object, either from cache or created through FreeType+FontConfig.
+ * \param library FreeType library object
+ * \param fontconfig_priv fontconfig private data
  * \param desc required face description
- * \return font struct
-*/
-ass_font_t* ass_font_cache_find(ass_font_desc_t* desc)
+ * \param face out: the face object
+*/ 
+int ass_new_face(FT_Library library, void* fontconfig_priv, face_desc_t* desc, /*out*/ FT_Face* face)
 {
+	FT_Error error;
 	int i;
+	char* path;
+	int index;
+	face_cache_item_t* item;
 	
-	for (i=0; i<font_cache_size; ++i)
-		if (font_compare(desc, &(font_cache[i]->desc)))
-			return font_cache[i];
+	for (i=0; i<face_cache_size; ++i)
+		if (font_compare(desc, &(face_cache[i].desc))) {
+			*face = face_cache[i].face;
+			return 0;
+		}
 
+	if (face_cache_size == MAX_FACE_CACHE_SIZE) {
+		mp_msg(MSGT_GLOBAL, MSGL_FATAL, "Too many fonts\n");
+		return 1;
+	}
+
+	path = fontconfig_select(fontconfig_priv, desc->family, desc->bold, desc->italic, &index);
+	
+	error = FT_New_Face(library, path, index, face);
+	if (error) {
+		if (!no_more_font_messages)
+			mp_msg(MSGT_GLOBAL, MSGL_WARN, "Error opening font: %s, %d\n", path, index);
+		no_more_font_messages = 1;
+		return 1;
+	}
+	
+	item = face_cache + face_cache_size;
+	item->path = strdup(path);
+	item->index = index;
+	item->face = *face;
+	memcpy(&(item->desc), desc, sizeof(face_desc_t));
+	face_cache_size++;
 	return 0;
 }
 
-/**
- * \brief Add a face struct to cache.
- * \param font font struct
-*/
-void ass_font_cache_add(ass_font_t* font)
+void ass_face_cache_init(void)
 {
-	if (font_cache_size == MAX_FONT_CACHE_SIZE) {
-		mp_msg(MSGT_ASS, MSGL_FATAL, MSGTR_LIBASS_TooManyFonts);
-		// FIXME: possible memory leak
-		return;
-	}
-
-	font_cache[font_cache_size] = font;
-	font_cache_size++;
+	face_cache = calloc(MAX_FACE_CACHE_SIZE, sizeof(face_cache_item_t));
+	face_cache_size = 0;
 }
 
-void ass_font_cache_init(void)
-{
-	font_cache = calloc(MAX_FONT_CACHE_SIZE, sizeof(ass_font_t*));
-	font_cache_size = 0;
-}
-
-void ass_font_cache_done(void)
+void ass_face_cache_done(void)
 {
 	int i;
-	for (i = 0; i < font_cache_size; ++i) {
-		ass_font_t* item = font_cache[i];
-		ass_font_free(item);
+	for (i = 0; i < face_cache_size; ++i) {
+		face_cache_item_t* item = face_cache + i;
+		if (item->face) FT_Done_Face(item->face);
+		if (item->path) free(item->path);
+		// FIXME: free desc ?
 	}
-	free(font_cache);
-	font_cache_size = 0;
+	free(face_cache);
+	face_cache_size = 0;
 }
 
 //---------------------------------
@@ -123,13 +146,13 @@ static int glyph_compare(glyph_hash_key_t* a, glyph_hash_key_t* b) {
 static unsigned glyph_hash(glyph_hash_key_t* key) {
 	unsigned val = 0;
 	unsigned i;
-	for (i = 0; i < sizeof(key->font); ++i)
-		val += *(unsigned char *)(&(key->font) + i);
+	for (i = 0; i < sizeof(key->face); ++i)
+		val += *(unsigned char *)(&(key->face) + i);
 	val <<= 21;
 	
 	if (key->bitmap)   val &= 0x80000000;
 	if (key->be) val &= 0x40000000;
-	val += key->ch;
+	val += key->index;
 	val += key->size << 8;
 	val += key->outline << 3;
 	val += key->advance.x << 10;

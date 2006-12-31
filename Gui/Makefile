@@ -2,7 +2,9 @@ include ../config.mak
 
 LIBNAME = libgui.a
 
-CFLAGS = -I../loader -I./wm -I./skin
+INCDIR  = -I. -I.. -I../loader -I./wm -I./skin
+
+CFLAGS = $(INCDIR) $(OPTFLAGS)
 #CFLAGS += -DDEBUG
 
 ifeq ($(TARGET_WIN32),yes)
@@ -44,12 +46,47 @@ SRCS = wm/ws.c \
        mplayer/gtk/common.c \
 
 endif
+OBJS = $(SRCS:.c=.o)
 
-include ../mpcommon.mak
+.SUFFIXES: .c .o
 
-clean::
-	rm -f mplayer/*.o mplayer/*~ \
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+### TARGETS ###
+
+$(LIBNAME): $(OBJS)
+	rm -f $(LIBNAME)
+	$(AR) rc $(LIBNAME) $(OBJS) $(MPLAYEROBJS)
+	$(RANLIB) $(LIBNAME)
+
+all:	$(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~ \
+              mplayer/*.o mplayer/*~ \
               mplayer/gtk/*.o mplayer/gtk/*~ \
               skin/*.o skin/*~ \
               wm/*.o wm/*~ \
               win32/*.o win32/*~ \
+
+#dep:	depend
+#
+#depend:
+#	makedepend -- $(CFLAGS) -- $(SRCS) &>/dev/null
+#
+
+distclean: clean
+	rm -f .depend
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

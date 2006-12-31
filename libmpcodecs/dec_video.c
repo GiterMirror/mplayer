@@ -315,11 +315,13 @@ return 1; // success
 
 extern int vo_directrendering;
 
-void *decode_video(sh_video_t *sh_video,unsigned char *start,int in_size,int drop_frame, double pts){
+int decode_video(sh_video_t *sh_video,unsigned char *start,int in_size,int drop_frame, double pts){
+vf_instance_t* vf;
 mp_image_t *mpi=NULL;
 unsigned int t=GetTimer();
 unsigned int t2;
 double tt;
+int ret;
 
  if (correct_pts) {
      int delay = get_current_video_decoder_lag(sh_video);
@@ -371,21 +373,16 @@ t2=GetTimer();t=t2-t;
 tt = t*0.000001f;
 video_time_usage+=tt;
 
-if(!mpi || drop_frame) return NULL; // error / skipped frame
+if(!mpi || drop_frame) return 0; // error / skipped frame
 
  if (correct_pts) {
      sh_video->num_buffered_pts--;
-     sh_video->pts = sh_video->buffered_pts[sh_video->num_buffered_pts];
+     pts = sh_video->buffered_pts[sh_video->num_buffered_pts];
  }
- return mpi;
-}
 
-int filter_video(sh_video_t *sh_video, void *frame, double pts) {
-mp_image_t *mpi = frame;
-unsigned int t2 = GetTimer();
-vf_instance_t *vf = sh_video->vfilter;
-// apply video filters and call the leaf vo/ve
-int ret = vf->put_image(vf,mpi, pts);
+//vo_draw_image(video_out,mpi);
+vf=sh_video->vfilter;
+ret = vf->put_image(vf,mpi, pts); // apply video filters and call the leaf vo/ve
 if(ret>0) {
     vf->control(vf,VFCTRL_DRAW_OSD,NULL);
 #ifdef USE_ASS
@@ -394,7 +391,8 @@ if(ret>0) {
 }
 
     t2=GetTimer()-t2;
-    vout_time_usage += t2*0.000001;
+    tt=t2*0.000001f;
+    vout_time_usage+=tt;
 
 return ret;
 }

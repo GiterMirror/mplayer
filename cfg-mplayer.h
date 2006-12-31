@@ -52,7 +52,9 @@ extern int opt_screen_size_y;
 extern int fullscreen;
 extern int vidmode;
 
+#ifdef USE_OSD
 extern int osd_level;
+#endif
 
 extern char *ao_outputfilename;
 extern int ao_pcm_waveheader;
@@ -134,8 +136,8 @@ m_option_t mplayer_opts[]={
 	{"border", &vo_border, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"noborder", &vo_border, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 
-	{"aop", "-aop has been removed, use -af instead.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
-	{"dsp", "-dsp has been removed. Use -ao oss:dsp_path instead.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+	{"aop", "-aop is deprecated, use -af instead.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+	{"dsp", "Use -ao oss:dsp_path.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
         {"mixer", &mixer_device, CONF_TYPE_STRING, 0, 0, 0, NULL},
         {"mixer-channel", &mixer_channel, CONF_TYPE_STRING, 0, 0, 0, NULL},
         {"softvol", &soft_vol, CONF_TYPE_FLAG, 0, 0, 1, NULL},
@@ -147,9 +149,9 @@ m_option_t mplayer_opts[]={
 	{"abs", &ao_data.buffersize, CONF_TYPE_INT, CONF_MIN, 0, 0, NULL},
 
 	// -ao pcm options:
-	{"aofile", "-aofile has been removed. Use -ao pcm:file=<filename> instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
-	{"waveheader", "-waveheader has been removed. Use -ao pcm:waveheader instead.\n", CONF_TYPE_PRINT, 0, 0, 1, NULL},
-	{"nowaveheader", "-nowaveheader has been removed. Use -ao pcm:nowaveheader instead.\n", CONF_TYPE_PRINT, 0, 1, 0, NULL},
+	{"aofile", "-aofile is deprecated. Use -ao pcm:file=<filename> instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"waveheader", "-waveheader is deprecated. Use -ao pcm:waveheader instead.\n", CONF_TYPE_PRINT, 0, 0, 1, NULL},
+	{"nowaveheader", "-nowaveheader is deprecated. Use -ao pcm:nowaveheader instead.\n", CONF_TYPE_PRINT, 0, 1, 0, NULL},
 
 	{"alsa", "-alsa has been removed. Remove it from your config file.\n",
             CONF_TYPE_PRINT, 0, 0, 0, NULL},
@@ -163,18 +165,18 @@ m_option_t mplayer_opts[]={
 
 	// -vo png only:
 #ifdef HAVE_PNG
-	{"z", "-z has been removed. Use -vo png:z=<0-9> instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"z", "-z is replaced by -vo png:z=<0-9>\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #endif
 	// -vo jpeg only:
 #ifdef HAVE_JPEG
-	{"jpeg", "-jpeg has been removed. Use -vo jpeg:<options> instead.\n",
+	{"jpeg", "-jpeg is deprecated. Use -vo jpeg:options instead.\n",
 	    CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #endif
 	// -vo sdl only:
 	{"sdl", "Use -vo sdl:driver=<driver> instead of -vo sdl -sdl driver.\n",
 	    CONF_TYPE_PRINT, 0, 0, 0, NULL},
-	{"noxv", "-noxv has been removed. Use -vo sdl:nohwaccel instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
-	{"forcexv", "-forcexv has been removed. Use -vo sdl:forcexv instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"noxv", "-noxv is deprecated. Use -vo sdl:nohwaccel instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"forcexv", "-forcexv is deprecated. Use -vo sdl:forcexv instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 	// -ao sdl only:
 	{"sdla", "Use -ao sdl:driver instead of -ao sdl -sdla driver.\n",
 	    CONF_TYPE_PRINT, 0, 0, 0, NULL},
@@ -191,7 +193,7 @@ m_option_t mplayer_opts[]={
 #endif
 #ifdef HAVE_DIRECTFB
 #if DIRECTFBVERSION > 912
-	{"dfbopts", "-dfbopts has been removed. Use -vf directfb:dfbopts=... instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"dfbopts", "-dfbopts is deprecated, use -vf directfb:dfbopts=... instead\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #endif
 #endif
 
@@ -236,7 +238,7 @@ m_option_t mplayer_opts[]={
 	{"wid", &WinID, CONF_TYPE_INT, 0, 0, 0, NULL},
 #ifdef HAVE_X11
 	// x11,xv,xmga,xvidix
-	{"icelayer", "-icelayer has been removed. Use -fstype layer:<number> instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"icelayer", "-icelayer is obsolete. Use -fstype layer:<number> instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 	{"stop-xscreensaver", &stop_xscreensaver, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"nostop-xscreensaver", &stop_xscreensaver, CONF_TYPE_FLAG, 0, 1, 0, NULL},
 	{"stop_xscreensaver", "Use -stop-xscreensaver instead, options with _ have been obsoleted.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
@@ -256,12 +258,12 @@ m_option_t mplayer_opts[]={
 	// direct rendering (decoding to video out buffer)
 	{"dr", &vo_directrendering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"nodr", &vo_directrendering, CONF_TYPE_FLAG, 0, 1, 0, NULL},
-	{"vaa_dr", "-vaa_dr has been removed, use -dr.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
-	{"vaa_nodr", "-vaa_nodr has been removed, use -nodr.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"vaa_dr", "-vaa_dr is obsolete, use -dr.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"vaa_nodr", "-vaa_nodr is obsolete, use -nodr.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 
 #ifdef HAVE_AA
 	// -vo aa
-	{"aa*", "-aa* has been removed. Use -vo aa:suboption instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
+	{"aa*", "-aa* is deprecated. Use -vo aa:suboption instead.\n", CONF_TYPE_PRINT, 0, 0, 0, NULL},
 #endif
 
 #ifdef HAVE_ZR
@@ -277,7 +279,7 @@ m_option_t mplayer_opts[]={
 //---------------------- mplayer-only options ------------------------
 
 	{"use-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
-	{"nouse-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
+	{"use-filedir-conf", &use_filedir_conf, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
 #ifdef CRASH_DEBUG
 	{"crash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
 	{"nocrash-debug", &crash_debug, CONF_TYPE_FLAG, CONF_GLOBAL, 1, 0, NULL},
@@ -325,8 +327,8 @@ m_option_t mplayer_opts[]={
 	{"lircconf", &lirc_configfile, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
 #endif
 
-	{"gui", "The -gui option will only work as the first command line argument.\n", CONF_TYPE_PRINT, 0, 0, 0, (void *)1},
-	{"nogui", "The -nogui option will only work as the first command line argument.\n", CONF_TYPE_PRINT, 0, 0, 0, (void *)1},
+	{"gui", "The -gui option will only work as first commandline argument.\n", CONF_TYPE_PRINT, 0, 0, 0, (void *)1},
+	{"nogui", "The -nogui option will only work as first commandline argument.\n", CONF_TYPE_PRINT, 0, 0, 0, (void *)1},
       
 #ifdef HAVE_NEW_GUI
 	{"skin", &skinName, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},

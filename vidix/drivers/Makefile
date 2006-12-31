@@ -6,7 +6,7 @@ BINDIR = $(LIBDIR)/mplayer/vidix
 VIDIX_LIBS = -L../../libdha -ldha
 VIDIX_LIBS_M = $(VIDIX_LIBS) -lm
 VIDIX_LIBS_X = $(VIDIX_LIBS_M) $(X_LIB)
-VIDIX_CFLAGS = -fPIC -I. -I.. $(OPTFLAGS)
+VIDIX_CFLAGS= -I. -I.. $(OPTFLAGS) -fPIC
 
 RAGE128_CFLAGS=$(VIDIX_CFLAGS) -DRAGE128
 MGA_CRTC2_CFLAGS=$(VIDIX_CFLAGS) -DCRTC2
@@ -62,11 +62,23 @@ clean:
 	rm -f *.o *.so *~
 
 distclean: clean
-	rm -f .depend
+	rm -f .depend test
 
-dep depend:
+dep:    depend
+
+depend:
 # do nothing here
 
+install:
+	mkdir -p $(LIBDIR)/mplayer/vidix
+	-install -m 755 $(INSTALLSTRIP) -p *.so $(LIBDIR)/mplayer/vidix
+uninstall:
+	rm -f $(LIBDIR)/mplayer/vidix/*.so
+	-rmdir -p $(LIBDIR)/mplayer/vidix
+
+#
+# include dependency files if they exist
+#
 ifneq ($(wildcard .depend),)
 include .depend
 endif

@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <sys/mman.h>
 #include <signal.h>
 #include <assert.h>
 

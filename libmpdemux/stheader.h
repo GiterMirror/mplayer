@@ -66,8 +66,6 @@ typedef struct {
   // timing (mostly for mpeg):
   double pts;     // predicted/interpolated PTS of the current frame
   double i_pts;   // PTS for the _next_ I/P frame
-  float next_frame_time;
-  double last_pts;
   double buffered_pts[20];
   int num_buffered_pts;
   // output format: (set by demuxer)
@@ -92,27 +90,11 @@ typedef struct {
   void* context;   // codec-specific stuff (usually HANDLE or struct pointer)
 } sh_video_t;
 
-typedef struct {
-  int sid;
-  char type;                    // t = text, v = VobSub, a = SSA/ASS
-  int has_palette;              // If we have a valid palette
-  unsigned int palette[16];     // for VobSubs
-  int width, height;            // for VobSubs
-  int custom_colors;
-  unsigned int colors[4];
-  int forced_subs_only;
-#ifdef USE_ASS
-  ass_track_t* ass_track;  // for SSA/ASS streams (type == 'a')
-#endif
-} sh_sub_t;
-
 // demuxer.c:
 #define new_sh_audio(d, i) new_sh_audio_aid(d, i, i)
 sh_audio_t* new_sh_audio_aid(demuxer_t *demuxer,int id,int aid);
 #define new_sh_video(d, i) new_sh_video_vid(d, i, i)
 sh_video_t* new_sh_video_vid(demuxer_t *demuxer,int id,int vid);
-#define new_sh_sub(d, i) new_sh_sub_sid(d, i, i)
-sh_sub_t *new_sh_sub_sid(demuxer_t *demuxer, int id, int sid);
 void free_sh_audio(demuxer_t *demuxer, int id);
 void free_sh_video(sh_video_t *sh);
 

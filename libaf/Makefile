@@ -29,14 +29,53 @@ SRCS=af.c \
      window.c \
      $(AF_SRCS) \
 
-SRCS-$(CONFIG_LIBAVCODEC)    += af_lavcresample.c
-SRCS-$(CONFIG_LIBAVCODEC_SO) += af_lavcresample.c
+LIBAV_INC =
+ifeq ($(CONFIG_LIBAVUTIL),yes)
+LIBAV_INC += -I../libavutil
+endif
+ifeq ($(CONFIG_LIBAVCODEC),yes)
+LIBAV_INC += -I../libavcodec
+SRCS+=af_lavcresample.c
+endif
+ifeq ($(CONFIG_LIBAVCODEC_SO),yes)
+SRCS+=af_lavcresample.c
+endif
 
-CFLAGS-$(CONFIG_LIBAVUTIL)   += -I../libavutil
-CFLAGS-$(CONFIG_LIBAVCODEC)  += -I../libavcodec
+OBJS=$(SRCS:.c=.o)
+
+CFLAGS  = -I. -I.. $(LIBAV_INC) $(OPTFLAGS) -D_GNU_SOURCE
 
 ifeq ($(TARGET_OS),MINGW32)
 CFLAGS += -D_IO_H_
 endif
 
-include ../mpcommon.mak
+.SUFFIXES: .c .o
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(LIBNAME):     $(OBJS) Makefile
+	$(AR) r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
+
+$(OBJS):af.h control.h dsp.h filter.h window.h af_mp.h
+
+all:    $(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~
+
+distclean: clean
+	rm -f .depend
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

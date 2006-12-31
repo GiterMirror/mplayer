@@ -9,11 +9,13 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+#include "bswap.h"
+
 #include "aviheader.h"
 #include "ms_hdr.h"
 
-#include "stream.h"
 #include "muxer.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "m_option.h"
@@ -58,8 +60,6 @@
 static char ftypes[] = {'?', 'I', 'P', 'B'}; 
 #define FTYPE(x) (ftypes[(x)])
 
-#define MAX_PATTERN_LENGTH 2000000
-static unsigned char bff_mask[MAX_PATTERN_LENGTH];	//2 million frames are enough
 
 static const char *framerates[] = {
 	"unchanged", "23.976", "24", "25", "29.97", "30", "50", "59.94", "60"
@@ -79,12 +79,8 @@ static uint32_t conf_vbitrate = 0;
 static int conf_init_vpts = 200, conf_init_apts = 200;
 static int conf_ts_allframes = 0;
 static int conf_init_adelay = 0;
-static int conf_abuf_size = 0;
-static int conf_vbuf_size = 0;
 static int conf_drop = 0;
 static int conf_telecine = 0;
-static float conf_telecine_src = 0;
-static float conf_telecine_dest = 0;
 
 enum FRAME_TYPE {
 	I_FRAME = 1,
@@ -135,7 +131,7 @@ typedef struct {
 	sys_info_t sys_info;
 	psm_info_t psm_info;
 	uint16_t packet_size;
-	int is_dvd, is_xvcd, is_xsvcd, is_genmpeg1, is_genmpeg2, rawpes, ts_allframes, has_video, has_audio;
+	int is_dvd, is_xvcd, is_xsvcd, is_genmpeg1, is_genmpeg2, ts_allframes, has_video, has_audio;
 	int update_system_header, use_psm;
 	off_t headers_size, data_size;
 	uint64_t scr;
@@ -169,7 +165,7 @@ typedef struct {
 	int max_tr;
 	uint8_t id, is_mpeg12, telecine;
 	uint64_t vframes;
-	int64_t display_frame;
+	uint8_t trf;
 	mp_mpeg_header_t picture;
 	int max_buffer_size;
 	buffer_track_t *buffer_track;
@@ -184,7 +180,6 @@ typedef struct {
 
 #define PULLDOWN32 1
 #define TELECINE_FILM2PAL 2
-#define TELECINE_DGPULLDOWN 3
 
 m_option_t mpegopts_conf[] = {
 	{"format", &(conf_mux), CONF_TYPE_STRING, 0, 0 ,0, NULL},
@@ -200,14 +195,10 @@ m_option_t mpegopts_conf[] = {
 	{"init_vpts", &(conf_init_vpts), CONF_TYPE_INT, CONF_RANGE, 100, 700, NULL},		//2*frametime at 60fps
 	{"init_apts", &(conf_init_apts), CONF_TYPE_INT, CONF_RANGE, 100, 700, NULL},
 	{"vdelay", &conf_init_adelay, CONF_TYPE_INT, CONF_RANGE, 1, 32760, NULL},
-	{"vbuf_size", &conf_vbuf_size, CONF_TYPE_INT, CONF_RANGE, 40, 1194, NULL},
-	{"abuf_size", &conf_abuf_size, CONF_TYPE_INT, CONF_RANGE, 4, 64, NULL},
 	{"drop", &conf_drop, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"tsaf", &conf_ts_allframes, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{"telecine", &conf_telecine, CONF_TYPE_FLAG, 0, 0, PULLDOWN32, NULL},
 	{"film2pal", &conf_telecine, CONF_TYPE_FLAG, 0, 0, TELECINE_FILM2PAL, NULL},
-	{"tele_src", &(conf_telecine_src), CONF_TYPE_FLOAT, 0, 0, 0, NULL},
-	{"tele_dest", &(conf_telecine_dest), CONF_TYPE_FLOAT, 0, 0, 0, NULL},
 	{NULL, NULL, 0, 0, 0, 0, NULL}
 };
 
@@ -397,13 +388,11 @@ static muxer_stream_t* mpegfile_new_stream(muxer_t *muxer,int type){
     spriv->id = 0xe0 + muxer->num_videos;
     s->ckid = be2me_32 (0x100 + spriv->id);
     if(priv->is_genmpeg1 || priv->is_genmpeg2) {
-      int v = (conf_vbuf_size ? conf_vbuf_size*1024 :
-        (s->h.dwSuggestedBufferSize ? s->h.dwSuggestedBufferSize : 46*1024));
       int n = priv->sys_info.cnt;
       
       priv->sys_info.streams[n].id = spriv->id;
       priv->sys_info.streams[n].type = 1;
-      priv->sys_info.streams[n].bufsize = v;
+      priv->sys_info.streams[n].bufsize = (s->h.dwSuggestedBufferSize > 0 ? s->h.dwSuggestedBufferSize : 46*1024);
       priv->sys_info.cnt++;
     }
     muxer->num_videos++;
@@ -434,13 +423,11 @@ static muxer_stream_t* mpegfile_new_stream(muxer_t *muxer,int type){
     spriv->id = 0xc0 + muxer->num_audios;
     s->ckid = be2me_32 (0x100 + spriv->id);
     if(priv->is_genmpeg1 || priv->is_genmpeg2) {
-      int a1 = (conf_abuf_size ? conf_abuf_size*1024 :
-        (s->h.dwSuggestedBufferSize ? s->h.dwSuggestedBufferSize : 4*1024));
       int n = priv->sys_info.cnt;
       
       priv->sys_info.streams[n].id = spriv->id;
       priv->sys_info.streams[n].type = 0;
-      priv->sys_info.streams[n].bufsize = a1;
+      priv->sys_info.streams[n].bufsize = (s->h.dwSuggestedBufferSize > 0 ? s->h.dwSuggestedBufferSize : 4*1024);
       priv->sys_info.cnt++;
     }
     if(priv->is_xvcd)
@@ -748,7 +735,7 @@ static void write_pes_padding(uint8_t *buff, uint16_t len)
 	memset(&buff[6], 0xff, len - 6);
 }
 
-static void write_psm_block(muxer_t *muxer, stream_t *stream)
+static void write_psm_block(muxer_t *muxer, FILE *f)
 {
 	uint16_t offset, stuffing_len;
 	muxer_priv_t *priv = (muxer_priv_t *) muxer->priv;
@@ -763,7 +750,7 @@ static void write_psm_block(muxer_t *muxer, stream_t *stream)
 		write_pes_padding(&buff[offset], stuffing_len);
 		offset += stuffing_len;
 	}
-	stream_write_buffer(stream, buff, offset);
+	fwrite(buff, offset, 1, f);
 	priv->headers_size += offset;
 }
 
@@ -824,7 +811,7 @@ static uint32_t calc_pes_hlen(int format, muxer_headers_t *h, muxer_priv_t *priv
 }
 
 	
-static int write_mpeg_pack(muxer_t *muxer, muxer_stream_t *s, stream_t *stream, int isoend)
+static int write_mpeg_pack(muxer_t *muxer, muxer_stream_t *s, FILE *f, int isoend)
 {
 	size_t tot, offset;
 	muxer_priv_t *priv;
@@ -842,7 +829,7 @@ static int write_mpeg_pack(muxer_t *muxer, muxer_stream_t *s, stream_t *stream, 
 		buff[offset + 2] = 1;
 		buff[offset + 3] = 0xb9;
 		
-		stream_write_buffer(stream, buff, priv->packet_size);
+		fwrite(buff, priv->packet_size, 1, f);
 		return 1;
 	}
 	else	//FAKE DVD NAV PACK
@@ -863,7 +850,7 @@ static int write_mpeg_pack(muxer_t *muxer, muxer_stream_t *s, stream_t *stream, 
 			offset += stuffing_len;
 		}
 			
-		stream_write_buffer(stream, buff, offset);
+		fwrite(buff, offset, 1, f);
 		priv->headers_size += offset;
 		tot = offset;
 		muxer->movi_end += tot;
@@ -936,7 +923,7 @@ static int calc_packet_len(muxer_stream_t *s, int psize, int finalize)
 	{
 		if(!frpos && len>0 && s->type == MUXER_TYPE_VIDEO && spriv->framebuf[n].type==I_FRAME)
 			return len;
-		m = FFMIN(spriv->framebuf[n].size - frpos, psize - len);
+		m = min(spriv->framebuf[n].size - frpos, psize - len);
 		len += m;
 		frpos += m;
 		if(frpos == spriv->framebuf[n].size)
@@ -997,8 +984,8 @@ static int find_packet_timestamps(muxer_priv_t *priv, muxer_stream_t *s, unsigne
 
 	if(i > -1)
 	{
-		dpts = FFMAX(spriv->last_saved_pts, spriv->framebuf[i].pts) - 
-			FFMIN(spriv->last_saved_pts, spriv->framebuf[i].pts) +
+		dpts = max(spriv->last_saved_pts, spriv->framebuf[i].pts) - 
+			min(spriv->last_saved_pts, spriv->framebuf[i].pts) +
 			spriv->framebuf[0].idur;
 
 		if(s->type != MUXER_TYPE_VIDEO)
@@ -1031,9 +1018,7 @@ static int get_packet_stats(muxer_priv_t *priv, muxer_stream_t *s, pack_stats_t 
 	p->dts = p->pts = p->frame_pts = p->frame_dts = 0;
 	p->len = 0;
 
-	if(priv->rawpes)
-		pack_hlen = 0;
-	else if(priv->mux == MUX_MPEG1)
+	if(priv->mux == MUX_MPEG1)
 		pack_hlen = 12;
 	else
 		pack_hlen = 14;
@@ -1130,9 +1115,6 @@ static int fill_packet(muxer_t *muxer, muxer_stream_t *s, int finalize)
 
 	if(!spriv->pack_offset)
 	{
-		if(priv->rawpes)
-			spriv->pack_offset = 0;
-		else
 		spriv->pack_offset = write_mpeg_pack_header(muxer, spriv->pack);
 		if(priv->update_system_header && (priv->is_genmpeg1 || priv->is_genmpeg2))
 		{
@@ -1148,18 +1130,11 @@ static int fill_packet(muxer_t *muxer, muxer_stream_t *s, int finalize)
 
 	if(!spriv->pes_set)
 	{
-		int bufsize = 0;
 		//search the pts. yes if either it's video && (I-frame or priv->ts_allframes) && framebuf[i].pos == 0
 		//or  it's audio && framebuf[i].pos == 0
 		//NB pts and dts can only be relative to the first frame beginning in this pack
-		if((priv->is_xsvcd || priv->is_xvcd || priv->rawpes) && spriv->size == 0)
-		{
-			if(s->type == MUXER_TYPE_VIDEO)
-				bufsize = (conf_vbuf_size ? conf_vbuf_size : (priv->is_xvcd ? 46 : 232));
-			else
-				bufsize = (conf_abuf_size ? conf_abuf_size : 4);
-			spriv->buffer_size = bufsize*1024;
-		}
+		if((priv->is_xsvcd || priv->is_xvcd) && spriv->size == 0)
+			spriv->buffer_size = 4*1024;
 
 		if(priv->is_dvd && s->type == MUXER_TYPE_VIDEO 
 			&& spriv->framebuf[0].type==I_FRAME && spriv->framebuf[0].pos==0)
@@ -1218,7 +1193,7 @@ static int fill_packet(muxer_t *muxer, muxer_stream_t *s, int finalize)
 			update_demux_bufsize(spriv, frm->dts, frm->size, s->type);
 		}
 
-		m = FFMIN(frm->size - frm->pos, priv->packet_size - spriv->pack_offset);
+		m = min(frm->size - frm->pos, priv->packet_size - spriv->pack_offset);
 		memcpy(&(spriv->pack[spriv->pack_offset]), &(frm->buffer[frm->pos]), m);
 
 		len += m;
@@ -1234,13 +1209,13 @@ static int fill_packet(muxer_t *muxer, muxer_stream_t *s, int finalize)
 		}
 	}
 
-	if((priv->is_xsvcd || priv->is_xvcd || priv->rawpes) && spriv->size == 0)
+	if((priv->is_xsvcd || priv->is_xvcd) && spriv->size == 0)
 		spriv->buffer_size = 0;
 
 	spriv->size += len;
 
 	if(dvd_pack && (spriv->pack_offset == priv->packet_size))
-		write_mpeg_pack(muxer, NULL, muxer->stream, 0);	//insert fake Nav Packet
+		write_mpeg_pack(muxer, NULL, muxer->file, 0);	//insert fake Nav Packet
 
 	if(n > 0)
 		remove_frames(spriv,  n);
@@ -1252,14 +1227,14 @@ static int fill_packet(muxer_t *muxer, muxer_stream_t *s, int finalize)
 	if(s->type == MUXER_TYPE_AUDIO && s->wf->wFormatTag == AUDIO_A52)
 		fix_a52_headers(s);
 	
-	if(spriv->pack_offset < priv->packet_size && !priv->rawpes)	//here finalize is set
+	if(spriv->pack_offset < priv->packet_size)	//here finalize is set
 	{
 		int diff = priv->packet_size - spriv->pack_offset;
 		write_pes_padding(&(spriv->pack[spriv->pack_offset]), diff);
 		spriv->pack_offset += diff;
 	}
 	
-	stream_write_buffer(muxer->stream, spriv->pack, spriv->pack_offset);
+	fwrite(spriv->pack, spriv->pack_offset, 1, muxer->file);
 
 	priv->headers_size += spriv->pack_offset - len;
 	priv->data_size += len;
@@ -1399,15 +1374,15 @@ static void update_scr(muxer_t *muxer)
 			priv->delta_scr = (uint64_t) (d * 27000000.0f);
 			mp_msg(MSGT_MUXER, MSGL_INFO, "\r\nBUFFER UNDEFLOW at stream %d, raising muxrate to %d kb/s, delta_scr: %llu\r\n", i, muxer->sysrate/125, priv->delta_scr);
 			spriv->track_bufsize = 0;
-		}
+	}
 
 		if(j > 0)
-		{
+	{
 			memmove(spriv->buffer_track, &(spriv->buffer_track[j]), (spriv->track_len - j) * sizeof(buffer_track_t));
 			spriv->track_pos -= j;
 			for(j = spriv->track_pos; j < spriv->track_len; j++)
 				spriv->buffer_track[j].size = 0;
-		}
+	}
 
 		if(spriv->framebuf_used && spriv->framebuf[0].dts < mindts)
 			mindts = spriv->framebuf[0].dts;
@@ -1498,7 +1473,9 @@ static int flush_buffers(muxer_t *muxer, int finalize)
 		duration = 0;
 		iduration = 0;
 		for(i = 0; i < n; i++)
+		{
 			iduration += vpriv->framebuf[i].idur;
+		}
 		duration = (double) (iduration / 27000000.0);
 		
 		if(as != NULL)
@@ -1521,7 +1498,7 @@ static int flush_buffers(muxer_t *muxer, int finalize)
 			init_delay = vpriv->framebuf[0].pts - vpriv->framebuf[0].dts;
 		
 			for(i = 0; i < apriv->framebuf_cnt; i++)
-			{
+		{
 				apriv->framebuf[i].pts += init_delay;
 				apriv->framebuf[i].dts += init_delay;
 			}
@@ -1530,7 +1507,7 @@ static int flush_buffers(muxer_t *muxer, int finalize)
 		}
 		
 		if((priv->is_xvcd || priv->is_xsvcd) && (vpriv->size == 0))
-			vpriv->buffer_size = (conf_vbuf_size ? conf_vbuf_size : (priv->is_xvcd ? 46 : 230))*1024;
+			vpriv->buffer_size = (priv->is_xvcd ? 46 : 230)*1024;
 			
 		i = 0;
 		skip_cnt = 0;
@@ -1566,14 +1543,34 @@ static inline uint64_t parse_fps(float fps)
 }
 
 
-static int soft_telecine(muxer_priv_t *priv, muxer_headers_t *vpriv, uint8_t *fps_ptr, uint8_t *se_ptr, uint8_t *pce_ptr, int n)
+static int soft_telecine(muxer_headers_t *vpriv, uint8_t *fps_ptr, uint8_t *se_ptr, uint8_t *pce_ptr, int n)
 {
+	uint8_t fps, tff, rff; 
+	int period; 
+	
 	if(! pce_ptr)
 		return 0;
+	fps = 0;
+	period = (vpriv->telecine == TELECINE_FILM2PAL) ? 12 : 4;
 	if(fps_ptr != NULL)
 	{
-		*fps_ptr = (*fps_ptr & 0xf0) | priv->vframerate;
-		vpriv->nom_delta_pts = parse_fps(conf_vframerate);
+		fps = *fps_ptr & 0x0f;
+		if((!fps) || (fps > FRAMERATE_24))
+		{
+			mp_msg(MSGT_MUXER, MSGL_ERR, "\nERROR! FRAMERATE IS INVALID: %d, disabling telecining\n", (int) fps);
+			vpriv->telecine = 0;
+			return 0;
+		}
+		if(vpriv->telecine == TELECINE_FILM2PAL)
+		{
+			*fps_ptr = (*fps_ptr & 0xf0) | FRAMERATE_25;
+			vpriv->nom_delta_pts = parse_fps(25.0);
+		}
+		else
+		{
+		*fps_ptr = (*fps_ptr & 0xf0) | (fps + 3);
+		vpriv->nom_delta_pts = parse_fps((fps + 3) == FRAMERATE_2997 ? 30000.0/1001.0 : 30.0);
+		}
 	}
 	
 	//in pce_ptr starting from bit 0 bit 24 is tff, bit 30 is rff, 
@@ -1589,12 +1586,72 @@ static int soft_telecine(muxer_priv_t *priv, muxer_headers_t *vpriv, uint8_t *fp
 	if(se_ptr)
 		se_ptr[1] &= 0xf7;
 	
-	pce_ptr[3] = (pce_ptr[3] & 0xfd) | bff_mask[vpriv->display_frame % MAX_PATTERN_LENGTH];
-	pce_ptr[4] |= 0x80;	//sets progressive frame
+			
+	if(! vpriv->vframes)	//initial value of tff
+		vpriv->trf = (pce_ptr[3] >> 6) & 0x2;
+
+	while(n < 0) n+=period;
+	vpriv->trf = (vpriv->trf + n) % period;
 	
-	vpriv->display_frame += n;
+	//sets curent tff/rff bits
+	if(vpriv->telecine == TELECINE_FILM2PAL)
+	{
+		//repeat 1 field every 12 frames
+		int rest1 = (vpriv->trf % period) == 11;
+		int rest2 = vpriv->vframes % 999;
+		
+		rff = 0;
+		if(rest1)
+			rff = 2;
+
+		if(vpriv->real_framerate == FRAMERATE_23976)
+		{
+			//we have to inverse the 1/1000 framedrop, repeating two fields in a sequence of 999 frames
+			//486 and 978 are ideal because they are halfway in the sequence 
+			//additionally x % 12 == 6 (halfway between two frames with rff set)
+			//and enough in advance to check if rest1 is valid too, 
+			//so we can delay the setting of rff to current_frame+3 with no risk to leave the 
+			//current sequence unpatched
+			if(rest2 == 486 || rest2 == 978)
+			{
+				if(rest1)
+				{
+					//delay the setting by 6 frames, so we don't have 2 consecutive rff
+					//and the transition will be smoother (halfway in the 12-frames sequence)
+					vpriv->delay_rff = 7;
+					mp_msg(MSGT_MUXER, MSGL_V, "\r\nDELAYED: %d\r\n", rest2);
+				}
+				else
+					rff = 2;
+			}
+	
+			if(!rest1 && vpriv->delay_rff)
+			{
+				vpriv->delay_rff--;
+				if(vpriv->delay_rff == 1)
+				{
+					rff = 2;
+					vpriv->delay_rff = 0;
+					mp_msg(MSGT_MUXER, MSGL_V, "\r\nRECOVERED: %d\r\n", rest2);
+				}
+			}
+		}
+		
+		pce_ptr[3] = (pce_ptr[3] & 0xfd) | rff;
+	}
+	else
+	{
+	tff = (vpriv->trf & 0x2) ? 0x80 : 0;
+	rff = (vpriv->trf & 0x1) ? 0x2 : 0;
+	pce_ptr[3] = (pce_ptr[3] & 0x7d) | tff | rff;
+	}
+	pce_ptr[4] |= 0x80;	//sets progressive frame
+	mp_msg(MSGT_MUXER, MSGL_DBG2, "\nTRF: %d, TFF: %d, RFF: %d, n: %d\n", vpriv->trf, tff >> 7, rff >> 1, n);
+	
+	
 	if(! vpriv->vframes)
-		mp_msg(MSGT_MUXER, MSGL_INFO, "\nENABLED SOFT TELECINING, FPS=%.3f\n",conf_vframerate);
+		mp_msg(MSGT_MUXER, MSGL_INFO, "\nENABLED SOFT TELECINING, FPS=%s, INITIAL PATTERN IS TFF:%d, RFF:%d\n", 
+		framerates[(vpriv->telecine == TELECINE_FILM2PAL) ? FRAMERATE_25 : fps+3], tff >> 7, rff >> 1);
 	
 	return 1;
 }
@@ -1731,7 +1788,7 @@ static size_t parse_mpeg12_video(muxer_stream_t *s, muxer_priv_t *priv, muxer_he
 				{
 					pce_ptr = &(s->buffer[ptr+4]);
 					if(spriv->telecine)
-						soft_telecine(priv, spriv, fps_ptr, se_ptr, pce_ptr, frames_diff);
+						soft_telecine(spriv, fps_ptr, se_ptr, pce_ptr, frames_diff);
 					spriv->picture.display_time = 100;
 					mp_header_process_extension(&(spriv->picture), &(s->buffer[ptr+4]));
 					if(spriv->picture.display_time >= 50 && spriv->picture.display_time <= 300) 
@@ -2207,17 +2264,13 @@ static void fix_parameters(muxer_stream_t *stream)
 	if(stream->type == MUXER_TYPE_AUDIO)
 	{
 		spriv->is_ready = 1;
-		if(conf_abuf_size)
-			spriv->max_buffer_size = conf_abuf_size*1024;
-		else
 		spriv->max_buffer_size = 4*1024;
 		if(stream->wf->wFormatTag == AUDIO_A52)
 		{
 			stream->ckid = be2me_32 (0x1bd);
 			if(priv->is_genmpeg1 || priv->is_genmpeg2)
-				fix_audio_sys_header(priv, spriv->id, 0xbd, FFMAX(conf_abuf_size, 58)*1024);	//only one audio at the moment
+				fix_audio_sys_header(priv, spriv->id, 0xbd, 58*1024);	//only one audio at the moment
 			spriv->id = 0xbd;
-			if(!conf_abuf_size)
 			spriv->max_buffer_size = 16*1024;
 		}
 		else if(stream->wf->wFormatTag == AUDIO_AAC1 || stream->wf->wFormatTag == AUDIO_AAC2)
@@ -2229,10 +2282,6 @@ static void fix_parameters(muxer_stream_t *stream)
 	}
 	else	//video
 	{
-		if(conf_vbuf_size)
-			spriv->max_buffer_size = conf_vbuf_size*1024;
-		else
-		{
 		if(priv->is_dvd)
 			spriv->max_buffer_size = 232*1024;
 		else if(priv->is_xsvcd)
@@ -2241,7 +2290,6 @@ static void fix_parameters(muxer_stream_t *stream)
 			spriv->max_buffer_size = 46*1024;
 		else
 			spriv->max_buffer_size = 232*1024;	//no profile => unconstrained :) FIXME!!!
-		}
 		
 		if(is_mpeg4(stream->bih->biCompression))
 			spriv->is_ready = 0;
@@ -2259,12 +2307,12 @@ static void mpegfile_write_chunk(muxer_stream_t *s,size_t len,unsigned int flags
   muxer_headers_t *spriv = (muxer_headers_t*) s->priv;
   float fps;
   uint32_t stream_format, nf;
-
+ 
   if(s->buffer == NULL)
   	return;
   if(len == -1)
 	return;
-
+  
   if (s->type == MUXER_TYPE_VIDEO) { // try to recognize frame type...
 	fps = (float) s->h.dwRate/ (float) s->h.dwScale;
   	spriv->type = 1;
@@ -2344,16 +2392,16 @@ static void mpegfile_write_chunk(muxer_stream_t *s,size_t len,unsigned int flags
 		mp_msg(MSGT_MUXER, MSGL_INFO, "AINIT: %.3lf\r\n", (double) spriv->last_pts/27000000.0f);	
 	}
   }
-
+  
 
   if(spriv->psm_fixed == 0) {
   	add_to_psm(priv, spriv->id, stream_format);
 	spriv->psm_fixed = 1;
 	priv->psm_streams_cnt++;
 	if((priv->psm_streams_cnt == muxer->num_videos + muxer->num_audios) && priv->use_psm)
-		write_psm_block(muxer, muxer->stream);
+		write_psm_block(muxer, muxer->file);
   }
-
+  
   flush_buffers(muxer, 0);
 }
 
@@ -2374,7 +2422,7 @@ static void mpegfile_write_index(muxer_t *muxer)
 	while(flush_buffers(muxer, 0) > 0);
 	flush_buffers(muxer, 1);
 	if(priv->is_genmpeg1 || priv->is_genmpeg2)
-		write_mpeg_pack(muxer, NULL, muxer->stream, 1);	//insert fake Nav Packet
+		write_mpeg_pack(muxer, NULL, muxer->file, 1);	//insert fake Nav Packet
 		
 	mp_msg(MSGT_MUXER, MSGL_INFO, "\nOverhead: %.3lf%% (%"PRIu64" / %"PRIu64")\n", 100.0 * (double)priv->headers_size / (double)priv->data_size, priv->headers_size, priv->data_size);
 }
@@ -2400,7 +2448,7 @@ static void mpegfile_write_header(muxer_t *muxer)
 	//write the first system header only for generic mpeg1/2 muxes, and only when we have collected all necessary infos
 	if(priv->is_genmpeg1 || priv->is_genmpeg2 || ((priv->is_xvcd || priv->is_xsvcd) && (priv->headers_cnt == 1)))
 	{
-		write_mpeg_pack(muxer, NULL, muxer->stream, 0);
+		write_mpeg_pack(muxer, NULL, muxer->file, 0);
 		priv->update_system_header = 0;
 	}
 	
@@ -2411,23 +2459,19 @@ static void setup_sys_params(muxer_priv_t *priv)
 {
 	if(priv->is_dvd)
 	{
-		int v = (conf_vbuf_size ? conf_vbuf_size : 232);
-		int a1 = (conf_abuf_size ? conf_abuf_size : 4);
-		int a2 = (conf_abuf_size>58 ? conf_abuf_size : 58);
-
 		priv->sys_info.cnt = 4;
 		
 		priv->sys_info.streams[0].id = 0xb9;
 		priv->sys_info.streams[0].type = 1;
-		priv->sys_info.streams[0].bufsize = v*1024;
+		priv->sys_info.streams[0].bufsize = 232*1024;
 			
 		priv->sys_info.streams[1].id = 0xb8;
 		priv->sys_info.streams[1].type = 0;
-		priv->sys_info.streams[1].bufsize = a1*1024;
+		priv->sys_info.streams[1].bufsize = 4*1024;
 		
 		priv->sys_info.streams[2].id = 0xbd;
 		priv->sys_info.streams[2].type = 1;
-		priv->sys_info.streams[2].bufsize = a2*1024;
+		priv->sys_info.streams[2].bufsize = 58*1024;
 		
 		priv->sys_info.streams[3].id = 0xbf;
 		priv->sys_info.streams[3].type = 1;
@@ -2435,47 +2479,20 @@ static void setup_sys_params(muxer_priv_t *priv)
 	}
 	else if(priv->is_xvcd || priv->is_xsvcd)
 	{
-		int v = (conf_vbuf_size ? conf_vbuf_size : (priv->is_xvcd ? 46: 230));
-		int a1 = (conf_abuf_size ? conf_abuf_size : 4);
-
 		priv->sys_info.cnt = 2;
 		
 		priv->sys_info.streams[0].id = 0xe0;
 		priv->sys_info.streams[0].type = 1;
-		priv->sys_info.streams[0].bufsize = v*1024;
+		priv->sys_info.streams[0].bufsize = (priv->is_xvcd ? 46: 230)*1024;
 			
 		priv->sys_info.streams[1].id = 0xc0;
 		priv->sys_info.streams[1].type = 0;
-		priv->sys_info.streams[1].bufsize = a1*1024;
+		priv->sys_info.streams[1].bufsize = 4*1024;
 	}
 	else
 		priv->sys_info.cnt = 0;
 }
 
-/* excerpt from DGPulldown Copyright (C) 2005-2006, Donald Graft */
-static void generate_flags(int source, int target)
-{
-	unsigned int i, trfp;
-	uint64_t dfl,tfl;
-	unsigned char ormask[4] = {0x0, 0x2, 0x80, 0x82};
-	
-	dfl = (target - source) << 1;
-	tfl = source >> 1;
-	
-	trfp = 0;
-	for(i = 0; i < MAX_PATTERN_LENGTH; i++)
-	{
-		tfl += dfl;
-		if(tfl >= source)
-		{
-			tfl -= source;
-			bff_mask[i] = ormask[trfp + 1];
-			trfp ^= 2;
-		}
-		else
-			bff_mask[i] = ormask[trfp];
-	}
-}
 
 int muxer_init_muxer_mpeg(muxer_t *muxer){
   muxer_priv_t *priv;
@@ -2483,9 +2500,9 @@ int muxer_init_muxer_mpeg(muxer_t *muxer){
   if(priv == NULL)
   	return 0;
   priv->update_system_header = 1;
-
+  
   //calloc() already zero-ed all flags, so we assign only the ones we need
-
+  
   if(conf_mux != NULL) {
     if(! strcasecmp(conf_mux, "mpeg1"))
     {
@@ -2515,22 +2532,6 @@ int muxer_init_muxer_mpeg(muxer_t *muxer){
 	priv->is_xvcd = 1;
 	priv->packet_size = 2324;
 	priv->muxrate = 75*2352;
-	priv->ts_allframes = 1;
-    }
-    else if(! strcasecmp(conf_mux, "pes1"))
-    {
-	priv->mux = MUX_MPEG1;
-	priv->rawpes = 1;
-	priv->packet_size = 2048;
-	priv->muxrate = 10080 * 125;
-	priv->ts_allframes = 1;
-    }
-    else if(! strcasecmp(conf_mux, "pes2"))
-    {
-	priv->mux = MUX_MPEG2;
-	priv->rawpes = 1;
-	priv->packet_size = 2048;
-	priv->muxrate = 10080 * 125;
 	priv->ts_allframes = 1;
     }
     else
@@ -2568,52 +2569,14 @@ int muxer_init_muxer_mpeg(muxer_t *muxer){
 	else
 		mp_msg(MSGT_MUXER, MSGL_ERR, "ERROR: unrecognized aspect %.3f\n", conf_vaspect);
   }
-
+  
   priv->vframerate = 0;		// no change
   if(conf_telecine && conf_vframerate > 0)
   {
   	mp_msg(MSGT_MUXER, MSGL_ERR, "ERROR: options 'telecine' and 'vframerate' are mutually exclusive, vframerate disabled\n");
 	conf_vframerate = 0;
   }
-
-  if(conf_telecine == TELECINE_FILM2PAL)
-  {
-	if(conf_telecine_src==0.0f) conf_telecine_src = 24000.0/1001.0;
-	conf_telecine_dest = 25;
-	conf_telecine = TELECINE_DGPULLDOWN;
-  }
-  else if(conf_telecine == PULLDOWN32)
-  {
-	if(conf_telecine_src==0.0f) conf_telecine_src = 24000.0/1001.0;
-	conf_telecine_dest = 30000.0/1001.0;
-	conf_telecine = TELECINE_DGPULLDOWN;
-  }
-
-  if(conf_telecine_src>0 && conf_telecine_dest>0 && conf_telecine_src < conf_telecine_dest)
-  {
-	int snum, sden, tnum, tden, sfps, tfps;
-	
-	sfps = (int) (conf_telecine_src * 1001 + 0.5);
-	tfps = (int) (conf_telecine_dest * 1001 + 0.5);
-	if(sfps % 2 || tfps % 2)
-	{
-		sfps *= 2;
-		tfps *= 2;
-	}
-	
-	if(((tfps - sfps)>>1) > sfps)
-	{
-		mp_msg(MSGT_MUXER, MSGL_ERR, "ERROR! Framerate increment must be <= 1.5, telecining disabled\n");
-		conf_telecine = 0;
-	}
-	else
-	{
-	generate_flags(sfps, tfps);
-	conf_telecine = TELECINE_DGPULLDOWN;
-	conf_vframerate = conf_telecine_dest;
-	}
-  }
-
+  
   if(conf_vframerate)
   {
 	int fps;
@@ -2646,21 +2609,16 @@ int muxer_init_muxer_mpeg(muxer_t *muxer){
 			priv->vframerate = FRAMERATE_60;
 			break;
 		default:
-		{
 			mp_msg(MSGT_MUXER, MSGL_ERR, "WRONG FPS: %d/1000, ignoring\n", fps);
-			if(conf_telecine)
-				mp_msg(MSGT_MUXER, MSGL_ERR, "DISABLED TELECINING\n");
-			conf_telecine = 0;
-		}
 	}
   }
-
+  
   priv->vwidth = (uint16_t) conf_vwidth;
   priv->vheight = (uint16_t) conf_vheight;
   priv->panscan_width = (uint16_t) conf_panscan_width;
   priv->panscan_height = (uint16_t) conf_panscan_height;
   priv->vbitrate = ((conf_vbitrate) * 10) >> 2;	//*1000 / 400
-
+  
   if(priv->vaspect || priv->vframerate || priv->vwidth || priv->vheight || priv->vbitrate || priv->panscan_width || priv->panscan_height)
   {
   	priv->patch_seq = priv->vaspect || priv->vframerate || priv->vwidth || priv->vheight || priv->vbitrate;
@@ -2678,24 +2636,25 @@ int muxer_init_muxer_mpeg(muxer_t *muxer){
 		mp_msg(MSGT_MUXER, MSGL_INFO, " bitrate to %u", conf_vbitrate);
 	mp_msg(MSGT_MUXER, MSGL_INFO, "\n");
   }
-
+  
   priv->has_video = priv->has_audio = 0;
-
+  
+  
   muxer->sysrate = priv->muxrate; 		// initial muxrate = constrained stream parameter
   priv->scr = muxer->file_end = 0;
-
+  
   if(conf_init_adelay)
   	priv->init_adelay = - (double) conf_init_adelay / (double) 1000.0;
-
+  
   priv->drop = conf_drop;
-
+  
   priv->buff = (uint8_t *) malloc(priv->packet_size);
   if((priv->buff == NULL))
   {
 	mp_msg(MSGT_MUXER, MSGL_ERR, "\nCouldn't allocate %d bytes, exit\n", priv->packet_size);
 	return 0;
   }
-
+  
   muxer->priv = (void *) priv;
   muxer->cont_new_stream = &mpegfile_new_stream;
   muxer->cont_write_chunk = &mpegfile_write_chunk;

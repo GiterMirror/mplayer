@@ -14,6 +14,7 @@
 #include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
+#include "bswap.h"
 
 
 #define FOURCC_DOTRA mmioFOURCC('.','r','a', 0xfd)

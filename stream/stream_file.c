@@ -68,22 +68,6 @@ static int seek_forward(stream_t *s,off_t newpos) {
   return 1;
 }
 
-static int control(stream_t *s, int cmd, void *arg) {
-  switch(cmd) {
-    case STREAM_CTRL_GET_SIZE: {
-      off_t size;
-
-      size = lseek(s->fd, 0, SEEK_END);
-      lseek(s->fd, s->pos, SEEK_SET);
-      if(size != (off_t)-1) {
-        *((off_t*)arg) = size;
-        return 1;
-      }
-    }
-  }
-  return STREAM_UNSUPORTED;
-}
-
 static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
   int f;
   mode_t m = 0;
@@ -94,7 +78,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
   if(mode == STREAM_READ)
     m = O_RDONLY;
   else if(mode == STREAM_WRITE)
-    m = O_RDWR|O_CREAT;
+    m = O_WRONLY;
   else {
     mp_msg(MSGT_OPEN,MSGL_ERR, "[file] Unknown open mode %d\n",mode);
     m_struct_free(&stream_opts,opts);
@@ -133,15 +117,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
 #endif
     }
   } else {
-    if(mode == STREAM_READ)
-      f=open(filename,m);
-    else {
-      mode_t openmode = S_IRUSR|S_IWUSR;
-#ifndef __MINGW32__
-      openmode |= S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
-#endif
-      f=open(filename,m, openmode);
-    }
+    f=open(filename,m);
     if(f<0) {
       mp_msg(MSGT_OPEN,MSGL_ERR,MSGTR_FileNotFound,filename);
       m_struct_free(&stream_opts,opts);
@@ -155,7 +131,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
 #else
   if(len == -1) {
 #endif
-    if(mode == STREAM_READ) stream->seek = seek_forward;
+    stream->seek = seek_forward;
     stream->type = STREAMTYPE_STREAM; // Must be move to STREAMTYPE_FILE
     stream->flags |= STREAM_SEEK_FW;
   } else if(len >= 0) {
@@ -169,7 +145,6 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
   stream->fd = f;
   stream->fill_buffer = fill_buffer;
   stream->write_buffer = write_buffer;
-  stream->control = control;
 
   m_struct_free(&stream_opts,opts);
   return STREAM_OK;

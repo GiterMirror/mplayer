@@ -7,7 +7,7 @@
     Gerd Knorr <kraxel@bytesex.org>
 
   Multithreading, a/v sync and native ALSA support by
-    Jindrich Makovicka <makovick@gmail.com>
+    Jindrich Makovicka <makovick@kmlinux.fjfi.cvut.cz>
 
   Mjpeg hardware encoding support by 
     Iván Szántó <szivan@freemail.hu>

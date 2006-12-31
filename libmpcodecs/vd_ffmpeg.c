@@ -7,9 +7,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "libavutil/common.h"
-#include "libavutil/intreadwrite.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #include "vd_internal.h"
 
@@ -169,56 +167,6 @@ static int control(sh_video_t *sh,int cmd,void* arg,...){
     return CONTROL_UNKNOWN;
 }
 
-void mp_msp_av_log_callback(void* ptr, int level, const char* fmt, va_list vl)
-{
-    static int print_prefix=1;
-    AVClass* avc= ptr ? *(AVClass**)ptr : NULL;
-    int type= MSGT_FIXME;
-    int mp_level;
-    char buf[256];
-
-    switch(level){
-    case AV_LOG_DEBUG:  mp_level= MSGL_V   ; break;
-    case AV_LOG_INFO :  mp_level= MSGL_INFO; break;
-    case AV_LOG_ERROR:  mp_level= MSGL_ERR ; break;
-    default          :  mp_level= MSGL_ERR ; break;
-    }
-
-    if (!mp_msg_test(type, mp_level)) return;
-
-    if(ptr){
-        if(!strcmp(avc->class_name, "AVCodecContext")){
-            AVCodecContext * s= ptr;
-            if(s->codec){
-                if(s->codec->type == CODEC_TYPE_AUDIO){
-                    if(s->codec->decode)
-                        type= MSGT_DECAUDIO;
-                }else if(s->codec->type == CODEC_TYPE_VIDEO){
-                    if(s->codec->decode)
-                        type= MSGT_DECVIDEO;
-                }
-                //FIXME subtitles, encoders (what msgt for them? there is no appropiate ...)
-            }
-        }else if(!strcmp(avc->class_name, "AVFormatContext")){
-#if 0 //needs libavformat include FIXME iam too lazy to do this cleanly,probably the whole should be moved out of this file ...
-            AVFormatContext * s= ptr;
-            if(s->iformat)
-                type= MSGT_DEMUXER;
-            else if(s->oformat)
-                type= MSGT_MUXER;
-#endif
-        }
-    }
-
-    if(print_prefix && avc) {
-        mp_msg(type, mp_level, "[%s @ %p]", avc->item_name(ptr), avc);
-    }
-
-    print_prefix= strchr(fmt, '\n') != NULL;
-    vsnprintf(buf, sizeof(buf), fmt, vl);
-    mp_msg(type, mp_level, buf);
-}
-
 // init driver
 static int init(sh_video_t *sh){
     AVCodecContext *avctx;
@@ -231,7 +179,6 @@ static int init(sh_video_t *sh){
       avcodec_init();
       avcodec_register_all();
       avcodec_inited=1;
-      av_log_set_callback(mp_msp_av_log_callback);
     }
 
     ctx = sh->context = malloc(sizeof(vd_ffmpeg_ctx));
@@ -242,7 +189,6 @@ static int init(sh_video_t *sh){
     lavc_codec = (AVCodec *)avcodec_find_decoder_by_name(sh->codec->dll);
     if(!lavc_codec){
 	mp_msg(MSGT_DECVIDEO,MSGL_ERR,MSGTR_MissingLAVCcodec,sh->codec->dll);
-        uninit(sh);
 	return 0;
     }
 
@@ -359,20 +305,21 @@ static int init(sh_video_t *sh){
     case mmioFOURCC('R', 'V', '2', '0'):
     case mmioFOURCC('R', 'V', '3', '0'):
     case mmioFOURCC('R', 'V', '4', '0'):
-        if(sh->bih->biSize<sizeof(*sh->bih)+8){
+        avctx->extradata_size= 8;
+        avctx->extradata = av_mallocz(avctx->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
+        if(sh->bih->biSize!=sizeof(*sh->bih)+8){
             /* only 1 packet per frame & sub_id from fourcc */
-            avctx->extradata_size= 8;
-            avctx->extradata = av_mallocz(avctx->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
 	    ((uint32_t*)avctx->extradata)[0] = 0;
+	    avctx->sub_id=
 	    ((uint32_t*)avctx->extradata)[1] =
         	(sh->format == mmioFOURCC('R', 'V', '1', '3')) ? 0x10003001 : 0x10000000;
         } else {
 	    /* has extra slice header (demux_rm or rm->avi streamcopy) */
-	    avctx->extradata_size = sh->bih->biSize-sizeof(BITMAPINFOHEADER);
-	    avctx->extradata = av_mallocz(avctx->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
-	    memcpy(avctx->extradata, sh->bih+1, avctx->extradata_size);
+	    unsigned int* extrahdr=(unsigned int*)(sh->bih+1);
+	    ((uint32_t*)avctx->extradata)[0] = be2me_32(extrahdr[0]);
+	    avctx->sub_id= extrahdr[1];
+	    ((uint32_t*)avctx->extradata)[1] = be2me_32(extrahdr[1]);
 	}
-	avctx->sub_id= BE_32(avctx->extradata+4);
 
 //        printf("%X %X %d %d\n", extrahdr[0], extrahdr[1]);
         break;
@@ -392,11 +339,11 @@ static int init(sh_video_t *sh){
         if (sh->bih->biSize-sizeof(BITMAPINFOHEADER))
             /* Palette size in biSize */
             memcpy(avctx->palctrl->palette, sh->bih+1,
-                   FFMIN(sh->bih->biSize-sizeof(BITMAPINFOHEADER), AVPALETTE_SIZE));
+                   min(sh->bih->biSize-sizeof(BITMAPINFOHEADER), AVPALETTE_SIZE));
         else
             /* Palette size in biClrUsed */
             memcpy(avctx->palctrl->palette, sh->bih+1,
-                   FFMIN(sh->bih->biClrUsed * 4, AVPALETTE_SIZE));
+                   min(sh->bih->biClrUsed * 4, AVPALETTE_SIZE));
 	}
 
     if(sh->bih)
@@ -407,7 +354,6 @@ static int init(sh_video_t *sh){
     /* open it */
     if (avcodec_open(avctx, lavc_codec) < 0) {
         mp_msg(MSGT_DECVIDEO,MSGL_ERR, MSGTR_CantOpenCodec);
-        uninit(sh);
         return 0;
     }
     mp_msg(MSGT_DECVIDEO,MSGL_V,"INFO: libavcodec init OK!\n");
@@ -431,7 +377,7 @@ static void uninit(sh_video_t *sh){
             );
     }
 
-    if (avctx && avctx->codec && avcodec_close(avctx) < 0)
+    if (avcodec_close(avctx) < 0)
     	    mp_msg(MSGT_DECVIDEO,MSGL_ERR, MSGTR_CantCloseCodec);
 
     av_freep(&avctx->extradata);
@@ -753,7 +699,7 @@ static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags){
        || sh->format == mmioFOURCC('R', 'V', '2', '0')
        || sh->format == mmioFOURCC('R', 'V', '3', '0')
        || sh->format == mmioFOURCC('R', 'V', '4', '0'))
-    if(sh->bih->biSize>=sizeof(*sh->bih)+8){
+    if(sh->bih->biSize==sizeof(*sh->bih)+8){
         int i;
         dp_hdr_t *hdr= (dp_hdr_t*)data;
 

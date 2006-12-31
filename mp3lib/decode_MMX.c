@@ -91,7 +91,7 @@ __asm __volatile(
 	"pushl %%ecx\n\t"
 	"leal "MANGLE(mp3lib_decwins)"(%%ebx,%%ebx,1), %%edx\n\t"
 	"shrl $1, %%ecx\n\t"
-ASMALIGN(4)
+".balign 16\n\t"
 ".L03:\n\t"
         "movq  (%%edx),%%mm0\n\t"
         "movq  64(%%edx),%%mm4\n\t"
@@ -169,7 +169,7 @@ ASMALIGN(4)
 ".next_loop:\n\t"
         "subl $64,%%esi\n\t"
         "movl $7,%%ecx\n\t"
-ASMALIGN(4)
+".balign 16\n\t"
 ".L04:\n\t"
         "movq  (%%edx),%%mm0\n\t"
         "movq  64(%%edx),%%mm4\n\t"

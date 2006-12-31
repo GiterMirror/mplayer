@@ -197,7 +197,7 @@ static uint64_t __attribute__((aligned(8))) dither8[2]={
 #define RENAME(a) a ## _MMX2
 #include "yuv2rgb_template.c"
 
-#endif /* defined(ARCH_X86) */
+#endif /* defined(ARCH_X86) || defined(ARCH_X86_64) */
 
 const int32_t Inverse_Table_6_9[8][4] = {
     {117504, 138453, 13954, 34903}, /* no sequence_display_extension */
@@ -213,9 +213,9 @@ const int32_t Inverse_Table_6_9[8][4] = {
 #define RGB(i)					\
 	U = pu[i];				\
 	V = pv[i];				\
-	r = (void *)c->table_rV[V];			\
-	g = (void *)(c->table_gU[U] + c->table_gV[V]);		\
-	b = (void *)c->table_bU[U];
+	r = c->table_rV[V];			\
+	g = c->table_gU[U] + c->table_gV[V];		\
+	b = c->table_bU[U];
 
 #define DST1(i)					\
 	Y = py_1[2*i];				\
@@ -265,16 +265,14 @@ static int func_name(SwsContext *c, uint8_t* src[], int srcStride[], int srcSlic
     for(y=0; y<srcSliceH; y+=2){\
 	dst_type *dst_1= (dst_type*)(dst[0] + (y+srcSliceY  )*dstStride[0]);\
 	dst_type *dst_2= (dst_type*)(dst[0] + (y+srcSliceY+1)*dstStride[0]);\
-	dst_type attribute_unused *r, *b;\
-	dst_type *g;\
+	dst_type *r, *g, *b;\
 	uint8_t *py_1= src[0] + y*srcStride[0];\
 	uint8_t *py_2= py_1 + srcStride[0];\
 	uint8_t *pu= src[1] + (y>>1)*srcStride[1];\
 	uint8_t *pv= src[2] + (y>>1)*srcStride[2];\
 	unsigned int h_size= c->dstW>>3;\
 	while (h_size--) {\
-	    int attribute_unused U, V;\
-	    int Y;\
+	    int U, V, Y;\
 
 #define EPILOG(dst_delta)\
 	    pu += 4;\
@@ -834,10 +832,10 @@ int yuv2rgb_c_init_tables (SwsContext *c, const int inv_table[4], int fullRange,
     }
 
     for (i = 0; i < 256; i++) {
-	c->table_rV[i] = (uint8_t *)table_r + entry_size * div_round (crv * (i-128), 76309);
-	c->table_gU[i] = (uint8_t *)table_g + entry_size * div_round (cgu * (i-128), 76309);
+	c->table_rV[i] = table_r + entry_size * div_round (crv * (i-128), 76309);
+	c->table_gU[i] = table_g + entry_size * div_round (cgu * (i-128), 76309);
 	c->table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);
-	c->table_bU[i] = (uint8_t *)table_b + entry_size * div_round (cbu * (i-128), 76309);
+	c->table_bU[i] = table_b + entry_size * div_round (cbu * (i-128), 76309);
     }
 
     av_free(c->yuvTable);

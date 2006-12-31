@@ -31,8 +31,7 @@
 #define MMX
 #endif
 
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "RTjpegN.h"
 
 #ifdef MMX

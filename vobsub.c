@@ -1357,12 +1357,12 @@ vobsub_out_open(const char *basename, const unsigned int *palette,
 	    result->aid = index;
 	    strcpy(filename, basename);
 	    strcat(filename, ".sub");
-	    result->fsub = fopen(filename, "ab");
+	    result->fsub = fopen(filename, "a");
 	    if (result->fsub == NULL)
 		perror("Error: vobsub_out_open subtitle file open failed");
 	    strcpy(filename, basename);
 	    strcat(filename, ".idx");
-	    result->fidx = fopen(filename, "ab");
+	    result->fidx = fopen(filename, "a");
 	    if (result->fidx) {
 		if (ftell(result->fidx) == 0){
 		    create_idx(result, palette, orig_width, orig_height);

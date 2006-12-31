@@ -14,7 +14,7 @@ CFLAGS  = $(OPTFLAGS)
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-all:	$(LIBNAME) do_drivers
+all:	$(SUBDIRS) $(LIBNAME) do_drivers
 
 do_drivers:
 	$(MAKE) -C drivers
@@ -31,10 +31,21 @@ distclean: clean
 	rm -f .depend test
 	$(MAKE) -C drivers distclean
 
-dep depend:
-	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
-	$(MAKE) -C drivers depend
+dep:    depend
+	$(MAKE) -C drivers dep
 
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+install:
+	$(MAKE) -C drivers install
+
+uninstall:
+	$(MAKE) -C drivers uninstall
+
+#
+# include dependency files if they exist
+#
 ifneq ($(wildcard .depend),)
 include .depend
 endif

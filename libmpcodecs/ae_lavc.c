@@ -8,7 +8,6 @@
 #include "mp_msg.h"
 #include "aviheader.h"
 #include "ms_hdr.h"
-#include "stream.h"
 #include "muxer.h"
 #include "ae_lavc.h"
 #include "help_mp.h"
@@ -30,7 +29,6 @@ extern int  avcodec_inited;
 static int compressed_frame_size = 0;
 #if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
 extern unsigned int codec_get_wav_tag(int id);
-extern const int mp_wav_tags[];
 #endif
 
 static int bind_lavc(audio_encoder_t *encoder, muxer_stream_t *mux_a)
@@ -56,12 +54,9 @@ static int bind_lavc(audio_encoder_t *encoder, muxer_stream_t *mux_a)
 			mux_a->h.dwSampleSize = 0; // Blocksize not constant
 		} 
 		else 
-			mux_a->h.dwSampleSize = 0;
+			mux_a->h.dwSampleSize = mux_a->h.dwScale;
 	}
-        if(mux_a->h.dwSampleSize)
-                mux_a->wf->nBlockAlign = mux_a->h.dwSampleSize;
-        else
-                mux_a->wf->nBlockAlign = 1;
+	mux_a->wf->nBlockAlign = mux_a->h.dwScale;
 	mux_a->h.dwSuggestedBufferSize = (encoder->params.audio_preload*mux_a->wf->nAvgBytesPerSec)/1000;
 	mux_a->h.dwSuggestedBufferSize -= mux_a->h.dwSuggestedBufferSize % mux_a->wf->nBlockAlign;
 
@@ -177,8 +172,6 @@ int mpae_init_lavc(audio_encoder_t *encoder)
 	{
 #if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
 		lavc_param_atag = codec_get_wav_tag(lavc_acodec->id);
-                if(!lavc_param_atag)
-                        lavc_param_atag =  codec_get_tag(mp_wav_tags, lavc_acodec->id);
 #else
 		lavc_param_atag = lavc_find_atag(lavc_param_acodec);
 #endif

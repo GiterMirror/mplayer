@@ -42,7 +42,7 @@
 #include <cdio/cdio.h>
 #endif
 
-extern m_obj_settings_t *vf_settings;
+extern m_obj_settings_t* vo_plugin_args;
 extern vo_functions_t *video_out;
 extern ao_functions_t *audio_out;
 extern void exit_player(const char *how);
@@ -480,6 +480,73 @@ void guiDone(void)
     cfg_write();
 }
 
+static void add_vop(char * str)
+{
+    mp_msg(MSGT_GPLAYER, MSGL_STATUS, MSGTR_AddingVideoFilter, str);
+    if (vo_plugin_args)
+    {
+        int i = 0;
+        while (vo_plugin_args[i].name)
+            if (!strcmp(vo_plugin_args[i++].name, str))
+            {
+                i = -1;
+                break;
+            }
+        if (i != -1)
+        {
+            vo_plugin_args = realloc(vo_plugin_args, (i + 2) * sizeof(m_obj_settings_t));
+            vo_plugin_args[i].name = strdup(str);
+            vo_plugin_args[i].attribs = NULL;
+            vo_plugin_args[i + 1].name = NULL;
+        }
+    }
+    else
+    {
+        vo_plugin_args = malloc(2 * sizeof(m_obj_settings_t));
+        vo_plugin_args[0].name = strdup(str);
+        vo_plugin_args[0].attribs = NULL;
+        vo_plugin_args[1].name = NULL;
+    }
+}
+
+static void remove_vop(char * str)
+{
+    int n = 0;
+    if (!vo_plugin_args ) return;
+
+    mp_msg(MSGT_GPLAYER,MSGL_STATUS, MSGTR_RemovingVideoFilter, str);
+
+    while (vo_plugin_args[n++].name);
+    n--;
+    if ( n > -1 )
+    {
+        int i = 0, m = -1;
+        while (vo_plugin_args[i].name)
+            if (!strcmp(vo_plugin_args[i++].name, str))
+            {
+                m = i - 1;
+                break;
+            }
+        i--;
+        if (m > -1)
+        {
+            if (n == 1)
+            {
+                free(vo_plugin_args[0].name);
+                free(vo_plugin_args[0].attribs);
+                free(vo_plugin_args);
+                vo_plugin_args=NULL;
+            }
+            else
+            {
+                free(vo_plugin_args[i].name);
+                free(vo_plugin_args[i].attribs);
+                memcpy(&vo_plugin_args[i], &vo_plugin_args[i + 1], (n - i) * sizeof(m_obj_settings_t));
+            }
+        }
+    }
+}
+
 /* this function gets called by mplayer to update the gui */
 int guiGetEvent(int type, char *arg)
 {
@@ -683,10 +750,12 @@ int guiGetEvent(int type, char *arg)
                     if(fullscreen) guiSetEvent(evFullScreen);
                     PostMessage(mygui->mainwindow, WM_COMMAND, (WPARAM) IDFILE_OPEN, 0);
                     break;
+#ifdef USE_SUB
                 case MP_CMD_GUI_LOADSUBTITLE:
                     if(fullscreen) guiSetEvent(evFullScreen);
                     PostMessage(mygui->mainwindow, WM_COMMAND, (WPARAM) IDSUBTITLE_OPEN, 0);
                     break;
+#endif
                 default:
                     break;
             }

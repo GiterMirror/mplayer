@@ -5,7 +5,6 @@
  */
 
 #include "config.h"
-#include "debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>

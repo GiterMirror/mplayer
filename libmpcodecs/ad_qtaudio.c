@@ -4,11 +4,6 @@
 #include <inttypes.h>
 
 #include "config.h"
-
-#ifdef MACOSX
-#include <QuickTime/QuickTimeComponents.h>
-#endif
-
 #include "mp_msg.h"
 
 #include "wine/windef.h"
@@ -18,6 +13,10 @@
 
 #ifdef WIN32_LOADER
 #include "ldt_keeper.h"
+#endif
+
+#ifdef MACOSX
+#include <QuickTime/QuickTimeComponents.h>
 #endif
 
 static ad_info_t info =  {

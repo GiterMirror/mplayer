@@ -9,7 +9,7 @@ CpuCaps gCpuCaps;
 #endif
 #include <stdlib.h>
 
-#ifdef ARCH_X86
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
 
 #include <stdio.h>
 #include <string.h>
@@ -493,7 +493,7 @@ static void check_os_katmai_support( void )
    gCpuCaps.hasSSE=0;
 #endif /* __linux__ */
 }
-#else /* ARCH_X86 */
+#else /* ARCH_X86 || ARCH_X86_64 */
 
 #ifdef SYS_DARWIN
 #include <sys/sysctl.h>

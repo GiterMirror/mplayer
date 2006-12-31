@@ -477,6 +477,12 @@ static char help_text[]=
 #define MSGTR_CodecDefinitionIncorrect "Kodek doğru şekilde tanımlanmamış."
 #define MSGTR_OutdatedCodecsConf "Bu codecs.conf dosyası çok eski ve bu Mplayer sürümü ile bağdaşmıyor."
 
+// divx4_vbr.c:
+#define MSGTR_OutOfMemory "yetersiz bellek"
+#define MSGTR_OverridingTooLowBitrate "Belirlenen bit oranı bu klip için çok düşük.\n"\
+"Bu klip için en az olası bit oranı %.0f kbps. Kullanıcı tanımlı değer\n"\
+"atlanıyor. \n"
+
 // fifo.c
 #define MSGTR_CannotMakePipe "PIPE yapılamıyor!\n"
 
@@ -590,6 +596,7 @@ static char help_text[]=
 #define MSGTR_OpeningAudioDemuxerFailed "Ses ayrıştırıcısı açılamadı: %s\n"
 #define MSGTR_OpeningSubtitlesDemuxerFailed "Altyazı ayrıştırıcısı açılamadı: %s\n"
 #define MSGTR_TVInputNotSeekable "TV girdisi aranabilir değil! (Muhtemelen arama kanal değiştirmek için yapılacak ;)\n"
+#define MSGTR_DemuxerInfoAlreadyPresent "%s ayrıştırıcı bilgisi önceden sunulmuş!\n"
 #define MSGTR_ClipInfo "Klip bilgisi: \n"
 
 #define MSGTR_LeaveTelecineMode "\nBulunan içerik demux_mpg: 30000/1001fps NTSC, kare oranı değiştiriliyor.\n"
@@ -707,7 +714,7 @@ static char help_text[]=
 #define MSGTR_NEMDB "Üzgünüm, tampon için yeterli hafıza yok."
 #define MSGTR_NEMFMR "Üzgünüm, menü oluşturmak için yeterli hafıza yok."
 #define MSGTR_IDFGCVD "Üzgünüm, KGA ile uyumlu video çıkış sürücüsü bulunamadı."
-#define MSGTR_NEEDLAVC "Üzgünüm, MPEG olmayan dosyaları DXR3/H+ aygıtınızla oynatamazsınız. \nLütfen DXR3/H+ ayarlarından lavc seçeneğini etkinleştirin."
+#define MSGTR_NEEDLAVCFAME "Üzgünüm, MPEG olmayan dosyaları DXR3/H+ aygıtınızla oynatamazsınız. \nLütfen DXR3/H+ ayarlarından lavc veya fame seçeneğini etkinleştirin."
 #define MSGTR_UNKNOWNWINDOWTYPE "Bilinmeyen pencere türü bulundu..."
 
 // --- skin loader error messages
@@ -867,6 +874,7 @@ static char help_text[]=
 #define MSGTR_PREFERENCES_Message "Yaptığınız değişiklikleri etkinleştirmek için lütfen Mplayer'ı yeniden başlatmayı unutmayınız."
 #define MSGTR_PREFERENCES_DXR3_VENC "Video kodlayıcı:"
 #define MSGTR_PREFERENCES_DXR3_LAVC "LAVC kullan (FFmpeg)"
+#define MSGTR_PREFERENCES_DXR3_FAME "FAME kullan"
 #define MSGTR_PREFERENCES_FontEncoding1 "Unicode"
 #define MSGTR_PREFERENCES_FontEncoding2 "Batı Avrupa Dilleri (ISO-8859-1)"
 #define MSGTR_PREFERENCES_FontEncoding3 "Batı Avrupa Dilleri ve Euro(ISO-8859-15)"
@@ -1550,6 +1558,9 @@ static char help_text[]=
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupportSlices  "UYARI! Sonraki filtre SLICES desteklemiyor,   sig11 için hazırlayınız...\n"
 #define MSGTR_MPCODECS_FunWhydowegetNULL "Neden NULL ulaşıyoruz??\n"
 
+// libmpcodecs/vf_fame.c
+#define MSGTR_MPCODECS_FatalCantOpenlibFAME "HATA: libFAME açılamıyor!\n"
+
 // libmpcodecs/vf_test.c, vf_yuy2.c, vf_yvu9.c
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupport "%s sonraki filtre/vo tarafından desteklenmiyor :(\n"
 
@@ -1565,7 +1576,7 @@ static char help_text[]=
 #define MSGTR_LIBVO_MGA_IncompatibleDriverVersion "[MGA] mga_video sürücünüzün sürümü bu MPlayer sürümüyle bağdaşmıyor!\n"
 #define MSGTR_LIBVO_MGA_UsingBuffers "[MGA] %d arabellek kullanılıyor.\n"
 #define MSGTR_LIBVO_MGA_CouldntOpen "[MGA] Açılamadı: %s\n"
-#define MGSTR_LIBVO_MGA_ResolutionTooHigh "[MGA] kaynak çözünürlüğün en azιndan bir boyutu 1023x1023'ten daha büyükütür. Yazılımla düzteliniz ya da -lavdopts lowres=1 kulanınız\n"
+#define MGSTR_LIBVO_MGA_ResolutionTooHigh "[MGA] kaynak çözünürlüğün en azιndan bir boyutu 1023x1023'ten daha büyükütür. Yazılımla düzteliniz ya da -lavopts lowres=1 kulanınız\n"
 
 // libvo/vesa_lvo.c
 

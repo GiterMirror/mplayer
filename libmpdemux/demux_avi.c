@@ -54,7 +54,7 @@ demux_stream_t* demux_avi_select_stream(demuxer_t *demux,unsigned int id){
 	    // workaround old mencoder's bug:
 	    if(sh->audio.dwSampleSize==1 && sh->audio.dwScale==1 &&
 	       (sh->wf->nBlockAlign==1152 || sh->wf->nBlockAlign==576)){
-		mp_msg(MSGT_DEMUX,MSGL_WARN,MSGTR_WorkAroundBlockAlignHeaderBug);
+		mp_msg(MSGT_DEMUX,MSGL_WARN,"AVI: Workarounding CBR-MP3 nBlockAlign header bug!\n");
 		priv->audio_block_size=1;
 	    }
 	  }
@@ -80,11 +80,14 @@ demux_stream_t* demux_avi_select_stream(demuxer_t *demux,unsigned int id){
 }
 
 static int valid_fourcc(unsigned int id){
-    static const char valid[] = "0123456789abcdefghijklmnopqrstuvwxyz"
-                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ_";
     unsigned char* fcc=(unsigned char*)(&id);
-    return strchr(valid, fcc[0]) && strchr(valid, fcc[1]) &&
-           strchr(valid, fcc[2]) && strchr(valid, fcc[3]);
+#define FCC_CHR_CHECK(x) (x<48 || x>=96)
+    if(FCC_CHR_CHECK(fcc[0])) return 0;
+    if(FCC_CHR_CHECK(fcc[1])) return 0;
+    if(FCC_CHR_CHECK(fcc[2])) return 0;
+    if(FCC_CHR_CHECK(fcc[3])) return 0;
+    return 1;
+#undef FCC_CHR_CHECK
 }
 
 static int choose_chunk_len(unsigned int len1,unsigned int len2){
@@ -410,11 +413,11 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
   read_avi_header(demuxer,(demuxer->stream->flags & STREAM_SEEK_BW)?index_mode:-2);
   
   if(demuxer->audio->id>=0 && !demuxer->a_streams[demuxer->audio->id]){
-      mp_msg(MSGT_DEMUX,MSGL_WARN,MSGTR_InvalidAudioStreamNosound,demuxer->audio->id);
+      mp_msg(MSGT_DEMUX,MSGL_WARN,"AVI: invalid audio stream ID: %d - ignoring (nosound)\n",demuxer->audio->id);
       demuxer->audio->id=-2; // disabled
   }
   if(demuxer->video->id>=0 && !demuxer->v_streams[demuxer->video->id]){
-      mp_msg(MSGT_DEMUX,MSGL_WARN,MSGTR_InvalidAudioStreamUsingDefault,demuxer->video->id);
+      mp_msg(MSGT_DEMUX,MSGL_WARN,"AVI: invalid video stream ID: %d - ignoring (using default)\n",demuxer->video->id);
       demuxer->video->id=-1; // autodetect
   }
   
@@ -466,6 +469,7 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
 	return NULL;
       }
       if(a_pos==-1){
+        mp_msg(MSGT_DEMUX,MSGL_INFO,"AVI_NI: " MSGTR_MissingAudioStream);
         d_audio->sh=sh_audio=NULL;
       } else {
         if(force_ni || abs(a_pos-v_pos)>0x100000){  // distance > 1MB
@@ -499,8 +503,12 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
       d_audio->sh=sh_audio=NULL;
     } else {
       sh_audio=d_audio->sh;sh_audio->ds=d_audio;
+      sh_audio->format=sh_audio->wf->wFormatTag;
     }
   }
+  // calc. FPS:
+  sh_video->fps=(float)sh_video->video.dwRate/(float)sh_video->video.dwScale;
+  sh_video->frametime=(float)sh_video->video.dwScale/(float)sh_video->video.dwRate;
 
   // calculating audio/video bitrate:
   if(priv->idx_size>0){
@@ -542,6 +550,7 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
     if(sh_audio){
       if(sh_audio->wf->nAvgBytesPerSec && sh_audio->audio.dwSampleSize!=1){
         asize=(float)sh_audio->wf->nAvgBytesPerSec*sh_audio->audio.dwLength*sh_audio->audio.dwScale/sh_audio->audio.dwRate;
+        sh_audio->i_bps=sh_audio->wf->nAvgBytesPerSec;
       } else {
         asize=sh_audio->audio.dwLength;
         sh_audio->i_bps=(float)asize/(sh_video->frametime*priv->numberofframes);
@@ -551,6 +560,11 @@ static demuxer_t* demux_open_avi(demuxer_t* demuxer){
     mp_msg(MSGT_DEMUX,MSGL_V,"AVI video size=%"PRId64" (%u)  audio size=%"PRId64"\n",vsize,priv->numberofframes,asize);
     sh_video->i_bps=(float)vsize/(sh_video->frametime*priv->numberofframes);
   }
+
+  if (sh_video)
+    sh_video->stream_delay = (float)sh_video->video.dwStart * sh_video->video.dwScale/sh_video->video.dwRate;
+  if (sh_audio)
+    sh_audio->stream_delay = (float)sh_audio->audio.dwStart * sh_audio->audio.dwScale/sh_audio->audio.dwRate;
 
   return demuxer;
   
@@ -762,36 +776,6 @@ static int demux_avi_control(demuxer_t *demuxer,int cmd, void *arg){
 	    if (sh_video->video.dwLength<=1) return DEMUXER_CTRL_GUESS;
 	    return DEMUXER_CTRL_OK;
 
-	case DEMUXER_CTRL_SWITCH_AUDIO:
-	case DEMUXER_CTRL_SWITCH_VIDEO: {
-	    int audio = (cmd == DEMUXER_CTRL_SWITCH_AUDIO);
-	    demux_stream_t *ds = audio ? demuxer->audio : demuxer->video;
-	    void **streams = audio ? demuxer->a_streams : demuxer->v_streams;
-	    int maxid = FFMIN(100, audio ? MAX_A_STREAMS : MAX_V_STREAMS);
-	    int chunkid;
-	    if (ds->id < -1)
-	      return DEMUXER_CTRL_NOTIMPL;
-
-	    if (*(int *)arg >= 0)
-	      ds->id = *(int *)arg;
-	    else {
-	      int i;
-	      for (i = 0; i < maxid; i++) {
-	        if (++ds->id >= maxid) ds->id = 0;
-	        if (streams[ds->id]) break;
-	      }
-	    }
-
-	    chunkid = (ds->id / 10 + '0') | (ds->id % 10 + '0') << 8;
-	    ds->sh = NULL;
-	    if (!streams[ds->id]) // stream not available
-	      ds->id = -1;
-	    else
-	      demux_avi_select_stream(demuxer, chunkid);
-	    *(int *)arg = ds->id;
-	    return DEMUXER_CTRL_OK;
-	}
-
 	default:
 	    return DEMUXER_CTRL_NOTIMPL;
     }
@@ -808,7 +792,7 @@ static int avi_check_file(demuxer_t *demuxer)
     if(id==formtypeAVI)
       return DEMUXER_TYPE_AVI;
     if(id==mmioFOURCC('O','N','2','f')){
-      mp_msg(MSGT_DEMUXER,MSGL_INFO,MSGTR_ON2AviFormat);
+      mp_msg(MSGT_DEMUXER,MSGL_INFO,"ON2 AVI format");
       return DEMUXER_TYPE_AVI;
     }
   }

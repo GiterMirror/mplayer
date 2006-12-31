@@ -3,7 +3,6 @@
 #include "geometry.h"
 //#ifndef ASPECT_TEST
 #include "mp_msg.h"
-#include "help_mp.h"
 //#endif
 
 //#define ASPECT_DEBUG
@@ -104,9 +103,9 @@ void aspect(int *srcw, int *srch, int zoom){
       *srcw = tmpw;
     }else{
 #ifndef ASPECT_TEST
-      mp_msg(MSGT_VO,MSGL_WARN,MSGTR_LIBVO_ASPECT_NoSuitableNewResFound);
+      mp_msg(MSGT_VO,MSGL_WARN,"aspect: Warning: no suitable new res found!\n");
 #else
-      mp_msg(MSGT_VO,MSGL_WARN,MSGTR_LIBVO_ASPECT_NoNewSizeFoundThatFitsIntoRes);
+      mp_msg(MSGT_VO,MSGL_WARN,"error: no new size found that fits into res!\n");
 #endif
     }
   }

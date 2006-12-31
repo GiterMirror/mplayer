@@ -30,6 +30,7 @@ extern vf_info_t vf_info_crop;
 extern vf_info_t vf_info_expand;
 extern vf_info_t vf_info_pp;
 extern vf_info_t vf_info_scale;
+extern vf_info_t vf_info_fame;
 extern vf_info_t vf_info_format;
 extern vf_info_t vf_info_noformat;
 extern vf_info_t vf_info_yuy2;
@@ -113,6 +114,9 @@ static vf_info_t* filter_list[]={
     &vf_info_scale,
 //    &vf_info_osd,
     &vf_info_vo,
+#ifdef USE_LIBFAME
+    &vf_info_fame,
+#endif
     &vf_info_format,
     &vf_info_noformat,
     &vf_info_yuy2,
@@ -200,6 +204,8 @@ static vf_info_t* filter_list[]={
 
 // For the vf option
 m_obj_settings_t* vf_settings = NULL;
+// For the vop option
+m_obj_settings_t* vo_plugin_args = NULL;
 m_obj_list_t vf_obj_list = {
   (void**)filter_list,
   M_ST_OFF(vf_info_t,name),
@@ -273,7 +279,7 @@ mp_image_t* vf_get_image(vf_instance_t* vf, unsigned int outfmt, int mp_imgtype,
   w2=(mp_imgflag&MP_IMGFLAG_ACCEPT_ALIGNED_STRIDE)?((w+15)&(~15)):w;
   
   if(vf->put_image==vf_next_put_image){
-      // passthru mode, if the filter uses the fallback/default put_image() code
+      // passthru mode, if the plugin uses the fallback/default put_image() code
       return vf_get_image(vf->next,outfmt,mp_imgtype,mp_imgflag,w,h);
   }
   
@@ -697,6 +703,7 @@ vf_instance_t* append_filters(vf_instance_t* last){
   vf_instance_t* vf;
   int i; 
 
+  // -vf take precedence over -vop
   if(vf_settings) {
     // We want to add them in the 'right order'
     for(i = 0 ; vf_settings[i].name ; i++)
@@ -704,6 +711,12 @@ vf_instance_t* append_filters(vf_instance_t* last){
     for(i-- ; i >= 0 ; i--) {
       //printf("Open filter %s\n",vf_settings[i].name);
       vf = vf_open_filter(last,vf_settings[i].name,vf_settings[i].attribs);
+      if(vf) last=vf;
+    }
+  } else if(vo_plugin_args) {
+    for(i = 0 ; vo_plugin_args[i].name ; i++) {
+      vf = vf_open_filter(last,vo_plugin_args[i].name,
+			  vo_plugin_args[i].attribs);
       if(vf) last=vf;
     }
   }
@@ -726,5 +739,13 @@ void vf_uninit_filter_chain(vf_instance_t* vf){
 	vf_instance_t* next=vf->next;
 	vf_uninit_filter(vf);
 	vf=next;
+    }
+}
+
+void vf_list_plugins(void){
+    int i=0;
+    while(filter_list[i]){
+        mp_msg(MSGT_VFILTER,MSGL_INFO,"\t%-10s: %s\n",filter_list[i]->name,filter_list[i]->info);
+        i++;
     }
 }

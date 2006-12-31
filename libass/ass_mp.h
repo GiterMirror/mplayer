@@ -23,7 +23,6 @@
 
 #include "subreader.h"
 
-extern ass_library_t* ass_library;
 extern int ass_enabled;
 extern float ass_font_scale;
 extern float ass_line_spacing;
@@ -36,18 +35,9 @@ extern char* ass_color;
 extern char* ass_border_color;
 extern char* ass_styles_file;
 
-ass_track_t* ass_default_track(ass_library_t* library);
+ass_track_t* ass_default_track();
 int ass_process_subtitle(ass_track_t* track, subtitle* sub);
-ass_track_t* ass_read_subdata(ass_library_t* library, sub_data* subdata, double fps);
-
-void ass_configure(ass_renderer_t* priv, int w, int h);
-void ass_configure_fonts(ass_renderer_t* priv);
-ass_library_t* ass_init();
-
-typedef struct {
-	ass_image_t* imgs;
-	int changed;
-} mp_eosd_images_t;
+ass_track_t* ass_read_subdata(sub_data* subdata, double fps);
 
 #endif
 

@@ -132,8 +132,7 @@ static int pci_config_type( void ) { return 1; }
 #include <fcntl.h>
 //#include <sys/io.h>
 #include <linux/pci.h>
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "../../bswap.h"
 
 static int pci_get_vendor(
           unsigned char bus,

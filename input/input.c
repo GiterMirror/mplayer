@@ -51,7 +51,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_RADIO_STEP_CHANNEL, "radio_step_channel", 1,  { { MP_CMD_ARG_INT ,{0}}, {-1,{0}} }},
   { MP_CMD_RADIO_SET_CHANNEL, "radio_set_channel", 1, { { MP_CMD_ARG_STRING, {0}}, {-1,{0}}  }},
   { MP_CMD_RADIO_SET_FREQ, "radio_set_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
-  { MP_CMD_RADIO_STEP_FREQ, "radio_step_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
 #endif
   { MP_CMD_SEEK, "seek", 1, { {MP_CMD_ARG_FLOAT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_EDL_MARK, "edl_mark", 0, { {-1,{0}} } },
@@ -165,7 +164,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_KEYDOWN_EVENTS, "key_down_event", 1, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_SET_PROPERTY, "set_property", 2, { {MP_CMD_ARG_STRING, {0}},  {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
   { MP_CMD_GET_PROPERTY, "get_property", 1, { {MP_CMD_ARG_STRING, {0}},  {-1,{0}} } },
-  { MP_CMD_STEP_PROPERTY, "step_property", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
   
   { MP_CMD_SEEK_CHAPTER, "seek_chapter", 1, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_SET_MOUSE_POS, "set_mouse_pos", 2, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
@@ -337,8 +335,10 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { '}', 0 }, "speed_mult 2.0" },
   { { KEY_BACKSPACE, 0 }, "speed_set 1.0" },
   { { 'q', 0 }, "quit" },
+  { { 'Q', 0 }, "quit" },
   { { KEY_ESC, 0 }, "quit" },
   { { 'p', 0 }, "pause" },
+  { { 'P', 0 }, "pause" },
   { { ' ', 0 }, "pause" },
   { { '.', 0 }, "frame_step" },
   { { KEY_HOME, 0 }, "pt_up_step 1" },
@@ -349,6 +349,7 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { KEY_INS, 0 }, "alt_src_step 1" },
   { { KEY_DEL, 0 }, "alt_src_step -1" },
   { { 'o', 0 }, "osd" },
+  { { 'O', 0 }, "osd" },
   { { 'I', 0 }, "osd_show_property_text \"${filename}\"" },
   { { 'z', 0 }, "sub_delay -0.1" },
   { { 'x', 0 }, "sub_delay +0.1" },
@@ -359,6 +360,7 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { '0', 0 }, "volume 1" },
   { { '*', 0 }, "volume 1" },
   { { 'm', 0 }, "mute" },
+  { { 'M', 0 }, "mute" },
   { { '1', 0 }, "contrast -1" },
   { { '2', 0 }, "contrast 1" },
   { { '3', 0 }, "brightness -1" },
@@ -368,16 +370,14 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { '7', 0 }, "saturation -1" },
   { { '8', 0 }, "saturation 1" },
   { { 'd', 0 }, "frame_drop" },
-  { { 'D', 0 }, "step_property deinterlace" },
   { { 'r', 0 }, "sub_pos -1" },
   { { 't', 0 }, "sub_pos +1" },
   { { 'a', 0 }, "sub_alignment" },
   { { 'v', 0 }, "sub_visibility" },
-  { { 'j', 0 }, "sub_select" },
+  { { 'b', 0 }, "sub_select" },
+  { { 'j', 0 }, "vobsub_lang" },
   { { 'F', 0 }, "forced_subs_only" },
   { { '#', 0 }, "switch_audio" },
-  { { '_', 0 }, "step_property switch_video" },
-  { { KEY_TAB, 0 }, "step_property switch_program" },
   { { 'i', 0 }, "edl_mark" },
 #ifdef USE_TV
   { { 'h', 0 }, "tv_step_channel 1" },
@@ -882,8 +882,8 @@ static char*
 mp_input_find_bind_for_key(mp_cmd_bind_t* binds, int n,int* keys) {
   int j;
 
-  if (n <= 0) return NULL;
   for(j = 0; binds[j].cmd != NULL; j++) {
+    if(n > 0) {
       int found = 1,s;
       for(s = 0; s < n && binds[j].input[s] != 0; s++) {
 	if(binds[j].input[s] != keys[s]) {
@@ -893,6 +893,12 @@ mp_input_find_bind_for_key(mp_cmd_bind_t* binds, int n,int* keys) {
       }
       if(found && binds[j].input[s] == 0 && s == n)
 	break;
+      else
+	continue;
+    } else if(n == 1){
+      if(binds[j].input[0] == keys[0] && binds[j].input[1] == 0)
+	break;
+    }
   }
   return binds[j].cmd;
 }
@@ -941,8 +947,7 @@ mp_input_read_key_code(int time) {
 
   if(num_key_fd == 0)
   {
-    if (time)
-      usec_sleep(time * 1000);
+    usec_sleep(time * 1000);
     return MP_INPUT_NOTHING;
   }
 
@@ -1023,7 +1028,7 @@ if(n>0){
       key_fds[i].flags |= MP_FD_DEAD;
     }
   }
-  if (time && !did_sleep)
+  if (!did_sleep)
     usec_sleep(time * 1000);
   return MP_INPUT_NOTHING;
 }

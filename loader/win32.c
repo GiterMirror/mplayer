@@ -18,7 +18,6 @@ for DLL to know too much about its environment.
  */
 
 #include "config.h"
-#include "mangle.h"
 
 #ifdef MPLAYER
 #ifdef USE_QTX_CODECS
@@ -69,9 +68,6 @@ for DLL to know too much about its environment.
 #ifdef	HAVE_KSTAT
 #include <kstat.h>
 #endif
-
-#include <sys/mman.h>
-#include "osdep/mmap_anon.h"
 
 #if HAVE_VSSCANF
 int vsscanf( const char *str, const char *format, va_list ap);
@@ -4591,25 +4587,8 @@ static INT WINAPI expMessageBoxA(HWND hWnd, LPCSTR text, LPCSTR title, UINT type
 
 /* these are needed for mss1 */
 
-/**
- * \brief this symbol is defined within exp_EH_prolog_dummy
- * \param dest jump target
- */
-void exp_EH_prolog(void *dest);
-//! just a dummy function that acts a container for the asm section
-void exp_EH_prolog_dummy(void) {
-  asm volatile (
-// take care, this "function" may not change flags or
-// registers besides eax (which is also why we can't use
-// exp_EH_prolog_dummy directly)
-MANGLE(exp_EH_prolog)":    \n\t"
-    "pop   %eax            \n\t"
-    "push  %ebp            \n\t"
-    "mov   %esp, %ebp      \n\t"
-    "lea   -12(%esp), %esp \n\t"
-    "jmp   *%eax           \n\t"
-  );
-}
+/* defined in stubs.s */
+void exp_EH_prolog(void);
 
 #include <netinet/in.h>
 static WINAPI inline unsigned long int exphtonl(unsigned long int hostlong)
@@ -4829,17 +4808,6 @@ static LPSTR WINAPI expCharNextA(LPCSTR ptr)
 static int WINAPI expPropVariantClear(void *pvar)
 {
 //    dbgprintf("PropVariantclear (0x%08x), %s\n", ptr, ptr);
-    return 1;
-}
-
-// This define is fake, the real thing is a struct
-#define LPDEVMODEA void*
-// Dummy implementation, always return 1
-// Required for frapsvid.dll 2.8.1, return value does not matter
-static WIN_BOOL WINAPI expEnumDisplaySettingsA(LPCSTR name ,DWORD n,
-    LPDEVMODEA devmode)
-{
-    dbgprintf("EnumDisplaySettingsA (dummy) => 1\n");
     return 1;
 }
 
@@ -5142,7 +5110,6 @@ struct exports exp_user32[]={
     FF(DialogBoxParamA, -1)
     FF(RegisterClipboardFormatA, -1)
     FF(CharNextA, -1)
-    FF(EnumDisplaySettingsA, -1)
 };
 struct exports exp_advapi32[]={
     FF(RegCloseKey, -1)
@@ -5293,47 +5260,73 @@ struct libs libraries[]={
 
 static void ext_stubs(void)
 {
-    volatile int idx = 0xdeadabcd;
-    // make sure gcc does not do eip-relative call or something like that
-    volatile void (*my_printf)(char *, char *) = (void *)0xdeadfbcd;
-    my_printf("Called unk_%s\n", export_names[idx]);
+    // expects:
+    //  ax  position index
+    //  cx  address of printf function
+#if 1
+    __asm__ __volatile__
+	(
+         "push %%edx		\n\t"
+	 "movl $0xdeadbeef, %%eax \n\t"
+	 "movl $0xdeadbeef, %%edx \n\t"
+	 "shl $5, %%eax		\n\t"			// ax * 32
+	 "addl $0xdeadbeef, %%eax \n\t"			// overwrite export_names
+	 "pushl %%eax		\n\t"
+	 "pushl $0xdeadbeef   	\n\t"                   // overwrite called_unk
+	 "call *%%edx		\n\t"                   // printf (via dx)
+	 "addl $8, %%esp	\n\t"
+	 "xorl %%eax, %%eax	\n\t"
+	 "pop %%edx             \n\t"
+	 :
+	 :
+	 : "eax"
+	);
+#else
+    __asm__ __volatile__
+	(
+         "push %%edx		\n\t"
+	 "movl $0, %%eax	\n\t"
+	 "movl $0, %%edx	\n\t"
+	 "shl $5, %%eax		\n\t"			// ax * 32
+	 "addl %0, %%eax	\n\t"
+	 "pushl %%eax		\n\t"
+	 "pushl %1		\n\t"
+	 "call *%%edx		\n\t"                   // printf (via dx)
+	 "addl $8, %%esp	\n\t"
+	 "xorl %%eax, %%eax	\n\t"
+	 "pop %%edx		\n\t"
+	 ::"m"(*export_names), "m"(*called_unk)
+	: "memory", "edx", "eax"
+	);
+#endif
+
 }
 
-#define MAX_STUB_SIZE 0x60
-#define MAX_NUM_STUBS 200
+//static void add_stub(int pos)
+
+extern int unk_exp1;
 static int pos=0;
-static char *extcode = NULL;
+static char extcode[20000];// place for 200 unresolved exports
+static const char* called_unk = "Called unk_%s\n";
 
 static void* add_stub(void)
 {
-    int i;
-    int found = 0;
     // generated code in runtime!
-    char* answ;
-    if (!extcode)
-      extcode = mmap_anon(NULL, MAX_NUM_STUBS * MAX_STUB_SIZE,
-                  PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE, 0);
-    answ = extcode + pos * MAX_STUB_SIZE;
-    if (pos >= MAX_NUM_STUBS) {
-      printf("too many stubs, expect crash\n");
-      return NULL;
-    }
-    memcpy(answ, ext_stubs, MAX_STUB_SIZE);
-    for (i = 0; i < MAX_STUB_SIZE - 3; i++) {
-      int *magic = (int *)(answ + i);
-      if (*magic == 0xdeadabcd) {
-        *magic = pos;
-        found |= 1;
-      }
-      if (*magic == 0xdeadfbcd) {
-        *magic = (intptr_t)printf;
-        found |= 2;
-      }
-    }
-    if (found != 3) {
-      printf("magic code not found in ext_subs, expect crash\n");
-      return NULL;
-    }
+    char* answ = (char*)extcode+pos*0x30;
+#if 0
+    memcpy(answ, &unk_exp1, 0x64);
+    *(int*)(answ+9)=pos;
+    *(int*)(answ+47)-=((int)answ-(int)&unk_exp1);
+#endif
+    memcpy(answ, ext_stubs, 0x2f); // 0x2c is current size
+    //answ[4] = 0xb8; // movl $0, eax  (0xb8 0x00000000)
+    *((int*) (answ + 5)) = pos;
+    //answ[9] = 0xba; // movl $0, edx  (0xba 0x00000000)
+    *((long*) (answ + 10)) = (long)printf;
+    //answ[17] = 0x05; // addl $0, eax  (0x05 0x00000000)
+    *((long*) (answ + 18)) = (long)export_names;
+    //answ[23] = 0x68; // pushl $0  (0x68 0x00000000)
+    *((long*) (answ + 24)) = (long)called_unk;
     pos++;
     return (void*)answ;
 }

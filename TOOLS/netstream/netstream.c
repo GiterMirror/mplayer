@@ -395,7 +395,7 @@ int mp_input_check_interrupt(int time){
     return 0;
 }
 
-// for libdvdread:
+// for libmpdvdkit2:
 #include "get_path.c"
 
 int verbose=0;

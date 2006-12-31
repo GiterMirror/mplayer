@@ -92,7 +92,7 @@ else
 fi
 
 cat > html-chunk.xsl << EOF
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="ISO-8859-1"?>
 <!-- **************************************************
      This file is generated automatically. DO NOT EDIT.
      ************************************************** -->
@@ -107,7 +107,7 @@ EOF
 
 
 cat > html-single.xsl << EOF
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="ISO-8859-1"?>
 <!-- **************************************************
      This file is generated automatically. DO NOT EDIT.
      ************************************************** -->
@@ -148,10 +148,7 @@ fi
 
 for lang in `grep 'SUBDIRS =' Makefile|cut -d= -f2`; do
   cat > $lang/main.xml << EOF
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<!-- **************************************************
-     This file is generated automatically. DO NOT EDIT.
-     ************************************************** -->
+<?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
     "$_dtd"
 [ 

@@ -19,8 +19,7 @@ void gettimeofday(struct timeval* t,void* timezone) {
 #endif
 #ifdef __MINGW32__
 #define MISSING_USLEEP
-#include <windows.h>
-#define sleep(t) Sleep(1000*t);
+#define sleep(t) _sleep(1000*t);
 #endif
 
 #ifdef __BEOS__

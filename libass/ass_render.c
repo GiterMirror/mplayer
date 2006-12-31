@@ -29,49 +29,41 @@
 #include FT_GLYPH_H
 #include FT_SYNTHESIS_H
 
-#include "mputils.h"
+#include "mp_msg.h"
 
 #include "ass.h"
-#include "ass_font.h"
 #include "ass_bitmap.h"
 #include "ass_cache.h"
 #include "ass_utils.h"
 #include "ass_fontconfig.h"
-#include "ass_library.h"
+
+#include "libvo/sub.h" // for utf8_get_char
 
 #define MAX_GLYPHS 1000
 #define MAX_LINES 100
 
+char *get_path(char *);
+
+extern char *font_name;
+#ifdef HAVE_FONTCONFIG
+extern int font_fontconfig;
+#else
+static int font_fontconfig = 0;
+#endif
+
 static int last_render_id = 0;
 
-typedef struct ass_settings_s {
-	int frame_width;
-	int frame_height;
-	double font_size_coeff; // font size multiplier
-	double line_spacing; // additional line spacing (in frame pixels)
-	int top_margin; // height of top margin. Everything except toptitles is shifted down by top_margin.
-	int bottom_margin; // height of bottom margin. (frame_height - top_margin - bottom_margin) is original video height.
-	int left_margin;
-	int right_margin;
-	int use_margins; // 0 - place all subtitles inside original frame
-	                 // 1 - use margins for placing toptitles and subtitles
-	double aspect; // frame aspect ratio, d_width / d_height.
-
-	char* default_font;
-	char* default_family;
-} ass_settings_t;
-
-struct ass_renderer_s {
-	ass_library_t* library;
-	FT_Library ftlibrary;
+struct ass_instance_s {
+	FT_Library library;
 	fc_instance_t* fontconfig_priv;
 	ass_settings_t settings;
 	int render_id;
 	ass_synth_priv_t* synth_priv;
 
 	ass_image_t* images_root; // rendering result is stored here
-	ass_image_t* prev_images_root;
 };
+
+int no_more_font_messages = 0;  // don't print font warnings
 
 typedef enum {EF_NONE = 0, EF_KARAOKE, EF_KARAOKE_KF, EF_KARAOKE_KO} effect_t;
 
@@ -122,7 +114,7 @@ typedef struct render_context_s {
 	ass_event_t* event;
 	ass_style_t* style;
 	
-	ass_font_t* font;
+	FT_Face face;
 	char* font_path;
 	int font_size;
 	
@@ -166,7 +158,7 @@ typedef struct render_context_s {
 
 // frame-global data
 typedef struct frame_context_s {
-	ass_renderer_t* ass_priv;
+	ass_instance_t* ass_priv;
 	int width, height; // screen dimensions
 	int orig_height; // frame height ( = screen height - margins )
 	int orig_width; // frame width ( = screen width - margins )
@@ -177,7 +169,7 @@ typedef struct frame_context_s {
 	double border_scale;
 } frame_context_t;
 
-static ass_renderer_t* ass_renderer;
+static ass_instance_t* ass_instance;
 static ass_settings_t* global_settings;
 static text_info_t text_info;
 static render_context_t render_context;
@@ -203,7 +195,7 @@ static void ass_lazy_track_init(void)
 	if (track->PlayResX && track->PlayResY)
 		return;
 	if (!track->PlayResX && !track->PlayResY) {
-		mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_NeitherPlayResXNorPlayResYDefined);
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "Neither PlayResX nor PlayResY defined. Assuming 384x288.  \n");
 		track->PlayResX = 384;
 		track->PlayResY = 288;
 	} else {
@@ -211,63 +203,88 @@ static void ass_lazy_track_init(void)
 			frame_context.orig_height / frame_context.width;
 		if (!track->PlayResY) {
 			track->PlayResY = track->PlayResX / orig_aspect + .5;
-			mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_PlayResYUndefinedSettingY, track->PlayResY);
+			mp_msg(MSGT_GLOBAL, MSGL_WARN, "PlayResY undefined, setting %d  \n", track->PlayResY);
 		} else if (!track->PlayResX) {
 			track->PlayResX = track->PlayResY * orig_aspect + .5;
-			mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_PlayResXUndefinedSettingX, track->PlayResX);
+			mp_msg(MSGT_GLOBAL, MSGL_WARN, "PlayResX undefined, setting %d  \n", track->PlayResX);
 		}
 	}
 }
 
-ass_renderer_t* ass_renderer_init(ass_library_t* library)
+ass_instance_t* ass_init(void)
 {
+	char* family = 0;
+	char* path = 0;
+	char* fonts_path = 0;
 	int error;
+	fc_instance_t* fc_priv;
 	FT_Library ft;
-	ass_renderer_t* priv = 0;
+	ass_instance_t* priv = 0;
 	
 	memset(&render_context, 0, sizeof(render_context));
 	memset(&frame_context, 0, sizeof(frame_context));
 	memset(&text_info, 0, sizeof(text_info));
 
+	if (font_fontconfig && font_name)
+		family = strdup(font_name);
+	
+	if (!font_fontconfig && font_name)
+		path = strdup(font_name);
+	else
+		path = get_path("subfont.ttf");
+
+	fonts_path = get_path("fonts");
+	
+	fc_priv = fontconfig_init(fonts_path, family, path);
+
+	free(fonts_path);
+	if (path) free(path);
+	if (family) free(family);
+
+	if (!fc_priv)
+		goto ass_init_exit;
+	
 	error = FT_Init_FreeType( &ft );
 	if ( error ) { 
-		mp_msg(MSGT_ASS, MSGL_FATAL, MSGTR_LIBASS_FT_Init_FreeTypeFailed);
+		mp_msg(MSGT_GLOBAL, MSGL_FATAL, "FT_Init_FreeType failed\n");
+		fontconfig_done(fc_priv);
 		goto ass_init_exit;
 	}
 
-	priv = calloc(1, sizeof(ass_renderer_t));
+	priv = calloc(1, sizeof(ass_instance_t));
 	if (!priv) {
 		FT_Done_FreeType(ft);
+		fontconfig_done(fc_priv);
 		goto ass_init_exit;
 	}
 
 	priv->synth_priv = ass_synth_init();
 
-	priv->library = library;
-	priv->ftlibrary = ft;
+	priv->library = ft;
+	priv->fontconfig_priv = fc_priv;
 	// images_root and related stuff is zero-filled in calloc
 	
-	ass_font_cache_init();
+	ass_face_cache_init();
 	ass_glyph_cache_init();
 
 	text_info.glyphs = calloc(MAX_GLYPHS, sizeof(glyph_info_t));
 	
 ass_init_exit:
-	if (priv) mp_msg(MSGT_ASS, MSGL_INFO, MSGTR_LIBASS_Init);
-	else mp_msg(MSGT_ASS, MSGL_ERR, MSGTR_LIBASS_InitFailed);
+	if (priv) mp_msg(MSGT_GLOBAL, MSGL_INFO, "[ass] Init\n");
+	else mp_msg(MSGT_GLOBAL, MSGL_ERR, "[ass] Init failed\n");
 
 	return priv;
 }
 
-void ass_renderer_done(ass_renderer_t* priv)
+void ass_done(ass_instance_t* priv)
 {
-	ass_font_cache_done();
+	ass_face_cache_done();
 	ass_glyph_cache_done();
 	if (render_context.stroker) {
 		FT_Stroker_Done(render_context.stroker);
 		render_context.stroker = 0;
 	}
-	if (priv && priv->ftlibrary) FT_Done_FreeType(priv->ftlibrary);
+	if (priv && priv->library) FT_Done_FreeType(priv->library);
 	if (priv && priv->fontconfig_priv) fontconfig_done(priv->fontconfig_priv);
 	if (priv && priv->synth_priv) ass_synth_done(priv->synth_priv);
 	if (priv) free(priv);
@@ -331,22 +348,22 @@ static ass_image_t** render_glyph(bitmap_t* bm, int dst_x, int dst_y, uint32_t c
 	
 	tmp = dst_x - clip_x0;
 	if (tmp < 0) {
-		mp_msg(MSGT_ASS, MSGL_DBG2, "clip left\n");
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "clip left\n");
 		b_x0 = - tmp;
 	}
 	tmp = dst_y - clip_y0;
 	if (tmp < 0) {
-		mp_msg(MSGT_ASS, MSGL_DBG2, "clip top\n");
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "clip top\n");
 		b_y0 = - tmp;
 	}
 	tmp = clip_x1 - dst_x - bm->w;
 	if (tmp < 0) {
-		mp_msg(MSGT_ASS, MSGL_DBG2, "clip right\n");
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "clip right\n");
 		b_x1 = bm->w + tmp;
 	}
 	tmp = clip_y1 - dst_y - bm->h;
 	if (tmp < 0) {
-		mp_msg(MSGT_ASS, MSGL_DBG2, "clip bottom\n");
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "clip bottom\n");
 		b_y1 = bm->h + tmp;
 	}
 	
@@ -373,7 +390,7 @@ static ass_image_t** render_glyph(bitmap_t* bm, int dst_x, int dst_y, uint32_t c
 }
 
 /**
- * \brief Render text_info_t struct into ass_image_t list
+ * \brief Render text_info_t struct into ass_images_t list
  * Rasterize glyphs and put them in glyph cache.
  */
 static ass_image_t* render_text(text_info_t* text_info, int dst_x, int dst_y)
@@ -389,7 +406,7 @@ static ass_image_t* render_text(text_info_t* text_info, int dst_x, int dst_y)
 		if (text_info->glyphs[i].glyph) {
 			if ((text_info->glyphs[i].symbol == '\n') || (text_info->glyphs[i].symbol == 0))
 				continue;
-			error = glyph_to_bitmap(ass_renderer->synth_priv,
+			error = glyph_to_bitmap(ass_instance->synth_priv,
 					text_info->glyphs[i].glyph, text_info->glyphs[i].outline_glyph,
 					&text_info->glyphs[i].bm, &text_info->glyphs[i].bm_o,
 					&text_info->glyphs[i].bm_s, text_info->glyphs[i].be);
@@ -489,24 +506,43 @@ static int y2scr_sub(int y) {
 		return y * frame_context.orig_height / frame_context.track->PlayResY + global_settings->top_margin;
 }
 
+static void vmirror_bbox(FT_BBox* orig, FT_BBox* pbbox) {
+	pbbox->xMin = orig->xMin;
+	pbbox->xMax = orig->xMax;
+	pbbox->yMin = - orig->yMax;
+	pbbox->yMax = - orig->yMin;
+}
+
 static void compute_string_bbox( text_info_t* info, FT_BBox *abbox ) {
 	FT_BBox bbox;
-	int i;
+	int n;
 	
-	if (text_info.length > 0) {
-		bbox.xMin = 32000;
-		bbox.xMax = -32000;
-		bbox.yMin = - (text_info.lines[0].asc >> 6) + text_info.glyphs[0].pos.y;
-		bbox.yMax = ((text_info.height - text_info.lines[0].asc) >> 6) + text_info.glyphs[0].pos.y;
-
-		for (i = 0; i < text_info.length; ++i) {
-			int s = text_info.glyphs[i].pos.x;
-			int e = s + (text_info.glyphs[i].advance.x >> 6);
-			bbox.xMin = FFMIN(bbox.xMin, s);
-			bbox.xMax = FFMAX(bbox.xMax, e);
-		}
-	} else
-		bbox.xMin = bbox.xMax = bbox.yMin = bbox.yMax = 0;
+	/* initialize string bbox to "empty" values */
+	bbox.xMin = bbox.yMin = 32000;
+	bbox.xMax = bbox.yMax = -32000;
+	
+	/* for each glyph image, compute its bounding box, */
+	/* translate it, and grow the string bbox */
+	for ( n = 0; n < info->length; n++ ) {
+		FT_BBox glyph_bbox;
+		vmirror_bbox( &(info->glyphs[n].bbox), &glyph_bbox );
+		glyph_bbox.xMin += info->glyphs[n].pos.x;
+		glyph_bbox.xMax += info->glyphs[n].pos.x;
+		glyph_bbox.yMin += info->glyphs[n].pos.y;
+		glyph_bbox.yMax += info->glyphs[n].pos.y;
+		if ( glyph_bbox.xMin < bbox.xMin ) bbox.xMin = glyph_bbox.xMin;
+		if ( glyph_bbox.yMin < bbox.yMin ) bbox.yMin = glyph_bbox.yMin;
+		if ( glyph_bbox.xMax > bbox.xMax ) bbox.xMax = glyph_bbox.xMax;
+		if ( glyph_bbox.yMax > bbox.yMax ) bbox.yMax = glyph_bbox.yMax;
+	}
+	
+	/* check that we really grew the string bbox */
+	if ( bbox.xMin > bbox.xMax ) {
+		bbox.xMin = 0;
+		bbox.yMin = 0;
+		bbox.xMax = 0;
+		bbox.yMax = 0;
+	}
 
 	/* return string bbox */
 	*abbox = bbox;
@@ -535,8 +571,8 @@ static void change_font_size(int sz)
 		size = 1;
 	else if (size > frame_context.height * 2)
 		size = frame_context.height * 2;
-
-	ass_font_set_size(render_context.font, size);
+	
+	FT_Set_Pixel_Sizes(render_context.face, 0, size);
 
 	render_context.font_size = sz;
 }
@@ -546,9 +582,10 @@ static void change_font_size(int sz)
  */
 static void update_font(void)
 {
+	int error;
 	unsigned val;
-	ass_renderer_t* priv = frame_context.ass_priv;
-	ass_font_desc_t desc;
+	ass_instance_t* priv = frame_context.ass_priv;
+	face_desc_t desc;
 	desc.family = strdup(render_context.family);
 
 	val = render_context.bold;
@@ -562,9 +599,12 @@ static void update_font(void)
 	else if (val == 1) val = 110; //italic
 	desc.italic = val;
 
-	render_context.font = ass_font_new(priv->library, priv->ftlibrary, priv->fontconfig_priv, &desc);
+	error = ass_new_face(priv->library, priv->fontconfig_priv, &desc, &(render_context.face));
+	if (error) {
+		render_context.face = 0;
+	}
 	
-	if (render_context.font)
+	if (render_context.face)
 		change_font_size(render_context.font_size);
 }
 
@@ -575,7 +615,7 @@ static void update_font(void)
 static void change_border(double border)
 {
 	int b;
-	if (!render_context.font) return;
+	if (!render_context.face) return;
 
 	if (border < 0) {
 		if (render_context.style->BorderStyle == 1) {
@@ -593,12 +633,12 @@ static void change_border(double border)
 		if (!render_context.stroker) {
 			int error;
 #if (FREETYPE_MAJOR > 2) || ((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR > 1))
-			error = FT_Stroker_New( ass_renderer->ftlibrary, &render_context.stroker );
+			error = FT_Stroker_New( ass_instance->library, &render_context.stroker );
 #else // < 2.2
-			error = FT_Stroker_New( render_context.font->faces[0]->memory, &render_context.stroker );
+			error = FT_Stroker_New( render_context.face->memory, &render_context.stroker );
 #endif
 			if (error) {
-				mp_msg(MSGT_ASS, MSGL_V, "failed to get stroker\n");
+				mp_msg(MSGT_GLOBAL, MSGL_V, "failed to get stroker\n");
 				render_context.stroker = 0;
 			}
 		}
@@ -719,7 +759,7 @@ static char* parse_tag(char* p, double pwr) {
 			val = render_context.font_size * ( 1 - pwr ) + val * pwr;
 		else
 			val = render_context.style->FontSize;
-		if (render_context.font)
+		if (render_context.face)
 			change_font_size(val);
 	} else if (mystrcmp(&p, "bord")) {
 		double val;
@@ -746,12 +786,12 @@ static char* parse_tag(char* p, double pwr) {
 			t1 = strtoll(p, &p, 10);
 			skip(',');
 			t2 = strtoll(p, &p, 10);
-			mp_msg(MSGT_ASS, MSGL_DBG2, "movement6: (%d, %d) -> (%d, %d), (%" PRId64 " .. %" PRId64 ")\n", 
+			mp_msg(MSGT_GLOBAL, MSGL_DBG2, "movement6: (%d, %d) -> (%d, %d), (%" PRId64 " .. %" PRId64 ")\n", 
 				x1, y1, x2, y2, (int64_t)t1, (int64_t)t2);
 		} else {
 			t1 = 0;
 			t2 = render_context.event->Duration;
-			mp_msg(MSGT_ASS, MSGL_DBG2, "movement: (%d, %d) -> (%d, %d)\n", x1, y1, x2, y2);
+			mp_msg(MSGT_GLOBAL, MSGL_DBG2, "movement: (%d, %d) -> (%d, %d)\n", x1, y1, x2, y2);
 		}
 		skip(')');
 		delta_t = t2 - t1;
@@ -770,12 +810,12 @@ static char* parse_tag(char* p, double pwr) {
 	} else if (mystrcmp(&p, "frx") || mystrcmp(&p, "fry")) {
 		double val;
 		mystrtod(&p, &val);
-		mp_msg(MSGT_ASS, MSGL_V, "frx/fry unimplemented \n");
+		mp_msg(MSGT_GLOBAL, MSGL_V, "frx/fry unimplemented \n");
 	} else if (mystrcmp(&p, "frz") || mystrcmp(&p, "fr")) {
 		double angle;
 		double val;
 		mystrtod(&p, &val);
-		mp_msg(MSGT_ASS, MSGL_DBG2, "setting rotation to %.2f\n", val * pwr);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "setting rotation to %.2f\n", val * pwr);
 		angle = M_PI * val / 180;
 		render_context.rotation = angle * pwr;
 	} else if (mystrcmp(&p, "fn")) {
@@ -806,11 +846,11 @@ static char* parse_tag(char* p, double pwr) {
 	} else if (mystrcmp(&p, "an")) {
 		int val = strtol(p, &p, 10);
 		int v = (val - 1) / 3; // 0, 1 or 2 for vertical alignment
-		mp_msg(MSGT_ASS, MSGL_DBG2, "an %d\n", val);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "an %d\n", val);
 		if (v != 0) v = 3 - v;
 		val = ((val - 1) % 3) + 1; // horizontal alignment
 		val += v*4;
-		mp_msg(MSGT_ASS, MSGL_DBG2, "align %d\n", val);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "align %d\n", val);
 		render_context.alignment = val;
 	} else if (mystrcmp(&p, "a")) {
 		int val = strtol(p, &p, 10);
@@ -822,7 +862,7 @@ static char* parse_tag(char* p, double pwr) {
 		skip(',');
 		v2 = strtol(p, &p, 10);
 		skip(')');
-		mp_msg(MSGT_ASS, MSGL_DBG2, "pos(%d, %d)\n", v1, v2);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "pos(%d, %d)\n", v1, v2);
 		render_context.evt_type = EVENT_POSITIONED;
 		render_context.detect_collisions = 0;
 		render_context.pos_x = v1;
@@ -868,7 +908,7 @@ static char* parse_tag(char* p, double pwr) {
 		skip(',');
 		v2 = strtol(p, &p, 10);
 		skip(')');
-		mp_msg(MSGT_ASS, MSGL_DBG2, "org(%d, %d)\n", v1, v2);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "org(%d, %d)\n", v1, v2);
 		//				render_context.evt_type = EVENT_POSITIONED;
 		render_context.org_x = v1;
 		render_context.org_y = v2;
@@ -899,14 +939,12 @@ static char* parse_tag(char* p, double pwr) {
 		t1 = v1;
 		t2 = v2;
 		delta_t = v2 - v1;
-		if (v3 < 0.)
-			v3 = 0.;
 		t = frame_context.time - render_context.event->Start; // FIXME: move to render_context
 		if (t < t1)
 			k = 0.;
 		else if (t > t2)
 			k = 1.;
-		else k = pow(((double)(t - t1)) / delta_t, v3);
+		else k = ((double)(t - t1)) / delta_t;
 		while (*p == '\\')
 			p = parse_tag(p, k); // maybe k*pwr ? no, specs forbid nested \t's 
 		skip_all(')'); // FIXME: better skip(')'), but much more tags support required
@@ -937,7 +975,7 @@ static char* parse_tag(char* p, double pwr) {
 		uint32_t val;
 		if (!strtocolor(&p, &val))
 			val = render_context.style->PrimaryColour;
-		mp_msg(MSGT_ASS, MSGL_DBG2, "color: %X\n", val);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "color: %X\n", val);
 		change_color(&render_context.c[0], val, pwr);
 	} else if ((*p >= '1') && (*p <= '4') && (++p) && (mystrcmp(&p, "c") || mystrcmp(&p, "a"))) {
 		char n = *(p-2);
@@ -956,9 +994,9 @@ static char* parse_tag(char* p, double pwr) {
 		switch (cmd) {
 			case 'c': change_color(render_context.c + cidx, val, pwr); break;
 			case 'a': change_alpha(render_context.c + cidx, val >> 24, pwr); break;
-			default: mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_BadCommand, n, cmd); break;
+			default: mp_msg(MSGT_GLOBAL, MSGL_WARN, "Bad command: %c%c\n", n, cmd); break;
 		}
-		mp_msg(MSGT_ASS, MSGL_DBG2, "single c/a at %f: %c%c = %X   \n", pwr, n, cmd, render_context.c[cidx]);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "single c/a at %f: %c%c = %X   \n", pwr, n, cmd, render_context.c[cidx]);
 	} else if (mystrcmp(&p, "r")) {
 		reset_render_context();
 	} else if (mystrcmp(&p, "be")) {
@@ -1035,7 +1073,7 @@ static unsigned get_next_char(char** str)
 				} else
 					break;
 			} else if (*p != '\\')
-				mp_msg(MSGT_ASS, MSGL_V, "Unable to parse: \"%s\" \n", p);
+				mp_msg(MSGT_GLOBAL, MSGL_V, "Unable to parse: \"%s\" \n", p);
 			if (*p == 0)
 				break;
 		}
@@ -1077,7 +1115,7 @@ static void apply_transition_effects(ass_event_t* event)
 	if (strncmp(event->Effect, "Banner;", 7) == 0) {
 		int delay;
 		if (cnt < 1) {
-			mp_msg(MSGT_ASS, MSGL_V, "Error parsing effect: %s \n", event->Effect);
+			mp_msg(MSGT_GLOBAL, MSGL_V, "Error parsing effect: %s \n", event->Effect);
 			return;
 		}
 		if (cnt >= 2 && v[1] == 0) // right-to-left
@@ -1097,7 +1135,7 @@ static void apply_transition_effects(ass_event_t* event)
 	} else if (strncmp(event->Effect, "Scroll down;", 12) == 0) {
 		render_context.scroll_direction = SCROLL_TB;
 	} else {
-		mp_msg(MSGT_ASS, MSGL_V, "Unknown transition effect: %s \n", event->Effect);
+		mp_msg(MSGT_GLOBAL, MSGL_V, "Unknown transition effect: %s \n", event->Effect);
 		return;
 	}
 	// parse scroll up/down parameters
@@ -1105,7 +1143,7 @@ static void apply_transition_effects(ass_event_t* event)
 		int delay;
 		int y0, y1;
 		if (cnt < 3) {
-			mp_msg(MSGT_ASS, MSGL_V, "Error parsing effect: %s \n", event->Effect);
+			mp_msg(MSGT_GLOBAL, MSGL_V, "Error parsing effect: %s \n", event->Effect);
 			return;
 		}
 		delay = v[2];
@@ -1197,15 +1235,15 @@ static void free_render_context(void)
  * \param advance advance vector of the extracted glyph
  * \return 0 on success
  */
-static int get_glyph(int symbol, glyph_info_t* info, FT_Vector* advance)
+static int get_glyph(int index, int symbol, glyph_info_t* info, FT_Vector* advance)
 {
 	int error;
 	glyph_hash_val_t* val;
 	glyph_hash_key_t* key = &(info->hash_key);
 	
-	key->font = render_context.font;
+	key->face = render_context.face;
 	key->size = render_context.font_size;
-	key->ch = symbol;
+	key->index = index;
 	key->outline = (render_context.border * 0xFFFF); // convert to 16.16
 	key->scale_x = (render_context.scale_x * 0xFFFF);
 	key->scale_y = (render_context.scale_y * 0xFFFF);
@@ -1231,11 +1269,28 @@ static int get_glyph(int symbol, glyph_info_t* info, FT_Vector* advance)
 	}
 
 	// not found, get a new outline glyph from face
-//	mp_msg(MSGT_ASS, MSGL_INFO, "miss, index = %d, symbol = %c, adv = (%d, %d)\n", index, symbol, advance->x, advance->y);
-
-	info->glyph = ass_font_get_glyph(frame_context.ass_priv->fontconfig_priv, render_context.font, symbol);
-	if (!info->glyph)
-		return 0;
+//	mp_msg(MSGT_GLOBAL, MSGL_INFO, "miss, index = %d, symbol = %c, adv = (%d, %d)\n", index, symbol, advance->x, advance->y);
+	
+	error = FT_Load_Glyph(render_context.face, index, FT_LOAD_NO_BITMAP );
+	if (error) {
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "Error loading glyph\n");
+		return error;
+	}
+	
+#if (FREETYPE_MAJOR > 2) || \
+    ((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR >= 2)) || \
+    ((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 1) && (FREETYPE_PATCH >= 10))
+// FreeType >= 2.1.10 required
+	if (!(render_context.face->style_flags & FT_STYLE_FLAG_ITALIC) && 
+			((render_context.italic == 1) || (render_context.italic > 55))) {
+		FT_GlyphSlot_Oblique(render_context.face->glyph);
+	}
+#endif
+	error = FT_Get_Glyph(render_context.face->glyph, &(info->glyph));
+	if (error) {
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "Error getting glyph\n");
+		return error;
+	}
 
 	info->advance.x = info->glyph->advance.x >> 10;
 	info->advance.y = info->glyph->advance.y >> 10;
@@ -1244,7 +1299,7 @@ static int get_glyph(int symbol, glyph_info_t* info, FT_Vector* advance)
 		info->outline_glyph = info->glyph;
 		error = FT_Glyph_Stroke( &(info->outline_glyph), render_context.stroker, 0 ); // don't destroy original
 		if (error) {
-			mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_FT_Glyph_Stroke_Error, error);
+			mp_msg(MSGT_GLOBAL, MSGL_WARN, "FT_Glyph_Stroke error %d \n", error);
 		}
 	} else {
 		info->outline_glyph = 0;
@@ -1321,7 +1376,7 @@ static void wrap_lines_smart(int max_text_width)
 		if (cur->symbol == '\n') {
 			break_type = 2;
 			break_at = i;
-			mp_msg(MSGT_ASS, MSGL_DBG2, "forced line break at %d\n", break_at);
+			mp_msg(MSGT_GLOBAL, MSGL_DBG2, "forced line break at %d\n", break_at);
 		}
 		
 		if (len >= max_text_width) {
@@ -1331,8 +1386,8 @@ static void wrap_lines_smart(int max_text_width)
 				break_at = i - 1;
 			if (break_at == -1)
 				break_at = 0;
-			mp_msg(MSGT_ASS, MSGL_DBG2, "overfill at %d\n", i);
-			mp_msg(MSGT_ASS, MSGL_DBG2, "line break at %d\n", break_at);
+			mp_msg(MSGT_GLOBAL, MSGL_DBG2, "overfill at %d\n", i);
+			mp_msg(MSGT_GLOBAL, MSGL_DBG2, "line break at %d\n", break_at);
 		}
 
 		if (break_at != -1) {
@@ -1411,7 +1466,7 @@ static void wrap_lines_smart(int max_text_width)
 			cur_line ++;
 			pen_shift_x = - cur->pos.x;
 			pen_shift_y += (height >> 6) + global_settings->line_spacing;
-			mp_msg(MSGT_ASS, MSGL_DBG2, "shifting from %d to %d by (%d, %d)\n", i, text_info.length - 1, pen_shift_x, pen_shift_y);
+			mp_msg(MSGT_GLOBAL, MSGL_DBG2, "shifting from %d to %d by (%d, %d)\n", i, text_info.length - 1, pen_shift_x, pen_shift_y);
 		}
 		cur->pos.x += pen_shift_x;
 		cur->pos.y += pen_shift_y;
@@ -1455,12 +1510,8 @@ static void process_karaoke_effects(void)
 				tm_start = timing + s1->effect_skip_timing;
 				tm_end = tm_start + s1->effect_timing;
 				timing = tm_end;
-				x_start = 1000000;
-				x_end = -1000000;
-				for (cur2 = s1; cur2 <= e1; ++cur2) {
-					x_start = FFMIN(x_start, cur2->bbox.xMin + cur2->pos.x);
-					x_end = FFMAX(x_end, cur2->bbox.xMax + cur2->pos.x);
-				}
+				x_start = s1->bbox.xMin + s1->pos.x;
+				x_end = e1->bbox.xMax + e1->pos.x;
 
 				dt = (tm_current - tm_start);
 				if ((s1->effect_type == EF_KARAOKE) || (s1->effect_type == EF_KARAOKE_KO)) {
@@ -1472,7 +1523,7 @@ static void process_karaoke_effects(void)
 					dt /= (tm_end - tm_start);
 					x = x_start + (x_end - x_start) * dt;
 				} else {
-					mp_msg(MSGT_ASS, MSGL_ERR, MSGTR_LIBASS_UnknownEffectType_InternalError);
+					mp_msg(MSGT_GLOBAL, MSGL_ERR, "Unknown effect type (internal error)  \n");
 					continue;
 				}
 
@@ -1483,6 +1534,26 @@ static void process_karaoke_effects(void)
 			}
 		}
 	}
+}
+
+static int get_face_ascender(FT_Face face)
+{
+	int v = face->size->metrics.ascender;
+	int v2 = FT_MulFix(face->bbox.yMax, face->size->metrics.y_scale);
+	if (v > v2 * 0.9)
+		return v;
+	else
+		return v2;
+}
+
+static int get_face_descender(FT_Face face)
+{
+	int v = - face->size->metrics.descender;
+	int v2 = - FT_MulFix(face->bbox.yMin, face->size->metrics.y_scale);
+	if (v > v2 * 0.9)
+		return v;
+	else
+		return v2;
 }
 
 /**
@@ -1529,6 +1600,8 @@ static void get_base_point(FT_BBox bbox, int alignment, int* bx, int* by)
 static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 {
 	char* p;
+	FT_UInt glyph_index; 
+	FT_Bool use_kerning; 
 	FT_UInt previous; 
 	FT_UInt num_glyphs;
 	FT_Vector pen;
@@ -1543,11 +1616,11 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 	int device_x = 0, device_y = 0;
 
 	if (event->Style >= frame_context.track->n_styles) {
-		mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_NoStyleFound);
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "No style found!\n");
 		return 1;
 	}
 	if (!event->Text) {
-		mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_EmptyEvent);
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, "Empty event!\n");
 		return 1;
 	}
 
@@ -1566,7 +1639,7 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 		code = get_next_char(&p);
 		
 		// face could have been changed in get_next_char
-		if (!render_context.font) {
+		if (!render_context.face) {
 			free_render_context();
 			return 1;
 		}
@@ -1574,15 +1647,19 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 		if (code == 0)
 			break;
 
+		use_kerning = FT_HAS_KERNING(render_context.face);
+
 		if (text_info.length >= MAX_GLYPHS) {
-			mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_MAX_GLYPHS_Reached, 
+			mp_msg(MSGT_GLOBAL, MSGL_WARN, "\nMAX_GLYPHS reached: event %d, start = %llu, duration = %llu\n Text = %s\n", 
 					(int)(event - frame_context.track->events), event->Start, event->Duration, event->Text);
 			break;
 		}
 
-		if ( previous && code ) {
+		glyph_index = FT_Get_Char_Index( render_context.face, code);
+
+		if ( use_kerning && previous && glyph_index ) {
 			FT_Vector delta;
-			delta = ass_font_get_kerning(render_context.font, previous, code);
+			FT_Get_Kerning( render_context.face, previous, glyph_index, FT_KERNING_DEFAULT, &delta );
 			pen.x += delta.x * render_context.scale_x;
 			pen.y += delta.y * render_context.scale_y;
 		}
@@ -1590,17 +1667,20 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 		shift.x = pen.x & 63;
 		shift.y = pen.y & 63;
 
-		{
+		if ((render_context.scale_x != 1.) || (render_context.scale_y != 1.) ||
+				(frame_context.font_scale_x != 1.)) {
 			FT_Matrix matrix;
 			matrix.xx = (FT_Fixed)( render_context.scale_x * frame_context.font_scale_x * 0x10000L );
 			matrix.xy = (FT_Fixed)( 0 * 0x10000L );
 			matrix.yx = (FT_Fixed)( 0 * 0x10000L );
 			matrix.yy = (FT_Fixed)( render_context.scale_y * 0x10000L );
 
-			ass_font_set_transform(render_context.font, &matrix, &shift );
+			FT_Set_Transform( render_context.face, &matrix, &shift );
+		} else {
+			FT_Set_Transform(render_context.face, 0, &shift);
 		}
 		
-		error = get_glyph(code, text_info.glyphs + text_info.length, &shift);
+		error = get_glyph(glyph_index, code, text_info.glyphs + text_info.length, &shift);
 
 		if (error) {
 			continue;
@@ -1618,8 +1698,9 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 			FT_Glyph_Get_CBox( text_info.glyphs[text_info.length].glyph, FT_GLYPH_BBOX_PIXELS, &(text_info.glyphs[text_info.length].bbox) );
 		}
 
-		previous = code;
-
+		
+		previous = glyph_index;
+		
 		text_info.glyphs[text_info.length].symbol = code;
 		text_info.glyphs[text_info.length].linebreak = 0;
 		for (i = 0; i < 4; ++i) {
@@ -1630,12 +1711,11 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 		text_info.glyphs[text_info.length].effect_type = render_context.effect_type;
 		text_info.glyphs[text_info.length].effect_timing = render_context.effect_timing;
 		text_info.glyphs[text_info.length].effect_skip_timing = render_context.effect_skip_timing;
+		text_info.glyphs[text_info.length].asc = get_face_ascender(render_context.face);
+		text_info.glyphs[text_info.length].desc = get_face_descender(render_context.face);
 		text_info.glyphs[text_info.length].be = render_context.be;
 		text_info.glyphs[text_info.length].shadow = render_context.shadow;
 		text_info.glyphs[text_info.length].frz = render_context.rotation;
-		ass_font_get_asc_desc(render_context.font, code,
-				      &text_info.glyphs[text_info.length].asc,
-				      &text_info.glyphs[text_info.length].desc);
 
 		text_info.length++;
 
@@ -1704,6 +1784,8 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 	
 	// determing text bounding box
 	compute_string_bbox(&text_info, &bbox);
+	bbox.yMin = - (text_info.lines[0].asc >> 6);
+	bbox.yMax = (text_info.height - text_info.lines[0].asc) >> 6;
 	
 	// determine device coordinates for text
 	
@@ -1729,7 +1811,7 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 		} else { // subtitle
 			int scr_y;
 			if (valign != VALIGN_SUB)
-				mp_msg(MSGT_ASS, MSGL_V, "Invalid valign, supposing 0 (subtitle)\n");
+				mp_msg(MSGT_GLOBAL, MSGL_V, "Invalid valign, supposing 0 (subtitle)\n");
 			scr_y = y2scr_sub(frame_context.track->PlayResY - MarginV);
 			device_y = scr_y;
 			device_y -= (text_info.height >> 6);
@@ -1746,7 +1828,7 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 	if (render_context.evt_type == EVENT_POSITIONED) {
 		int base_x = 0;
 		int base_y = 0;
-		mp_msg(MSGT_ASS, MSGL_DBG2, "positioned event at %d, %d\n", render_context.pos_x, render_context.pos_y);
+		mp_msg(MSGT_GLOBAL, MSGL_DBG2, "positioned event at %d, %d\n", render_context.pos_x, render_context.pos_y);
 		get_base_point(bbox, alignment, &base_x, &base_y);
 		device_x = x2scr(render_context.pos_x) - base_x;
 		device_y = y2scr(render_context.pos_y) - base_y;
@@ -1839,96 +1921,27 @@ static int ass_render_event(ass_event_t* event, event_images_t* event_images)
 	return 0;
 }
 
-/**
- * \brief deallocate image list
- * \param img list pointer
- */
-void ass_free_images(ass_image_t* img)
+void ass_configure(ass_instance_t* priv, const ass_settings_t* config)
 {
-	while (img) {
-		ass_image_t* next = img->next;
-		free(img);
-		img = next;
+	if (memcmp(&priv->settings, config, sizeof(ass_settings_t)) != 0) {
+		mp_msg(MSGT_GLOBAL, MSGL_V, "ass_configure: %d x %d; margins: l: %d, r: %d, t: %d, b: %d  \n",
+				config->frame_width, config->frame_height,
+				config->left_margin, config->right_margin, config->top_margin, config->bottom_margin);
+
+		priv->render_id = ++last_render_id;
+		memcpy(&priv->settings, config, sizeof(ass_settings_t));
+		ass_glyph_cache_reset();
 	}
-}
-
-static void ass_reconfigure(ass_renderer_t* priv)
-{
-	priv->render_id = ++last_render_id;
-	ass_glyph_cache_reset();
-	ass_free_images(priv->prev_images_root);
-	priv->prev_images_root = 0;
-}
-
-void ass_set_frame_size(ass_renderer_t* priv, int w, int h)
-{
-	if (priv->settings.frame_width != w || priv->settings.frame_height != h) {
-		priv->settings.frame_width = w;
-		priv->settings.frame_height = h;
-		if (priv->settings.aspect == 0.)
-			priv->settings.aspect = ((double)w) / h;
-		ass_reconfigure(priv);
-	}
-}
-
-void ass_set_margins(ass_renderer_t* priv, int t, int b, int l, int r)
-{
-	if (priv->settings.left_margin != l ||
-	    priv->settings.right_margin != r ||
-	    priv->settings.top_margin != t ||
-	    priv->settings.bottom_margin != b) {
-		priv->settings.left_margin = l;
-		priv->settings.right_margin = r;
-		priv->settings.top_margin = t;
-		priv->settings.bottom_margin = b;
-		ass_reconfigure(priv);
-	}
-}
-
-void ass_set_use_margins(ass_renderer_t* priv, int use)
-{
-	priv->settings.use_margins = use;
-}
-
-void ass_set_aspect_ratio(ass_renderer_t* priv, double ar)
-{
-	if (priv->settings.aspect != ar) {
-		priv->settings.aspect = ar;
-		ass_reconfigure(priv);
-	}
-}
-
-void ass_set_font_scale(ass_renderer_t* priv, double font_scale)
-{
-	if (priv->settings.font_size_coeff != font_scale) {
-		priv->settings.font_size_coeff = font_scale;
-		ass_reconfigure(priv);
-	}
-}
-
-int ass_set_fonts(ass_renderer_t* priv, const char* default_font, const char* default_family)
-{
-	if (priv->settings.default_font)
-		free(priv->settings.default_font);
-	if (priv->settings.default_family)
-		free(priv->settings.default_family);
-
-	priv->settings.default_font = default_font ? strdup(default_font) : 0;
-	priv->settings.default_family = default_family ? strdup(default_family) : 0;
-
-	if (priv->fontconfig_priv)
-		fontconfig_done(priv->fontconfig_priv);
-	priv->fontconfig_priv = fontconfig_init(priv->library, priv->ftlibrary, default_family, default_font);
-
-	return !!priv->fontconfig_priv;
 }
 
 /**
  * \brief Start a new frame
  */
-static int ass_start_frame(ass_renderer_t *priv, ass_track_t* track, long long now)
+static int ass_start_frame(ass_instance_t *priv, ass_track_t* track, long long now)
 {
-	ass_renderer = priv;
+	ass_image_t* img;
+
+	ass_instance = priv;
 	global_settings = &priv->settings;
 
 	if (!priv->settings.frame_width && !priv->settings.frame_height)
@@ -1948,12 +1961,17 @@ static int ass_start_frame(ass_renderer_t *priv, ass_track_t* track, long long n
 	                           frame_context.orig_height / frame_context.track->PlayResY;
 	frame_context.border_scale = ((double)frame_context.orig_height) / frame_context.track->PlayResY;
 
-	if (frame_context.orig_width * track->PlayResY == frame_context.orig_height * track->PlayResX)
+	if (frame_context.width * track->PlayResY == frame_context.height * track->PlayResX)
 		frame_context.font_scale_x = 1.;
 	else
 		frame_context.font_scale_x = ((double)(frame_context.orig_width * track->PlayResY)) / (frame_context.orig_height * track->PlayResX);
 
-	priv->prev_images_root = priv->images_root;
+	img = priv->images_root;
+	while (img) {
+		ass_image_t* next = img->next;
+		free(img);
+		img = next;
+	}
 	priv->images_root = 0;
 
 	return 0;
@@ -1985,9 +2003,9 @@ static render_priv_t* get_render_priv(ass_event_t* event)
 	if (!event->render_priv)
 		event->render_priv = calloc(1, sizeof(render_priv_t));
 	// FIXME: check render_id
-	if (ass_renderer->render_id != event->render_priv->render_id) {
+	if (ass_instance->render_id != event->render_priv->render_id) {
 		memset(event->render_priv, 0, sizeof(render_priv_t));
-		event->render_priv->render_id = ass_renderer->render_id;
+		event->render_priv->render_id = ass_instance->render_id;
 	}
 	return event->render_priv;
 }
@@ -2038,27 +2056,37 @@ static void shift_event(event_images_t* ei, int shift)
 static int fit_segment(segment_t* s, segment_t* fixed, int* cnt, int dir)
 {
 	int i;
-	int shift = 0;
+	int shift;
 
-	if (dir == 1) // move down
+	if (*cnt == 0) {
+		*cnt = 1;
+		fixed[0].a = s->a;
+		fixed[0].b = s->b;
+		return 0;
+	}
+
+	if (dir == 1) { // move down
+		if (s->b <= fixed[0].a) // all ok
+			return 0;
 		for (i = 0; i < *cnt; ++i) {
-			if (s->b + shift <= fixed[i].a || s->a + shift >= fixed[i].b)
-				continue;
 			shift = fixed[i].b - s->a;
+			if (i == *cnt - 1 || fixed[i+1].a >= shift + s->b) { // here is a good place
+				fixed[i].b += s->b - s->a;
+				return shift;
+			}
 		}
-	else // dir == -1, move up
+	} else { // dir == -1, move up
+		if (s->a >= fixed[*cnt-1].b) // all ok
+			return 0;
 		for (i = *cnt-1; i >= 0; --i) {
-			if (s->b + shift <= fixed[i].a || s->a + shift >= fixed[i].b)
-				continue;
 			shift = fixed[i].a - s->b;
+			if (i == 0 || fixed[i-1].b <= shift + s->a) { // here is a good place
+				fixed[i].a -= s->b - s->a;
+				return shift;
+			}
 		}
-
-	fixed[*cnt].a = s->a + shift;
-	fixed[*cnt].b = s->b + shift;
-	(*cnt)++;
-	qsort(fixed, *cnt, sizeof(segment_t), cmp_segment);
-	
-	return shift;
+	}
+	assert(0); // unreachable
 }
 
 static void fix_collisions(event_images_t* imgs, int cnt)
@@ -2070,14 +2098,14 @@ static void fix_collisions(event_images_t* imgs, int cnt)
 	// fill used[] with fixed events
 	for (i = 0; i < cnt; ++i) {
 		render_priv_t* priv;
-		if (!imgs[i].detect_collisions) continue;
+		if (!imgs[i].detect_collisions) break;
 		priv = get_render_priv(imgs[i].event);
 		if (priv->height > 0) { // it's a fixed event
 			segment_t s;
 			s.a = priv->top;
 			s.b = priv->top + priv->height;
 			if (priv->height != imgs[i].height) { // no, it's not
-				mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_EventHeightHasChanged);
+				mp_msg(MSGT_GLOBAL, MSGL_WARN, "Achtung! Event height has changed!  \n");
 				priv->top = 0;
 				priv->height = 0;
 			}
@@ -2099,7 +2127,7 @@ static void fix_collisions(event_images_t* imgs, int cnt)
 	// try to fit other events in free spaces
 	for (i = 0; i < cnt; ++i) {
 		render_priv_t* priv;
-		if (!imgs[i].detect_collisions) continue;
+		if (!imgs[i].detect_collisions) break;
 		priv = get_render_priv(imgs[i].event);
 		if (priv->height == 0) { // not a fixed event
 			int shift;
@@ -2117,70 +2145,12 @@ static void fix_collisions(event_images_t* imgs, int cnt)
 }
 
 /**
- * \brief compare two images
- * \param i1 first image
- * \param i2 second image
- * \return 0 if identical, 1 if different positions, 2 if different content
- */
-int ass_image_compare(ass_image_t *i1, ass_image_t *i2)
-{
-	if (i1->w != i2->w) return 2;
-	if (i1->h != i2->h) return 2;
-	if (i1->stride != i2->stride) return 2;
-	if (i1->color != i2->color) return 2;
-	if (i1->bitmap != i2->bitmap)
-		return 2;
-	if (i1->dst_x != i2->dst_x) return 1;
-	if (i1->dst_y != i2->dst_y) return 1;
-	return 0;
-}
-
-/**
- * \brief compare current and previous image list
- * \param priv library handle
- * \return 0 if identical, 1 if different positions, 2 if different content
- */
-int ass_detect_change(ass_renderer_t *priv)
-{
-	ass_image_t* img, *img2;
-	int diff;
-
-	img = priv->prev_images_root;
-	img2 = priv->images_root;
-	diff = 0;
-	while (img && diff < 2) {
-		ass_image_t* next, *next2;
-		next = img->next;
-		if (img2) {
-			int d = ass_image_compare(img, img2);
-			if (d > diff) diff = d;
-			next2 = img2->next;
-		} else {
-			// previous list is shorter
-			diff = 2;
-			break;
-		}
-		img = next;
-		img2 = next2;
-	}
-
-	// is the previous list longer?
-	if (img2)
-		diff = 2;
-
-	return diff;
-}
-
-/**
  * \brief render a frame
  * \param priv library handle
  * \param track track
  * \param now current video timestamp (ms)
- * \param detect_change a value describing how the new images differ from the previous ones will be written here:
- *        0 if identical, 1 if different positions, 2 if different content.
- *        Can be NULL, in that case no detection is performed.
  */
-ass_image_t* ass_render_frame(ass_renderer_t *priv, ass_track_t* track, long long now, int* detect_change)
+ass_image_t* ass_render_frame(ass_instance_t *priv, ass_track_t* track, long long now)
 {
 	int i, cnt, rc;
 	event_images_t eimg[MAX_EVENTS];
@@ -2201,7 +2171,7 @@ ass_image_t* ass_render_frame(ass_renderer_t *priv, ass_track_t* track, long lon
 				rc = ass_render_event(event, eimg + cnt);
 				if (!rc) ++cnt;
 			} else {
-				mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_TooManySimultaneousEvents);
+				mp_msg(MSGT_GLOBAL, MSGL_WARN, "Too many simultaneous events  \n");
 				break;
 			}
 		}
@@ -2221,7 +2191,7 @@ ass_image_t* ass_render_frame(ass_renderer_t *priv, ass_track_t* track, long lon
 		fix_collisions(last, eimg + cnt - last);
 
 	// concat lists
-	tail = &ass_renderer->images_root;
+	tail = &ass_instance->images_root;
 	for (i = 0; i < cnt; ++i) {
 		ass_image_t* cur = eimg[i].imgs;
 		while (cur) {
@@ -2230,14 +2200,7 @@ ass_image_t* ass_render_frame(ass_renderer_t *priv, ass_track_t* track, long lon
 			cur = cur->next;
 		}
 	}
-
-	if (detect_change)
-		*detect_change = ass_detect_change(priv);
 	
-	// free the previous image list
-	ass_free_images(priv->prev_images_root);
-	priv->prev_images_root = 0;
-
-	return ass_renderer->images_root;
+	return ass_instance->images_root;
 }
 

@@ -717,12 +717,10 @@ base64_encode(const void *enc, int encLen, char *out, int outMax) {
 	return -1;
 }
 
-//! If this function succeeds you must closesocket stream->fd
 static int http_streaming_start(stream_t *stream, int* file_format) {
-	HTTP_header_t *http_hdr = NULL;
+	HTTP_header_t *http_hdr;
 	unsigned int i;
-	int fd = stream->fd;
-	int res = 0;
+	int fd=-1;
 	int redirect = 0;
 	int auth_retry=0;
 	int seekable=0;
@@ -732,23 +730,25 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 
 	do
 	{
-		redirect = 0;
-		if (fd > 0) closesocket(fd);
 		fd = http_send_request( url, 0 );
 		if( fd<0 ) {
-			goto err_out;
+			return -1;
 		}
 
-		http_free(http_hdr);
 		http_hdr = http_read_response( fd );
 		if( http_hdr==NULL ) {
-			goto err_out;
+			closesocket( fd );
+			http_free( http_hdr );
+			return -1;
 		}
 
+		stream->fd=fd;
 		if( mp_msg_test(MSGT_NETWORK,MSGL_V) ) {
 			http_debug_hdr( http_hdr );
 		}
 		
+		stream->streaming_ctrl->data = (void*)http_hdr;
+
 		// Check if we can make partial content requests and thus seek in http-streams
 		if( http_hdr!=NULL && http_hdr->status_code==200 ) {
 		    char *accept_ranges;
@@ -784,23 +784,23 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 						*file_format = DEMUXER_TYPE_AAC;
 					else
 						*file_format = DEMUXER_TYPE_AUDIO;
-					goto out;
+					return 0;
 				}
 				case 400: // Server Full
 					mp_msg(MSGT_NETWORK,MSGL_ERR,"Error: ICY-Server is full, skipping!\n");
-					goto err_out;
+					return -1;
 				case 401: // Service Unavailable
 					mp_msg(MSGT_NETWORK,MSGL_ERR,"Error: ICY-Server return service unavailable, skipping!\n");
-					goto err_out;
+					return -1;
 				case 403: // Service Forbidden
 					mp_msg(MSGT_NETWORK,MSGL_ERR,"Error: ICY-Server return 'Service Forbidden'\n");
-					goto err_out;
+					return -1;
 				case 404: // Resource Not Found
 					mp_msg(MSGT_NETWORK,MSGL_ERR,"Error: ICY-Server couldn't find requested stream, skipping!\n");
-					goto err_out;
+					return -1;
 				default:
 					mp_msg(MSGT_NETWORK,MSGL_ERR,"Error: unhandled ICY-Errorcode, contact MPlayer developers!\n");
-					goto err_out;
+					return -1;
 			}
 		}
 
@@ -819,16 +819,14 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 					while(mime_type_table[i].mime_type != NULL) {
 						if( !strcasecmp( content_type, mime_type_table[i].mime_type ) ) {
 							*file_format = mime_type_table[i].demuxer_type;
-							res = seekable;
-							goto out;
+							return seekable;
 						}
 						i++;
 					}
 				}
 				// Not found in the mime type table, don't fail,
 				// we should try raw HTTP
-				res = seekable;
-				goto out;
+				return seekable;
 			// Redirect
 			case 301: // Permanently
 			case 302: // Temporarily
@@ -836,31 +834,24 @@ static int http_streaming_start(stream_t *stream, int* file_format) {
 				// TODO: RFC 2616, recommand to detect infinite redirection loops
 				next_url = http_get_field( http_hdr, "Location" );
 				if( next_url!=NULL ) {
-					stream->streaming_ctrl->url = url_redirect( &url, next_url );
+					closesocket( fd );
+					url_free( url );
+					stream->streaming_ctrl->url = url = url_new( next_url );
+					http_free( http_hdr );
 					redirect = 1;	
 				}
 				break;
 			case 401: // Authentication required
-				if( http_authenticate(http_hdr, url, &auth_retry)<0 )
-					goto err_out;
+				if( http_authenticate(http_hdr, url, &auth_retry)<0 ) return STREAM_UNSUPORTED;
 				redirect = 1;
 				break;
 			default:
 				mp_msg(MSGT_NETWORK,MSGL_ERR,"Server returned %d: %s\n", http_hdr->status_code, http_hdr->reason_phrase );
-				goto err_out;
+				return -1;
 		}
 	} while( redirect );
 
-err_out:
-	if (fd > 0) closesocket( fd );
-	fd = -1;
-	res = STREAM_UNSUPORTED;
-	http_free( http_hdr );
-	http_hdr = NULL;
-out:
-	stream->streaming_ctrl->data = (void*)http_hdr;
-	stream->fd = fd;
-	return res;
+	return -1;
 }
 
 static int fixup_open(stream_t *stream,int seekable) {
@@ -878,9 +869,6 @@ static int fixup_open(stream_t *stream,int seekable) {
 	if ((!is_icy && !is_ultravox) || scast_streaming_start(stream))
 	if(nop_streaming_start( stream )) {
 		mp_msg(MSGT_NETWORK,MSGL_ERR,"nop_streaming_start failed\n");
-		if (stream->fd >= 0)
-			closesocket(stream->fd);
-		stream->fd = -1;
 		streaming_ctrl_free(stream->streaming_ctrl);
 		stream->streaming_ctrl = NULL;
 		return STREAM_UNSUPORTED;
@@ -906,9 +894,6 @@ static int open_s1(stream_t *stream,int mode, void* opts, int* file_format) {
 	mp_msg(MSGT_OPEN, MSGL_V, "STREAM_HTTP(1), URL: %s\n", stream->url);
 	seekable = http_streaming_start(stream, file_format);
 	if((seekable < 0) || (*file_format == DEMUXER_TYPE_ASF)) {
-		if (stream->fd >= 0)
-			closesocket(stream->fd);
-		stream->fd = -1;
 		streaming_ctrl_free(stream->streaming_ctrl);
 		stream->streaming_ctrl = NULL;
 		return STREAM_UNSUPORTED;
@@ -933,9 +918,6 @@ static int open_s2(stream_t *stream,int mode, void* opts, int* file_format) {
 	mp_msg(MSGT_OPEN, MSGL_V, "STREAM_HTTP(2), URL: %s\n", stream->url);
 	seekable = http_streaming_start(stream, file_format);
 	if(seekable < 0) {
-		if (stream->fd >= 0)
-			closesocket(stream->fd);
-		stream->fd = -1;
 		streaming_ctrl_free(stream->streaming_ctrl);
 		stream->streaming_ctrl = NULL;
 		return STREAM_UNSUPORTED;

@@ -21,7 +21,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Modified for use with MPlayer, see libmpeg-0.4.1.diff for the exact changes.
+ * Modified for use with MPlayer, see libmpeg-0.4.0.diff for the exact changes.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
  * $Id$
  */
@@ -1252,7 +1252,7 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
 	      ref[0] + offset, decoder->stride, 16);			      \
     table[4] (decoder->dest[1] + decoder->offset,			      \
 	      ref[1] + offset, decoder->stride, 16);			      \
-    table[4] (decoder->dest[2] + decoder->offset,			      \
+    table[4] (decoder->dest[2] + (decoder->offset >> 1),		      \
 	      ref[2] + offset, decoder->stride, 16)
 
 #define bit_buf (decoder->bitstream_buf)
@@ -1569,18 +1569,9 @@ do {								\
 
 #define NEXT_MACROBLOCK							\
 do {									\
-    if(decoder->quant_store) {                                          \
-       if (decoder->picture_structure == TOP_FIELD)                     \
-        decoder->quant_store[2*decoder->quant_stride*(decoder->v_offset>>4) \
-                    +(decoder->offset>>4)] = decoder->quantizer_scale;  \
-       else if (decoder->picture_structure == BOTTOM_FIELD)             \
-        decoder->quant_store[2*decoder->quant_stride*(decoder->v_offset>>4) \
-	            + decoder->quant_stride                             \
-                    +(decoder->offset>>4)] = decoder->quantizer_scale;  \
-       else                                                             \
+    if(decoder->quant_store)                                            \
         decoder->quant_store[decoder->quant_stride*(decoder->v_offset>>4) \
                     +(decoder->offset>>4)] = decoder->quantizer_scale;  \
-    }                                                                   \
     decoder->offset += 16;						\
     if (decoder->offset == decoder->width) {				\
 	do { /* just so we can use the break statement */		\

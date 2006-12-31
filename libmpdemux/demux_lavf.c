@@ -33,14 +33,8 @@
 #ifdef USE_LIBAVFORMAT_SO
 #include <ffmpeg/avformat.h>
 #include <ffmpeg/opt.h>
-typedef struct CodecTag {
-    int id;
-    unsigned int tag;
-    unsigned int invalid_asf : 1;
-} CodecTag;
 #else
 #include "avformat.h"
-#include "riff.h"
 #include "avi.h"
 #include "opt.h"
 #endif
@@ -64,45 +58,12 @@ typedef struct lavf_priv_t{
     int video_streams;
     int64_t last_pts;
     int astreams[MAX_A_STREAMS];
-    int vstreams[MAX_V_STREAMS];
 }lavf_priv_t;
 
 extern void print_wave_header(WAVEFORMATEX *h, int verbose_level);
 extern void print_video_header(BITMAPINFOHEADER *h, int verbose_level);
 
 int64_t ff_gcd(int64_t a, int64_t b);
-
-const CodecTag mp_wav_tags[] = {
-    { CODEC_ID_ADPCM_4XM,         MKTAG('4', 'X', 'M', 'A')},
-    { CODEC_ID_ADPCM_EA,          MKTAG('A', 'D', 'E', 'A')},
-    { CODEC_ID_ADPCM_IMA_WS,      MKTAG('A', 'I', 'W', 'S')},
-    { CODEC_ID_AMR_NB,            MKTAG('n', 'b',   0,   0)},
-    { CODEC_ID_DSICINAUDIO,       MKTAG('D', 'C', 'I', 'A')},
-    { CODEC_ID_INTERPLAY_DPCM,    MKTAG('I', 'N', 'P', 'A')},
-    { CODEC_ID_MUSEPACK7,         MKTAG('M', 'P', 'C', ' ')},
-    { CODEC_ID_PCM_S24BE,         MKTAG('i', 'n', '2', '4')},
-    { CODEC_ID_PCM_S8,            MKTAG('t', 'w', 'o', 's')},
-    { CODEC_ID_ROQ_DPCM,          MKTAG('R', 'o', 'Q', 'A')},
-    { CODEC_ID_SHORTEN,           MKTAG('s', 'h', 'r', 'n')},
-    { CODEC_ID_TTA,               MKTAG('T', 'T', 'A', '1')},
-    { CODEC_ID_WAVPACK,           MKTAG('W', 'V', 'P', 'K')},
-    { CODEC_ID_WESTWOOD_SND1,     MKTAG('S', 'N', 'D', '1')},
-    { CODEC_ID_XAN_DPCM,          MKTAG('A', 'x', 'a', 'n')},
-    { 0, 0 },
-};
-
-const CodecTag mp_bmp_tags[] = {
-    { CODEC_ID_DSICINVIDEO,       MKTAG('D', 'C', 'I', 'V')},
-    { CODEC_ID_FLIC,              MKTAG('F', 'L', 'I', 'C')},
-    { CODEC_ID_IDCIN,             MKTAG('I', 'D', 'C', 'I')},
-    { CODEC_ID_INTERPLAY_VIDEO,   MKTAG('I', 'N', 'P', 'V')},
-    { CODEC_ID_ROQ,               MKTAG('R', 'o', 'Q', 'V')},
-    { CODEC_ID_TIERTEXSEQVIDEO,   MKTAG('T', 'S', 'E', 'Q')},
-    { CODEC_ID_VMDVIDEO,          MKTAG('V', 'M', 'D', 'V')},
-    { CODEC_ID_WS_VQA,            MKTAG('V', 'Q', 'A', 'V')},
-    { CODEC_ID_XAN_WC3,           MKTAG('W', 'C', '3', 'V')},
-    { 0, 0 },
-};
 
 static int mp_open(URLContext *h, const char *filename, int flags){
     return 0;
@@ -198,12 +159,6 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
     register_protocol(&mp_protocol);
 
     avfc = av_alloc_format_context();
-
-    if (correct_pts)
-        avfc->flags |= AVFMT_FLAG_GENPTS;
-    if (index_mode == 0)
-        avfc->flags |= AVFMT_FLAG_IGNIDX;
-
     ap.prealloced_context = 1;
     if(opt_probesize) {
         double d = (double) opt_probesize;
@@ -258,8 +213,6 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
             priv->audio_streams++;
             if(!codec->codec_tag)
                 codec->codec_tag= codec_get_wav_tag(codec->codec_id);
-            if(!codec->codec_tag)
-                codec->codec_tag= codec_get_tag(mp_wav_tags, codec->codec_id);
             wf->wFormatTag= codec->codec_tag;
             wf->nChannels= codec->channels;
             wf->nSamplesPerSec= codec->sample_rate;
@@ -320,20 +273,12 @@ static demuxer_t* demux_open_lavf(demuxer_t *demuxer){
                 st->discard= AVDISCARD_ALL;
             break;}
         case CODEC_TYPE_VIDEO:{
-            sh_video_t* sh_video;
-            BITMAPINFOHEADER *bih;
-            if(priv->video_streams >= MAX_V_STREAMS)
-                break;
-            sh_video=new_sh_video(demuxer, i);
-            if(!sh_video) break;
-            priv->vstreams[priv->video_streams] = i;
-            priv->video_streams++;
-            bih=calloc(sizeof(BITMAPINFOHEADER) + codec->extradata_size,1);
+            BITMAPINFOHEADER *bih=calloc(sizeof(BITMAPINFOHEADER) + codec->extradata_size,1);
+            sh_video_t* sh_video=new_sh_video(demuxer, i);
 
+	    priv->video_streams++;
             if(!codec->codec_tag)
                 codec->codec_tag= codec_get_bmp_tag(codec->codec_id);
-            if(!codec->codec_tag)
-                codec->codec_tag= codec_get_tag(mp_bmp_tags, codec->codec_id);
             bih->biSize= sizeof(BITMAPINFOHEADER) + codec->extradata_size;
             bih->biWidth= codec->width;
             bih->biHeight= codec->height;
@@ -493,31 +438,16 @@ static int demux_lavf_control(demuxer_t *demuxer, int cmd, void *arg)
 	    *((int *)arg) = (int)((priv->last_pts - priv->avfc->start_time)*100 / priv->avfc->duration);
 	    return DEMUXER_CTRL_OK;
 	case DEMUXER_CTRL_SWITCH_AUDIO:
-	case DEMUXER_CTRL_SWITCH_VIDEO:
 	{
 	    int id = *((int*)arg);
 	    int newid = -2;
 	    int i, curridx = -2;
-	    int nstreams, *pstreams;
-	    demux_stream_t *ds;
 
-	    if(cmd == DEMUXER_CTRL_SWITCH_VIDEO)
-	    {
-	        ds = demuxer->video;
-	        nstreams = priv->video_streams;
-	        pstreams = priv->vstreams;
-	    }
-	    else
-	    {
-	        ds = demuxer->audio;
-	        nstreams = priv->audio_streams;
-	        pstreams = priv->astreams;
-	    }
-	    if(ds->id == -2)
+	    if(demuxer->audio->id == -2)
 	        return DEMUXER_CTRL_NOTIMPL;
-	    for(i = 0; i < nstreams; i++)
+	    for(i = 0; i < priv->audio_streams; i++)
 	    {
-	        if(pstreams[i] == ds->id) //current stream id
+	        if(priv->astreams[i] == demuxer->audio->id) //current stream id
 	        {
 	            curridx = i;
 	            break;
@@ -526,14 +456,14 @@ static int demux_lavf_control(demuxer_t *demuxer, int cmd, void *arg)
 
 	    if(id < 0)
 	    {
-	        i = (curridx + 1) % nstreams;
-	        newid = pstreams[i];
+	        i = (curridx + 1) % priv->audio_streams;
+	        newid = priv->astreams[i];
 	    }
 	    else
 	    {
-	        for(i = 0; i < nstreams; i++)
+	        for(i = 0; i < priv->audio_streams; i++)
 	        {
-		    if(pstreams[i] == id)
+		    if(priv->astreams[i] == id)
 		    {
 		        newid = id;
 		        break;
@@ -544,9 +474,9 @@ static int demux_lavf_control(demuxer_t *demuxer, int cmd, void *arg)
 	        return DEMUXER_CTRL_NOTIMPL;
 	    else
 	    {
-	        ds_free_packs(ds);
-	        priv->avfc->streams[ds->id]->discard = AVDISCARD_ALL;
-	        *((int*)arg) = ds->id = newid;
+	        ds_free_packs(demuxer->audio);
+	        priv->avfc->streams[demuxer->audio->id]->discard = AVDISCARD_ALL;
+	        *((int*)arg) = demuxer->audio->id = newid;
 	        priv->avfc->streams[newid]->discard = AVDISCARD_NONE;
 	        return DEMUXER_CTRL_OK;
 	    }

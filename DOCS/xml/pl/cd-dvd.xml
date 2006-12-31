@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- synced with r21612 -->
+<!-- synced with r20379 -->
 <!-- Opiekun: Emdej -->
 <chapter id="cd-dvd">
 <title>Używanie CD/DVD</title>
@@ -16,19 +16,17 @@ naszego napędu:
 
 <itemizedlist>
 <listitem><para>
-  Istnieją doniesienia o błędach odczytu przy dużych prędkościach, szczególnie
-  podczas używania uszkodzonych bądź wadliwie wytłoczonych/nagranych płyt CD.
-  Redukcja prędkości odczytu może uchronić nas przed utratą danych w takich
-  przypadkach.
+Istnieją doniesienia o błędach odczytu przy dużych prędkościach, szczególnie
+podczas używania uszkodzonych bądź wadliwie wytłoczonych/nagranych płyt CD.
+Redukcja prędkości odczytu może uchronić nas przed utratą danych w takich
+przypadkach.
 </para></listitem>
 
 <listitem><para>
-  Wiele napędów CD jest dokuczliwie głośnych. Redukcja prędkości może zmniejszyć
-  natężenie hałasu.
+Wiele napędów CD jest dokuczliwie głośnych. Redukcja prędkości może zmniejszyć
+natężenie hałasu.
 </para></listitem>
 </itemizedlist>
-
-<!-- ********** -->
 
 <sect2 id="drives_linux">
 <title>Linux</title>
@@ -70,9 +68,8 @@ odmaskowanie IRQ (IRQ unmasking) (więcej przeczytasz na stronach man do
 </para>
 
 <para>
-Proszę sprawdzić
-"<filename>/proc/ide/<replaceable>[urządzenie cdrom]</replaceable>/settings</filename>"
-by dostroić swój napędu CD-ROM.
+Proszę sprawdzić &quot;<filename>/proc/ide/<replaceable>[urządzenie cdrom]</replaceable>/settings&quot;</filename>
+dla dostrojenia swojego napędu CD-ROM.
 </para>
 
 <para>
@@ -81,8 +78,6 @@ Dla napędów SCSI nie istnieje jednolity sposób ustawiawiania tych parametrów
 <ulink url="http://das.ist.org/~georg/">napędami SCSI Plextor</ulink>.
 </para>
 </sect2>
-
-<!-- ********** -->
 
 <sect2 id="drives_freebsd">
 <title>FreeBSD</title>
@@ -103,23 +98,18 @@ sysctl hw.ata.atapi_dma=1
 </sect1>
 
 
-<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
 
 <sect1 id="dvd">
 <title>Odtwarzanie DVD</title>
-
 <para>
 Aby poznać pełną listę dostępnych opcji, proszę przeczytać odpowiednie strony
-man. Składnia do odtwarzania standardowego DVD jest następująca:
-<screen>
-mplayer dvd://<replaceable>&lt;ścieżka&gt;</replaceable> [-dvd-device <replaceable>&lt;urządzenie&gt;</replaceable>]
-</screen>
+man. Składnia dla standardowego DVD (Digital Versatile Disc) jest następująca:
+<screen>mplayer dvd://<replaceable>&lt;ścieżka&gt;</replaceable> [-dvd-device <replaceable>&lt;urządzenie&gt;</replaceable>]</screen>
 </para>
 
 <para>
 Przykład:
-<screen>mplayer dvd://1 -dvd-device /dev/hdc</screen>
+<screen>mplayer dvd://<replaceable>1</replaceable> -dvd-device <replaceable>/dev/hdc</replaceable></screen>
 </para>
 
 <para>
@@ -136,9 +126,9 @@ urządzenie (device) w linii polecenia korzystając z opcji
 
 <para>
 <application>MPlayer</application> używa <systemitem>libdvdread</systemitem>
-oraz <systemitem>libdvdcss</systemitem> do odtwarzania i dekodowania DVD.
-Te dwie biblioteki są zawarte
-w głównym drzewie źródłowym <application>MPlayera</application>, nie trzeba
+oraz <systemitem>libdvdcss</systemitem> do dekodowania i odtwarzania DVD. Te
+dwie biblioteki są zawarte w podkatalogu <filename class="directory">libmpdvdkit2</filename>
+w głównym drzewie katalogów <application>MPlayera</application>, nie trzeba
 instalować ich osobno.
 Możesz też użyć systemowych wersji tych bibliotek, ale nie jest to zalecane,
 ponieważ może spowodować błędy, niekompatybilności bibliotek oraz zmniejszenie
@@ -179,8 +169,9 @@ jest (pod Linuksem) posiadanie uprawnień roota aby móc korzystać z sektoroweg
 adresowania pliku.
 Dlatego też nie w ogóle używamy sterownika systemu plików pochodzącego
 z jądra, ale reimplementujemy to w przestrzeni użytkownika.
-Zajmuje się tym biblioteka <systemitem>libdvdread</systemitem> 0.9.x.
-Sterownik
+Zajmują się tym
+biblioteki <systemitem>libdvdread</systemitem> 0.9.x i
+<systemitem>libmpdvdkit</systemitem>. Sterownik
 systemu plików UDF zawarty w jądrze nie jest wymagany ponieważ wspomniane
 biblioteki zawierają własny, wbudowany sterownik systemu plików UDF. DVD nie
 musi być podmontowany, bowiem używany jest jedynie dostęp w trybie raw.
@@ -203,14 +194,78 @@ nazwy urządzeń są przydzielane automatycznie.
 </para>
 
 <formalpara>
-<title>Deszyfrowanie DVD</title>
+<title>Autoryzacja DVD</title>
 <para>
-Do deszyfrowania DVD jest używana biblioteka
-<systemitem>libdvdcss</systemitem>. Metoda jej działania może być określona
-poprzez zmienna środowiskową <envar>DVDCSS_METHOD</envar>,
-co jest dokładniej opisane na stronie man.
+Metoda autoryzacji i rozszyfrowywania używana gdy korzystamy z DVD przy użyciu
+nowego sposobu polega na korzystaniu ze zmodyfikowanej biblioteki
+<systemitem>libdvdcss</systemitem> (patrz wyżej). Ta metoda może być określona
+poprzez zmienna środowiskową <envar>DVDCSS_METHOD</envar>, która może być
+ustawiona na "key", "disk" albo "title".
 </para>
 </formalpara>
+
+<para>
+Jeżeli żadna wartość nie jest ustawiona, próbowane są następujące metody
+(domyślnie: "key", "title request"):
+</para>
+
+<orderedlist>
+<listitem><para>
+<emphasis role="bold">bus key</emphasis>: Ten klucz jest ustalany podczas
+autoryzacji (długa mieszanina ioctl'i i rozmaite wymiany kluczy, bajery
+kryptograficzne) oraz jest używany do szyfrowania tytułu i kluczy dyskowych
+przed wysłaniem ich nieszyfrowaną magistralą (by zapobiec podsłuchiwaniu).
+Klucz magistrali (bus key) jest wymagany do pobrania i wstępnego
+rozszyfrowania zaszyfrowanego klucza dysku (disk key).
+</para></listitem>
+
+<listitem><para>
+<emphasis role="bold">cached key</emphasis>: <application>MPlayer</application>
+wyszukuje już złamane klucze tytułów, które są przechowywane w katalogu
+<filename class="directory">~/.mplayer/DVDKeys</filename> (szybkie ;).
+</para></listitem>
+
+<listitem><para>
+<emphasis role="bold">key</emphasis>: Jeżeli żaden zbuforowany klucz nie jest
+dostępny, <application>MPlayer</application> próbuje rozszyfrować klucz dysku
+korzystając z garści kluczy zaszytych w odtwarzaczu.
+</para></listitem>
+
+<listitem><para>
+<emphasis role="bold">disk</emphasis>: Jeżeli metoda "key" zawodzi (np. brak
+kluczy zaszytych w odtwarzaczu), <application>MPlayer</application> złamie klucz
+dysku używając algorytmu ataku brutalnego. Proces ten jest bardzo
+procesorochłonny i wymaga 64 MB pamięci (16M 32-bitowych pól
+tabeli hash) do przechowywania tymczasowych danych. Ta metoda powinna zadziałać
+zawsze (powolne).
+</para></listitem>
+
+<listitem><para>
+<emphasis role="bold">title request</emphasis>: Mając klucz dysku
+<application>MPlayer</application> pobiera zaszyfrowane klucze tytułów (title
+key), które są zawarte w <emphasis>ukrytych sektorach (hidden
+sectors)</emphasis> używając <systemitem>ioctl()</systemitem>. Ochrona
+regionalna w napędach RPC-2 jest realizowana w tym kroku i może się nie udać na
+tych napędach. Jeśli jednak się uda, klucze tytułowe zostają rozszyfrowane przy
+użyciu kluczy magistrali i dysku.
+</para></listitem>
+
+<listitem><para>
+<emphasis role="bold">title</emphasis>: Ta metoda jest używana jeżeli zapytanie
+o tytuł zakończyło się niepowodzeniem i nie polega na żadnej wymianie
+kluczy z napędem DVD. Używa ona ataku kryptograficznego w celu odgadnięcia
+klucza tytułowego (title key) wprost (poprzez szukanie powtarzającego się ciągu
+znaków (wzoru) w rozszyfrowanej zawartości pliku VOB oraz poprzez zgadywanie, że
+czysty tekst odpowiadający pierwszym zaszyfrowanym bajtom jest kontynuacją
+wzoru). Metoda ta jest także znana jako &quot;znany czysto-tekstowy atak (known
+plaintext attack)&quot; bądź &quot;DeCSSPlus&quot;. Rzadko zdarza się, ale się
+zdarza, że metoda ta może zawieść ponieważ jest niewystarczająco dużo
+zaszyfrowanych danych na dysku aby spełnić założenia statystycznego ataku lub
+ponieważ klucz zmienia się w trakcie tytułu. Jest to jedyna metoda, aby
+zdeszyfrować DVD przechowywane na twardym dysku lub DVD ze złym regionem na
+napędzie RPC2 (powolne).
+</para></listitem>
+</orderedlist>
 
 <para>
 Napędy DVD RPC-1 zabezpieczają ustawienia regionu jedynie poprzez
@@ -229,12 +284,9 @@ ustawić region tylko 5 razy.
 </sect1>
 
 
-<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
 
 <sect1 id="vcd">
 <title>Odtwarzanie VCD</title>
-
 <para>
 Pełna lista dostępnych opcji znajduje się na stronie man. Składnia dla
 standardowego Video CD (VCD) jest następująca:
@@ -266,47 +318,47 @@ i odtwarzać plik wynikowy za pomocą <application>MPlayera</application>
 <title>Struktura VCD</title>
 <para>
 Video CD (VCD) składa się z sektorów CD-ROM XA, tzn. ścieżek CD-ROM 
-mode 2 form 1 i form 2:
+mode 2 form 1 i form 2:</para>
+</formalpara>
+
 <itemizedlist>
 <listitem><para>
-  Pierwsza ścieżka jest w formacie mode 2 form 2, który oznacza użycie korekcji
-  błędów L2. Ścieżka ta zawiera system plików ISO-9660 o gęstości 2048
-  bajtów/sektor.  Ten system plików z kolei zawiera metainformacje VCD, a także
-  nieruchome klatki, często używane w menu. Segmenty MPEG dla menu mogą także
-  być składowane w tejże pierwszej ścieżce, ale MPEGi muszą być podzielone na
-  kawałki po 150 sektorów. System plików ISO-9660 może zawierać inne pliki bądź
-  programy, niekonieczne dla eksploatacji VCD.
+Pierwsza ścieżka jest w formacie mode 2 form 2, który oznacza użycie korekcji 
+błędów L2. Ścieżka ta zawiera system plików ISO-9660 o gęstości 2048 bajtów/sektor.
+Ten system plików z kolei zawiera metainformacje VCD, a także nieruchome klatki, często 
+używane w menu. Segmenty MPEG dla menu mogą także być składowane w tejże pierwszej 
+ścieżce, ale MPEGi muszą być podzielone na kawałki po 150 sektorów. System plików ISO-9660 
+może zawierać inne pliki bądź programy, niekonieczne dla eksploatacji VCD.
 </para></listitem>
 
 <listitem><para>
-  Druga i pozostałe ścieżki są zwykle ścieżkami video MPEG typu raw o gęstości 
-  2324 bajtów/sektor, zawierającymi jeden pakiet danych MGEG PS na sektor.
-  Ścieżki te są w formacje mode 2 form 1, więc przechowują one więcej danych na
-  sektor, w zamian za słabszą korekcję błędów. Możliwe są też ścieżki CD-DA na
-  VCD poza pierwszą ścieżką. Niektóre systemy operacyjne używają pewnych
-  trików aby ścieżki nie zawierające systemu plików ISO-9660 były widoczne
-  w systemie plików. W pozostałych systemach, jak na przykład w systemie
-  GNU/Linux, nie ma takiej możliwości (jeszcze). W takim przypadku dane MPEG
-  <emphasis role="bold">nie mogą być montowane</emphasis>. 
-  Jako że większość filmów znajduje się na tego typu ścieżce,
-  powinieneś spróbować na początek opcji <option>vcd://2</option>.
+Druga i pozostałe ścieżki są zwykle ścieżkami video MPEG typu raw o gęstości 
+2324 bajtów/sektor, zawierającymi jeden pakiet danych MGEG PS na sektor.
+Ścieżki te są w formacje mode 2 form 1, więc przechowują one więcej danych 
+na sektor, w zamian za słabszą korekcję błędów. Możliwe są też ścieżki 
+CD-DA na VCD poza pierwszą ścieżką.
+Niektóre systemy operacyjne używają pewnych trików aby ścieżki nie zawierające 
+systemu plików ISO-9660 były widoczne w systemie plików. W pozostałych systemach, 
+jak na przykład w systemie GNU/Linux, nie ma takiej możliwości (jeszcze). W takim 
+przypadku dane MPEG <emphasis role="bold">nie mogą być montowane</emphasis>. 
+Jako że większość filmów znajduje się na tego typu ścieżce,
+powinieneś spróbować na początek opcji <option>vcd://2</option>.
 </para></listitem>
 
 <listitem><para>
-  Istnieją również płyty VCD bez pierwszej ścieżki (pojedyncza ścieżka i
-  brak systemu plików w ogóle). Je również da się odtwarzać, ale nie da
-  się ich montować.
+Istnieją również płyty VCD bez pierwszej ścieżki (pojedyncza ścieżka i
+brak systemu plików w ogóle). Je również da się odtwarzać, ale nie da
+się ich montować.
 </para></listitem>
 
-<listitem><para>
-  Definicja standardu Video CD, nazywana "Białą Księgą" Phillipsa,
-  generalnie nie jest dostępna online, musi być zakupiona u Phillipsa. 
-  Bardziej szczegółowe informacje na temat Video CD można znaleźć na 
-  <ulink url="http://www.vcdimager.org/pub/vcdimager/manuals/0.7/vcdimager.html#SEC4">stronie dokumentacji vcdimagera</ulink>.
+<listitem><para> Definicja standardu Video CD, nazywana "Białą Księgą"
+Phillipsa, generalnie nie jest dostępna online, musi być zakupiona u Phillipsa. 
+Bardziej szczegółowe informacje na temat Video CD można znaleźć na 
+<ulink url="http://www.vcdimager.org/pub/vcdimager/manuals/0.7/vcdimager.html#SEC4">stronie 
+dokumentacji vcdimagera</ulink>.
 </para></listitem>
+
 </itemizedlist>
-</para>
-</formalpara>
 
 <formalpara>
 <title>O plikach .DAT</title>

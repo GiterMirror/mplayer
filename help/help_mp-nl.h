@@ -58,7 +58,7 @@ static char help_text[]=
 #define MSGTR_IntBySignal "\nMPlayer onderbroken door signaal %d in module: %s \n"
 #define MSGTR_NoHomeDir "Kan HOME dir niet vinden\n"
 #define MSGTR_GetpathProblem "get_path(\"config\") probleem\n"
-#define MSGTR_CreatingCfgFile "Bezig met het creÃ«ren van configuratie bestand: %s\n"
+#define MSGTR_CreatingCfgFile "Bezig met het creëren van configuratie bestand: %s\n"
 #define MSGTR_CopyCodecsConf "(copy/ln etc/codecs.conf (van MPlayer source tree) naar ~/.mplayer/codecs.conf)\n"
 #define MSGTR_BuiltinCodecsConf "De standaard ingebouwde codecs.conf wordt gebruikt\n"
 #define MSGTR_CantLoadFont "Kan font niet laden: %s\n"
@@ -408,6 +408,11 @@ static char help_text[]=
 #define MSGTR_CodecDefinitionIncorrect "De codec is niet correct gedefinieerd."
 #define MSGTR_OutdatedCodecsConf "Dit codecs.conf bestand is te oud en incompatibel met deze versie van MPlayer!"
 
+// divx4_vbr.c:
+#define MSGTR_OutOfMemory "Geen geheugen meer"
+#define MSGTR_OverridingTooLowBitrate "De opgegeven bitrate is te laag voor deze clip.\n"\
+"De minimum bitrate is %.0f kbps. De opgegeven bitrate \n"\
+"wordt genegeerd.\n"
 #define MSGTR_CannotMakePipe "Kan geen PIPE aanmaken!\n"
 #define MSGTR_SaveSlotTooOld "Een te oud save slot voor lvl %d gevonden: %d !!!\n"
 #define MSGTR_InvalidCfgfileOption "De %s optie kan niet gebruikt worden in het configuratie bestand.\n"
@@ -469,6 +474,8 @@ static char help_text[]=
 #define MSGTR_CantSeekRawAVI "Kan niet in raw .AVI streams verplaatsen! (index nodig, probeer met de -idx optie!)  \n"
 #define MSGTR_CantSeekFile "Kan niet verplaatsen in dit bestand!  \n"
 
+#define MSGTR_EncryptedVOB "Ge-encrypteerd VOB bestand! Lees DOCS/HTML/en/dvd.html voor meer informatie.\n"
+
 #define MSGTR_MOVcomprhdr "MOV: Gecomprimeerde headers (nog) niet ondersteund!\n"
 #define MSGTR_MOVvariableFourCC "MOV: Waarschuwing! variabele FOURCC gedetecteerd!?\n"
 #define MSGTR_MOVtooManyTrk "MOV: Waarschuwing! te veel tracks!"
@@ -482,6 +489,7 @@ static char help_text[]=
 #define MSGTR_OpeningAudioDemuxerFailed "Kan audio demuxer niet openen: %s\n"
 #define MSGTR_OpeningSubtitlesDemuxerFailed "Openen van de ondertiteling demuxer is mislukt: %s\n"
 #define MSGTR_TVInputNotSeekable "TV invoer is niet doorzoekbaar! (Waarschijnlijk zal zoeken de kanalen veranderen ;)\n"
+#define MSGTR_DemuxerInfoAlreadyPresent "Demuxer info %s reeds aanwezig!\n"
 #define MSGTR_ClipInfo "Clip info: \n"
 
 #define MSGTR_LeaveTelecineMode "\ndemux_mpg: 30fps NTSC data gevonden, framerate wordt aangepast.\n"
@@ -523,6 +531,7 @@ static char help_text[]=
 
 // LIRC:
 #define MSGTR_SettingUpLIRC "Bezig met configuratie van lirc ondersteuning...\n"
+#define MSGTR_LIRCdisabled "Je zal je afstandsbediening niet kunnen gebruiken\n"
 #define MSGTR_LIRCopenfailed "Laden van lirc ondersteuning mislukt!\n"
 #define MSGTR_LIRCcfgerr "Lezen van LIRC config bestand mislukt %s!\n"
 
@@ -587,7 +596,7 @@ static char help_text[]=
 #define MSGTR_NEMDB "Sorry, niet genoeg geheugen voor tekenbuffer."
 #define MSGTR_NEMFMR "Sorry, niet genoeg geheugen voor menu rendering."
 #define MSGTR_IDFGCVD "Sorry, kon geen GUI compatibele video uitvoer driver vinden."
-#define MSGTR_NEEDLAVC "Sorry, je kan geen niet-MPEG bestanden met je DXR3/H+ apparaat aspelen zonder het bestand te herencoderen.\nActiveer lavc in het DXR3/H+ configuratiescherm."
+#define MSGTR_NEEDLAVCFAME "Sorry, je kan geen niet-MPEG bestanden met je DXR3/H+ apparaat aspelen zonder het bestand te herencoderen.\nActiveer lavc of fame in het DXR3/H+ configuratiescherm."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] fout in skin configuratie bestand op regel %d: %s"
@@ -734,6 +743,7 @@ static char help_text[]=
 #define MSGTR_PREFERENCES_Message "Denk eraan, dat sommige functies het afspelen herstarten."
 #define MSGTR_PREFERENCES_DXR3_VENC "Video encoder:"
 #define MSGTR_PREFERENCES_DXR3_LAVC "Gebruik LAVC (FFmpeg)"
+#define MSGTR_PREFERENCES_DXR3_FAME "Gebruik FAME" 
 #define MSGTR_PREFERENCES_FontEncoding1 "Unicode"
 #define MSGTR_PREFERENCES_FontEncoding2 "West Europese talen (ISO-8859-1)"
 #define MSGTR_PREFERENCES_FontEncoding3 "West Europese talen with Euro (ISO-8859-15)"

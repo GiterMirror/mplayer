@@ -17,7 +17,7 @@ install: dhahelper.o
 	install -m 644 dhahelper.o $(MDIR)/dhahelper.o
 	depmod -a
 
-dep depend:
+dep:
 
 clean: 
 	rm -f *.o *~

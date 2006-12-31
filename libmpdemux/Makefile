@@ -1,15 +1,29 @@
 
+LIBNAME = libmpdemux.a
+
 include ../config.mak
 
-LIBNAME = libmpdemux.a
-ifeq ($(MENCODER),yes)
-LIBNAME2 = libmpmux.a
-endif
-
-SRCS  = asfheader.c \
+# Headers and header-dumpers
+SRCS  = mp3_hdr.c \
+        mpeg_hdr.c \
+        asfheader.c \
         aviheader.c \
         aviprint.c \
-        demuxer.c \
+
+# Core
+SRCS += extension.c \
+        video.c \
+
+# Miscellaneous
+SRCS += parse_es.c \
+        parse_mp4.c \
+        mpeg_packetizer.c \
+        yuv4mpeg.c \
+        yuv4mpeg_ratio.c \
+        mf.c \
+
+# Demuxers
+SRCS += demuxer.c \
         demux_aac.c \
         demux_asf.c \
         demux_audio.c \
@@ -19,8 +33,8 @@ SRCS  = asfheader.c \
         demux_fli.c \
         demux_lmlm4.c \
         demux_mf.c \
-        demux_mkv.c ebml.c \
         demux_mov.c \
+        demux_mpc.c \
         demux_mpg.c \
         demux_nsv.c \
         demux_nuv.c \
@@ -37,43 +51,95 @@ SRCS  = asfheader.c \
         demux_viv.c \
         demux_vqf.c \
         demux_y4m.c \
-        extension.c \
-        mf.c \
-        mp3_hdr.c \
-        mpeg_hdr.c \
-        mpeg_packetizer.c \
-        parse_es.c \
-        parse_mp4.c \
-        video.c \
-        yuv4mpeg.c \
-        yuv4mpeg_ratio.c \
+        demux_mkv.c ebml.c \
 
-SRCS-$(CONFIG_LIBAVFORMAT)      += demux_lavf.c
-SRCS-$(CONFIG_LIBAVFORMAT_SO)   += demux_lavf.c
-SRCS-$(GIF)                     += demux_gif.c
-SRCS-$(LIBDV)                   += demux_rawdv.c
-SRCS-$(LIBNUT)                  += demux_nut.c
-SRCS-$(LIBVORBIS)               += demux_ogg.c
-SRCS-$(MUSEPACK)                += demux_mpc.c
-SRCS-$(STREAMING_LIVE555)       += demux_rtp.cpp demux_rtp_codec.cpp
-SRCS-$(WIN32DLL)                += demux_avs.c
-SRCS-$(XMMS_PLUGINS)            += demux_xmms.c
+ifeq ($(LIBNUT),yes)
+SRCS += demux_nut.c
+endif
+ifeq ($(LIBVORBIS),yes)
+SRCS += demux_ogg.c
+endif
+ifeq ($(LIBDV),yes)
+SRCS += demux_rawdv.c
+endif
+ifeq ($(GIF),yes)
+SRCS += demux_gif.c
+endif
+ifeq ($(XMMS_PLUGINS),yes)
+SRCS += demux_xmms.c
+endif
+ifeq ($(WIN32DLL),yes)
+SRCS += demux_avs.c
+endif
 
-SRCS2 = muxer.c \
+# Muxers
+MUXERS = muxer.c \
         muxer_avi.c \
         muxer_mpeg.c \
         muxer_rawaudio.c \
         muxer_rawvideo.c \
 
-SRCS2-$(CONFIG_LIBAVFORMAT)     += muxer_lavf.c
-SRCS2-$(CONFIG_LIBAVFORMAT_SO)  += muxer_lavf.c
+LIBAV_INC =
+ifeq ($(CONFIG_LIBAVUTIL),yes)
+LIBAV_INC += -I../libavutil
+endif
+ifeq ($(CONFIG_LIBAVCODEC),yes)
+LIBAV_INC += -I../libavcodec
+endif
+ifeq ($(CONFIG_LIBAVFORMAT),yes)
+LIBAV_INC += -I../libavformat
+SRCS   += demux_lavf.c
+MUXERS += muxer_lavf.c
+endif
+ifeq ($(CONFIG_LIBAVFORMAT_SO),yes)
+SRCS   += demux_lavf.c
+MUXERS += muxer_lavf.c
+endif
 
-CFLAGS = -I../stream -I../loader
+ifeq ($(MENCODER),yes)
+SRCS += $(MUXERS)
+endif
 
-CFLAGS-$(CONFIG_LIBAVUTIL)      += -I../libavutil
-CFLAGS-$(CONFIG_LIBAVCODEC)     += -I../libavcodec
-CFLAGS-$(CONFIG_LIBAVFORMAT)    += -I../libavformat
+ifeq ($(STREAMING_LIVE555),yes)
+CPLUSPLUSSRCS = demux_rtp.cpp demux_rtp_codec.cpp
+endif
 
-CXXFLAGS  = $(CFLAGS) -D__STDC_LIMIT_MACROS
+OBJS	= $(SRCS:.c=.o)
+OBJS   += $(CPLUSPLUSSRCS:.cpp=.o)
+INCLUDE = -I.. -I../stream -I../loader $(LIBAV_INC)
+CFLAGS  = $(INCLUDE) $(OPTFLAGS)
+CPLUSPLUSFLAGS  = $(CFLAGS) -D__STDC_LIMIT_MACROS
+CPLUSPLUS = $(CC)
 
-include ../mpcommon.mak
+.SUFFIXES: .c .cpp .o
+
+# .PHONY: all clean
+
+all:	$(LIBNAME)
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+.cpp.o:
+	$(CPLUSPLUS) -c $(CPLUSPLUSFLAGS) -o $@ $<
+
+$(LIBNAME):	$(OBJS)
+	$(AR) r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~
+
+distclean: clean
+	rm -f .depend
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

@@ -23,11 +23,7 @@
 #include <math.h>
 #include "libvo/video_out.h"
 #include "spudec.h"
-#ifdef USE_LIBAVUTIL_SO
-#include <ffmpeg/avutil.h>
-#else
 #include "avutil.h"
-#endif
 #include "libswscale/swscale.h"
 
 #define MIN(a, b)	((a)<(b)?(a):(b))

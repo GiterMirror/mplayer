@@ -31,8 +31,7 @@
 #include <string.h>
 
 #include "../config.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "../bswap.h"
 #include "real.h"
 #include "asmrp.h"
 #include "sdpplin.h"
@@ -42,8 +41,6 @@
 #else
 #include "libavutil/md5.h"
 #endif
-#include "../http.h"
-#include "mp_msg.h"
 
 /*
 #define LOG
@@ -210,8 +207,7 @@ static int select_mlti_data(const char *mlti_chunk, int mlti_size, int selection
   numrules=BE_16(mlti_chunk);
 
   if (codec >= numrules) {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: codec index >= number of codecs. %i %i\n",
-      codec, numrules);
+    printf("codec index >= number of codecs. %i %i\n", codec, numrules);
     return 0;
   }
 
@@ -357,8 +353,7 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer) {
   if (n<8) return 0;
   if (header[0] != 0x24)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: rdt chunk not recognized: got 0x%02x\n",
-      header[0]);
+    printf("rdt chunk not recognized: got 0x%02x\n", header[0]);
     return 0;
   }
   size=(header[1]<<16)+(header[2]<<8)+(header[3]);
@@ -369,7 +364,7 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer) {
     printf("got flags1: 0x%02x\n",flags1);
 #endif
     if(header[6] == 0x06) {
-      mp_msg(MSGT_STREAM, MSGL_INFO, "realrtsp: Stream EOF detected\n");
+      printf("Stream EOF detected\n");
       return -1;
     }
     header[0]=header[5];
@@ -441,8 +436,7 @@ static int convert_timestamp(char *str, int *sec, int *msec) {
 
 //! maximum size of the rtsp description, must be < INT_MAX
 #define MAX_DESC_BUF (20 * 1024 * 1024)
-rmff_header_t *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidth,
-  char *username, char *password) {
+rmff_header_t  *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidth) {
 
   char *description=NULL;
   char *session_id=NULL;
@@ -456,7 +450,6 @@ rmff_header_t *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidt
   unsigned int size;
   int status;
   uint32_t maxbandwidth = bandwidth;
-  char* authfield = NULL;
   
   /* get challenge */
   challenge1=strdup(rtsp_search_answers(rtsp_session,"RealChallenge1"));
@@ -469,7 +462,6 @@ rmff_header_t *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidt
       bandwidth = 10485800;
   
   /* request stream description */
-rtsp_send_describe:
   rtsp_schedule_field(rtsp_session, "Accept: application/sdp");
   sprintf(buf, "Bandwidth: %u", bandwidth);
   rtsp_schedule_field(rtsp_session, buf);
@@ -479,56 +471,13 @@ rtsp_send_describe:
   rtsp_schedule_field(rtsp_session, "SupportsMaximumASMBandwidth: 1");
   rtsp_schedule_field(rtsp_session, "Language: en-US");
   rtsp_schedule_field(rtsp_session, "Require: com.real.retain-entity-for-setup");
-  if(authfield)
-    rtsp_schedule_field(rtsp_session, authfield);
   status=rtsp_request_describe(rtsp_session,NULL);
-
-  if (status == 401) {
-    int authlen, b64_authlen;
-    char *authreq;
-    char* authstr = NULL;
-
-    if (authfield) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: authorization failed, check your credentials\n");
-      goto autherr;
-    }
-    if (!(authreq = rtsp_search_answers(rtsp_session,"WWW-Authenticate"))) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: 401 but no auth request, aborting\n");
-      goto autherr;
-    }
-    if (!username) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: auth required but no username supplied\n");
-      goto autherr;
-    }
-    if (!strstr(authreq, "Basic")) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: authenticator not supported (%s)\n", authreq);
-      goto autherr;
-    }
-    authlen = strlen(username) + (password ? strlen(password) : 0) + 2;
-    authstr = malloc(authlen);
-    sprintf(authstr, "%s:%s", username, password ? password : "");
-    authfield = malloc(authlen*2+22);
-    strcpy(authfield, "Authorization: Basic ");
-    b64_authlen = base64_encode(authstr, authlen, authfield+21, authlen*2);
-    free(authstr);
-    if (b64_authlen < 0) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: base64 output overflow, this should never happen\n");
-      goto autherr;
-    }
-    authfield[b64_authlen+21] = 0;
-    goto rtsp_send_describe;
-  }
-autherr:
-
-  if (authfield)
-     free(authfield);
 
   if ( status<200 || status>299 )
   {
     char *alert=rtsp_search_answers(rtsp_session,"Alert");
     if (alert) {
-      mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: got message from server:\n%s\n",
-        alert);
+      printf("real: got message from server:\n%s\n", alert);
     }
     rtsp_send_ok(rtsp_session);
     buf = xbuffer_free(buf);
@@ -538,20 +487,20 @@ autherr:
   /* receive description */
   size=0;
   if (!rtsp_search_answers(rtsp_session,"Content-length"))
-    mp_msg(MSGT_STREAM, MSGL_WARN, "real: got no Content-length!\n");
+    printf("real: got no Content-length!\n");
   else
     size=atoi(rtsp_search_answers(rtsp_session,"Content-length"));
 
   // as size is unsigned this also catches the case (size < 0)
   if (size > MAX_DESC_BUF) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: Content-length for description too big (> %uMB)!\n",
+    printf("real: Content-length for description too big (> %uMB)!\n",
             MAX_DESC_BUF/(1024*1024) );
     xbuffer_free(buf);
     return NULL;
   }
 
   if (!rtsp_search_answers(rtsp_session,"ETag"))
-    mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: got no ETag!\n");
+    printf("real: got no ETag!\n");
   else
     session_id=strdup(rtsp_search_answers(rtsp_session,"ETag"));
     

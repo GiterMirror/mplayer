@@ -3,19 +3,22 @@
  *
  * This file is part of FFmpeg.
  *
- * FFmpeg is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * FFmpeg is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * You should have received a copy of the GNU General Public License
+ * along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * the C code (not assembly, mmx, ...) of the swscaler which has been written
+ * by Michael Niedermayer can be used under the LGPL license too
  */
 
 #ifndef SWSCALE_INTERNAL_H
@@ -101,10 +104,10 @@ typedef struct SwsContext{
 	int dstY;
 	int flags;
 	void * yuvTable;			// pointer to the yuv->rgb table start so it can be freed()
-	uint8_t * table_rV[256];
-	uint8_t * table_gU[256];
+	void * table_rV[256];
+	void * table_gU[256];
 	int    table_gV[256];
-	uint8_t * table_bU[256];
+	void * table_bU[256];
 
 	//Colorspace stuff
 	int contrast, brightness, saturation;	// for sws_getColorspaceDetails
@@ -178,8 +181,7 @@ char *sws_format_name(int format);
 			|| (x)==PIX_FMT_YUV444P || (x)==PIX_FMT_NV12	\
 			|| (x)==PIX_FMT_NV21)
 #define isYUV(x)       ((x)==PIX_FMT_UYVY422 || (x)==PIX_FMT_YUYV422 || isPlanarYUV(x))
-#define isGray(x)      ((x)==PIX_FMT_GRAY8 || (x)==PIX_FMT_GRAY16BE || (x)==PIX_FMT_GRAY16LE)
-#define isGray16(x)    ((x)==PIX_FMT_GRAY16BE || (x)==PIX_FMT_GRAY16LE)
+#define isGray(x)      ((x)==PIX_FMT_GRAY8)
 #define isRGB(x)       ((x)==PIX_FMT_BGR32 || (x)==PIX_FMT_RGB24	\
 			|| (x)==PIX_FMT_RGB565 || (x)==PIX_FMT_RGB555	\
 			|| (x)==PIX_FMT_RGB8 || (x)==PIX_FMT_RGB4	\
@@ -202,8 +204,6 @@ static inline int fmt_depth(int fmt)
             return 24;
         case PIX_FMT_BGR565:
         case PIX_FMT_RGB565:
-        case PIX_FMT_GRAY16BE:
-        case PIX_FMT_GRAY16LE:
             return 16;
         case PIX_FMT_BGR555:
         case PIX_FMT_RGB555:
