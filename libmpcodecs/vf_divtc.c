@@ -7,8 +7,7 @@
 #include "config.h"
 #include "mp_msg.h"
 #include "cpudetect.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #include "img_format.h"
 #include "mp_image.h"

@@ -5,7 +5,7 @@
 
 #include "config.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 
 /*
@@ -20,6 +20,8 @@ static struct {
 //        { "mpe", DEMUXER_TYPE_MPEG_PS },
         { "vob", DEMUXER_TYPE_MPEG_PS },
         { "m2v", DEMUXER_TYPE_MPEG_PS },
+        { "gxf", DEMUXER_TYPE_LAVF },
+        { "mxf", DEMUXER_TYPE_LAVF },
         { "avi", DEMUXER_TYPE_AVI },
         { "mp4", DEMUXER_TYPE_MOV },
         { "mov", DEMUXER_TYPE_MOV },
@@ -55,14 +57,14 @@ static struct {
 #ifdef USE_WIN32DLL
         { "avs", DEMUXER_TYPE_AVS },
 #endif
+	{ "nut", DEMUXER_TYPE_LAVF },
+	{ "swf", DEMUXER_TYPE_LAVF },
+	{ "flv", DEMUXER_TYPE_LAVF },
 	{ "302", DEMUXER_TYPE_LAVF },
         { "264", DEMUXER_TYPE_H264_ES },
         { "26l", DEMUXER_TYPE_H264_ES },
 	{ "ac3", DEMUXER_TYPE_LAVF },
-
-// At least the following are hacks against broken autodetection
-// that should not be there
-
+	{ "wv",  DEMUXER_TYPE_LAVF },
 };
 
 int demuxer_type_by_filename(char* filename){

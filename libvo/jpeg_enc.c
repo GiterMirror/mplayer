@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * For an excellent introduction to the JPEG format, see:
  * http://www.ece.purdue.edu/~bouman/grad-labs/lab8/pdf/lab.pdf
@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#ifdef USE_FASTMEMCPY
+#include "fastmemcpy.h"
+#endif
 #include "mp_msg.h"
 /* We need this #define because we need ../libavcodec/common.h to #define 
  * be2me_32, otherwise the linker will complain that it doesn't exist */
@@ -110,7 +113,7 @@ static void convert_matrix(MpegEncContext *s, int (*qmat)[64],
                    so (1<<19) / 16 >= (1<<19) / (qscale * quant_matrix[i]) >= (1<<19) / 7905
                    so 32768        >= (1<<19) / (qscale * quant_matrix[i]) >= 67
                 */
-                qmat  [qscale][i] = (int)((UINT64_C(1) << QMAT_SHIFT_MMX) / (qscale * quant_matrix[j]));
+                qmat  [qscale][i] = (int)((uint64_t_C(1) << QMAT_SHIFT_MMX) / (qscale * quant_matrix[j]));
                 qmat16[qscale][0][i] = (1 << QMAT_SHIFT_MMX) / (qscale * quant_matrix[j]);
 
                 if(qmat16[qscale][0][i]==0 || qmat16[qscale][0][i]==128*256) qmat16[qscale][0][i]=128*256-1;
@@ -311,6 +314,7 @@ jpeg_enc_t *jpeg_enc_init(int w, int h, int y_psize, int y_rsize,
 	j->s->height = h;
 	j->s->qscale = q;
 
+	j->s->mjpeg_data_only_frames = 0;
 	j->s->out_format = FMT_MJPEG;
 	j->s->intra_only = 1;
 	j->s->encoding = 1;
@@ -318,7 +322,7 @@ jpeg_enc_t *jpeg_enc_init(int w, int h, int y_psize, int y_rsize,
 	j->s->y_dc_scale = 8;
 	j->s->c_dc_scale = 8;
 
-	//FIXME j->s->mjpeg_write_tables = 1;
+	j->s->mjpeg_write_tables = 1;
 	j->s->mjpeg_vsample[0] = 1;
 	j->s->mjpeg_vsample[1] = 1;
 	j->s->mjpeg_vsample[2] = 1;
@@ -339,7 +343,7 @@ jpeg_enc_t *jpeg_enc_init(int w, int h, int y_psize, int y_rsize,
 		avcodec_inited=1;
 	}
 
-	if (ff_mjpeg_encode_init(j->s) < 0) {
+	if (mjpeg_init(j->s) < 0) {
 		av_free(j->s);
 		av_free(j);
 		return NULL;
@@ -365,7 +369,7 @@ jpeg_enc_t *jpeg_enc_init(int w, int h, int y_psize, int y_rsize,
 
 	j->s->intra_matrix[0] = ff_mpeg1_default_intra_matrix[0];
 	for (i = 1; i < 64; i++) 
-		j->s->intra_matrix[i] = av_clip_uint8(
+		j->s->intra_matrix[i] = clip_uint8(
 			(ff_mpeg1_default_intra_matrix[i]*j->s->qscale) >> 3);
 	convert_matrix(j->s, j->s->q_intra_matrix, j->s->q_intra_matrix16, 
 			j->s->intra_matrix, j->s->intra_quant_bias, 8, 8);
@@ -381,7 +385,7 @@ int jpeg_enc_frame(jpeg_enc_t *j, unsigned char *y_data,
 
 	init_put_bits(&j->s->pb, bufr, 1024*256);
 
-	ff_mjpeg_encode_picture_header(j->s);
+	mjpeg_picture_header(j->s);
 
 	j->s->header_bits = put_bits_count(&j->s->pb);
 
@@ -486,18 +490,17 @@ int jpeg_enc_frame(jpeg_enc_t *j, unsigned char *y_data,
 		}
 	}
 	emms_c();
-	ff_mjpeg_encode_picture_trailer(j->s);
+	mjpeg_picture_trailer(j->s);
 	flush_put_bits(&j->s->pb);	
 
-	//FIXME
-	//if (j->s->mjpeg_write_tables == 1)
-	//	j->s->mjpeg_write_tables = 0;
+	if (j->s->mjpeg_write_tables == 1)
+		j->s->mjpeg_write_tables = 0;
 	
 	return pbBufPtr(&(j->s->pb)) - j->s->pb.buf;
 }
 
 void jpeg_enc_uninit(jpeg_enc_t *j) {
-	ff_mjpeg_encode_close(j->s);
+	mjpeg_close(j->s);
 	av_free(j->s);
 	av_free(j);
 }

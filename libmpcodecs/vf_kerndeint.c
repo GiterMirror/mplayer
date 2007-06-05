@@ -13,7 +13,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include <stdio.h>
@@ -43,7 +43,6 @@ struct vf_priv_s {
 	int	thresh;
 	int	sharp;
 	int	twoway;
-	int	do_deinterlace;
 };
 
 
@@ -98,15 +97,11 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 	int map = vf->priv->map;
 	int sharp = vf->priv->sharp;
 	int twoway = vf->priv->twoway;
-	mp_image_t *dmpi, *pmpi;
 
-	if(!vf->priv->do_deinterlace)
-		return vf_next_put_image(vf, mpi, pts);
-
-	dmpi=vf_get_image(vf->next,mpi->imgfmt,
+	mp_image_t *dmpi=vf_get_image(vf->next,mpi->imgfmt,
 		MP_IMGTYPE_IP, MP_IMGFLAG_ACCEPT_STRIDE,
 		mpi->w,mpi->h);
-	pmpi=vf_get_image(vf->next,mpi->imgfmt,
+	mp_image_t *pmpi=vf_get_image(vf->next,mpi->imgfmt,
 		MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE,
 		mpi->w,mpi->h);
 	if(!dmpi) return 0;
@@ -128,16 +123,16 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 		dstp = dstp_saved + (1-order) * dst_pitch;
 
 		for (y=0; y<h; y+=2) {
-			fast_memcpy(dstp, srcp, w);
+			memcpy(dstp, srcp, w);
 			srcp += 2*src_pitch;
 			dstp += 2*dst_pitch;
 		}
 
 		// Copy through the lines that will be missed below.
-		fast_memcpy(dstp_saved + order*dst_pitch, srcp_saved + (1-order)*src_pitch, w);
-		fast_memcpy(dstp_saved + (2+order)*dst_pitch, srcp_saved + (3-order)*src_pitch, w);
-		fast_memcpy(dstp_saved + (h-2+order)*dst_pitch, srcp_saved + (h-1-order)*src_pitch, w);
-		fast_memcpy(dstp_saved + (h-4+order)*dst_pitch, srcp_saved + (h-3-order)*src_pitch, w);
+		memcpy(dstp_saved + order*dst_pitch, srcp_saved + (1-order)*src_pitch, w);
+		memcpy(dstp_saved + (2+order)*dst_pitch, srcp_saved + (3-order)*src_pitch, w);
+		memcpy(dstp_saved + (h-2+order)*dst_pitch, srcp_saved + (h-1-order)*src_pitch, w);
+		memcpy(dstp_saved + (h-4+order)*dst_pitch, srcp_saved + (h-3-order)*src_pitch, w);
 		/* For the other field choose adaptively between using the previous field
 		   or the interpolant from the current field. */
 
@@ -270,7 +265,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
 		srcp = mpi->planes[z];
 		dstp = pmpi->planes[z];
 		for (y=0; y<h; y++) {
-			fast_memcpy(dstp, srcp, w);
+			memcpy(dstp, srcp, w);
 			srcp += src_pitch;
 			dstp += psrc_pitch;
 		}
@@ -292,22 +287,8 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
 	return 0;
 }
 
-static int control(struct vf_instance_s* vf, int request, void* data){
-	switch (request)
-	{
-	case VFCTRL_GET_DEINTERLACE:
-		*(int*)data = vf->priv->do_deinterlace;
-		return CONTROL_OK;
-	case VFCTRL_SET_DEINTERLACE:
-		vf->priv->do_deinterlace = *(int*)data;
-		return CONTROL_OK;
-	}
-	return vf_next_control (vf, request, data);
-}
-
 static int open(vf_instance_t *vf, char* args){
 
-	vf->control=control;
 	vf->config=config;
 	vf->put_image=put_image;
         vf->query_format=query_format;
@@ -322,7 +303,6 @@ static int open(vf_instance_t *vf, char* args){
 	vf->priv->thresh = 10;
 	vf->priv->sharp = 0;
 	vf->priv->twoway = 0;
-	vf->priv->do_deinterlace=1;
 
         if (args)
         {

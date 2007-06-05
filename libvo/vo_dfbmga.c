@@ -39,7 +39,6 @@
 #include "sub.h"
 #include "mp_msg.h"
 #include "aspect.h"
-#include "mp_fifo.h"
 
 static vo_info_t info = {
      "DirectFB / Matrox G200/G400/G450/G550",
@@ -1425,6 +1424,8 @@ control( uint32_t request, void *data, ... )
 
      return VO_NOTIMPL;
 }
+
+extern void mplayer_put_key( int code );
 
 #include "osdep/keycodes.h"
 

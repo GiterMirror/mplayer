@@ -52,7 +52,6 @@
 #define MKV_V_MPEG4_ASP  "V_MPEG4/ISO/ASP"
 #define MKV_V_MPEG4_AP   "V_MPEG4/ISO/AP"
 #define MKV_V_MPEG4_AVC  "V_MPEG4/ISO/AVC"
-#define MKV_V_THEORA     "V_THEORA"
 
 #define MKV_S_TEXTASCII  "S_TEXT/ASCII"
 #define MKV_S_TEXTUTF8   "S_TEXT/UTF8"
@@ -62,6 +61,7 @@
 #define MKV_S_SSA        "S_SSA" // Deprecated
 #define MKV_S_ASS        "S_ASS" // Deprecated
 
+int demux_mkv_num_subs(demuxer_t *demuxer);
 int demux_mkv_change_subs(demuxer_t *demuxer, int new_num);
 void demux_mkv_get_audio_lang(demuxer_t *demuxer, int track_num, char *lang,
                             int maxlen);

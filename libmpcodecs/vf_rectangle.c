@@ -6,7 +6,6 @@
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
-#include "libavutil/common.h"
 
 struct vf_priv_s {
     int x, y, w, h;
@@ -68,7 +67,7 @@ static int
 put_image(struct vf_instance_s* vf, mp_image_t* mpi, double pts){
     mp_image_t* dmpi;
     unsigned int bpp = mpi->bpp / 8;
-    int x, y, w, h;
+    unsigned int x, y, w, h;
     dmpi = vf_get_image(vf->next, mpi->imgfmt, MP_IMGTYPE_TEMP,
 			MP_IMGFLAG_ACCEPT_STRIDE | MP_IMGFLAG_PREFER_ALIGNED_STRIDE,
 			mpi->w, mpi->h);
@@ -88,19 +87,30 @@ put_image(struct vf_instance_s* vf, mp_image_t* mpi, double pts){
 
     mp_msg(MSGT_VFILTER,MSGL_INFO, "rectangle: -vf rectangle=%d:%d:%d:%d \n", vf->priv->w, vf->priv->h, vf->priv->x, vf->priv->y);
 
-    x = FFMIN(vf->priv->x, dmpi->width);
-    x = FFMAX(x, 0);
-
-    w = vf->priv->x + vf->priv->w - 1 - x;
-    w = FFMIN(w, dmpi->width - x);
-    w = FFMAX(w, 0);
-
-    y = FFMIN(vf->priv->y, dmpi->height);
-    y = FFMAX(y, 0);
-
-    h = vf->priv->y + vf->priv->h - 1 - y;
-    h = FFMIN(h, dmpi->height - y);
-    h = FFMAX(h, 0);
+    if (vf->priv->x < 0)
+	x = 0;
+    else if (dmpi->width < vf->priv->x)
+	x = dmpi->width;
+    else
+	x = vf->priv->x;
+    if (vf->priv->x + vf->priv->w - 1 < 0)
+	w = vf->priv->x + vf->priv->w - 1 - x;
+    else if (dmpi->width < vf->priv->x + vf->priv->w - 1)
+	w = dmpi->width - x;
+    else
+	w = vf->priv->x + vf->priv->w - 1 - x;
+    if (vf->priv->y < 0)
+	y = 0;
+    else if (dmpi->height < vf->priv->y)
+	y = dmpi->height;
+    else
+	y = vf->priv->y;
+    if (vf->priv->y + vf->priv->h - 1 < 0)
+	h = vf->priv->y + vf->priv->h - 1 - y;
+    else if (dmpi->height < vf->priv->y + vf->priv->h - 1)
+	h = dmpi->height - y;
+    else
+	h = vf->priv->y + vf->priv->h - 1 - y;
 
     if (0 <= vf->priv->y && vf->priv->y <= dmpi->height) {
 	unsigned char *p = dmpi->planes[0] + y * dmpi->stride[0] + x * bpp;

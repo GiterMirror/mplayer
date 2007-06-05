@@ -11,9 +11,10 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
+#include "bswap.h"
 
 
 #define FOURCC_DOTRA mmioFOURCC('.','r','a', 0xfd)
@@ -22,8 +23,6 @@
 #define FOURCC_DNET mmioFOURCC('d','n','e','t')
 #define FOURCC_LPCJ mmioFOURCC('l','p','c','J')
 #define FOURCC_SIPR mmioFOURCC('s','i','p','r')
-#define INTLID_INT4 mmioFOURCC('I','n','t','4')
-#define INTLID_SIPR mmioFOURCC('s','i','p','r')
 
 
 static unsigned char sipr_swaps[38][2]={
@@ -48,7 +47,7 @@ typedef struct {
 	unsigned short sub_packet_h;
 	unsigned short frame_size;
 	unsigned short sub_packet_size;
-	unsigned intl_id;
+	char genr[4];
 	unsigned char *audio_buf;
 } ra_priv_t;
 
@@ -86,8 +85,8 @@ static int demux_ra_fill_buffer(demuxer_t *demuxer, demux_stream_t *dsds)
 	len = wf->nBlockAlign;
 	demuxer->filepos = stream_tell(demuxer->stream);
 
-    if ((ra_priv->intl_id == INTLID_INT4) || (ra_priv->intl_id == INTLID_SIPR)) {
-      if (ra_priv->intl_id == INTLID_SIPR) {
+    if ((sh->format == FOURCC_288) || (sh->format == FOURCC_SIPR)) {
+      if (sh->format == FOURCC_SIPR) {
         int n;
         int bs = ra_priv->sub_packet_h * ra_priv->frame_size * 2 / 96;  // nibbles per subpacket
         stream_read(demuxer->stream, ra_priv->audio_buf, ra_priv->sub_packet_h * ra_priv->frame_size);
@@ -201,9 +200,12 @@ static demuxer_t* demux_open_ra(demuxer_t* demuxer)
 		mp_msg(MSGT_DEMUX,MSGL_V,"[RealAudio] %d channel, %d bit, %dHz\n", sh->channels,
 			sh->samplesize, sh->samplerate);
 		i = stream_read_char(demuxer->stream);
-		ra_priv->intl_id = stream_read_dword_le(demuxer->stream);
+		ra_priv->genr[0] = stream_read_char(demuxer->stream);
+		ra_priv->genr[1] = stream_read_char(demuxer->stream);
+		ra_priv->genr[2] = stream_read_char(demuxer->stream);
+		ra_priv->genr[3] = stream_read_char(demuxer->stream);
 		if (i != 4) {
-			mp_msg(MSGT_DEMUX,MSGL_WARN,"[RealAudio] Interleaver Id size is not 4 (%d), please report to "
+			mp_msg(MSGT_DEMUX,MSGL_WARN,"[RealAudio] Genr size is not 4 (%d), please report to "
 				"MPlayer developers\n", i);
 			stream_skip(demuxer->stream, i - 4);
 		}

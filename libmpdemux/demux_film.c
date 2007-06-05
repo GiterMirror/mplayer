@@ -18,7 +18,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 

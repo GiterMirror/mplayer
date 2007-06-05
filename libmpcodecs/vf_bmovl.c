@@ -68,8 +68,9 @@
 #include "vf.h"
 #include "img_format.h"
 
+#ifndef HAVE_NO_POSIX_SELECT
+
 #include "mp_msg.h"
-#include "libavutil/common.h"
 
 #include "libvo/fastmemcpy.h"
 
@@ -88,6 +89,8 @@
 #define TRUE  1
 #define FALSE 0
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define INRANGE(a,b,c)	( ((a) < (b)) ? (b) : ( ((a) > (c)) ? (c) : (a) ) )
 
 #define rgb2y(R,G,B)  ( (( 263*R + 516*G + 100*B) >> 10) + 16  )
@@ -295,10 +298,10 @@ put_image(struct vf_instance_s* vf, mp_image_t* mpi, double pts){
 					vf->priv->x2 = vf->priv->y2 = 0;
 				}
 				// Define how much of our bitmap that contains graphics!
-				vf->priv->x1 = av_clip(imgx, 0, vf->priv->x1);
-				vf->priv->y1 = av_clip(imgy, 0, vf->priv->y1);
-				vf->priv->x2 = av_clip(imgx + imgw, vf->priv->x2, vf->priv->w);
-				vf->priv->y2 = av_clip(imgy + imgh, vf->priv->y2, vf->priv->h);
+				vf->priv->x1 = MAX( 0, MIN(vf->priv->x1, imgx) );
+				vf->priv->y1 = MAX( 0, MIN(vf->priv->y1, imgy) );
+				vf->priv->x2 = MIN( vf->priv->w, MAX(vf->priv->x2, ( imgx + imgw)) );
+				vf->priv->y2 = MIN( vf->priv->h, MAX(vf->priv->y2, ( imgy + imgh)) );
 			}
 			
 			if( command == CMD_CLEAR ) {
@@ -388,14 +391,14 @@ put_image(struct vf_instance_s* vf, mp_image_t* mpi, double pts){
 
 	if(vf->priv->opaque) {	// Just copy buffer memory to screen
 		for( ypos=vf->priv->y1 ; ypos < vf->priv->y2 ; ypos++ ) {
-			fast_memcpy( dmpi->planes[0] + (ypos*dmpi->stride[0]) + vf->priv->x1,
+			memcpy( dmpi->planes[0] + (ypos*dmpi->stride[0]) + vf->priv->x1,
 			        vf->priv->bitmap.y + (ypos*vf->priv->w) + vf->priv->x1,
 					vf->priv->x2 - vf->priv->x1 );
 			if(ypos%2) {
-				fast_memcpy( dmpi->planes[1] + ((ypos/2)*dmpi->stride[1]) + (vf->priv->x1/2),
+				memcpy( dmpi->planes[1] + ((ypos/2)*dmpi->stride[1]) + (vf->priv->x1/2),
 				        vf->priv->bitmap.u + (((ypos/2)*(vf->priv->w)/2)) + (vf->priv->x1/2),
 				        (vf->priv->x2 - vf->priv->x1)/2 );
-				fast_memcpy( dmpi->planes[2] + ((ypos/2)*dmpi->stride[2]) + (vf->priv->x1/2),
+				memcpy( dmpi->planes[2] + ((ypos/2)*dmpi->stride[2]) + (vf->priv->x1/2),
 				        vf->priv->bitmap.v + (((ypos/2)*(vf->priv->w)/2)) + (vf->priv->x1/2),
 				        (vf->priv->x2 - vf->priv->x1)/2 );
 			}
@@ -477,3 +480,5 @@ vf_info_t vf_info_bmovl = {
     vf_open,
     NULL
 };
+
+#endif

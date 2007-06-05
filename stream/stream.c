@@ -84,7 +84,7 @@ extern stream_info_t stream_info_cue;
 extern stream_info_t stream_info_null;
 extern stream_info_t stream_info_mf;
 extern stream_info_t stream_info_file;
-#ifdef USE_DVDREAD
+#ifdef HAVE_DVD
 extern stream_info_t stream_info_dvd;
 #endif
 
@@ -131,7 +131,7 @@ stream_info_t* auto_open_streams[] = {
   &stream_info_smb,
 #endif
   &stream_info_cue,
-#ifdef USE_DVDREAD
+#ifdef HAVE_DVD
   &stream_info_dvd,
 #endif
 #ifdef USE_DVDNAV
@@ -189,7 +189,6 @@ stream_t* open_stream_plugin(stream_info_t* sinfo,char* filename,int mode,
   if(s->seek && !(s->flags & STREAM_SEEK))
     s->flags |= STREAM_SEEK;
   
-  s->mode = mode;
 
   mp_msg(MSGT_OPEN,MSGL_V, "STREAM: [%s] %s\n",sinfo->name,filename);
   mp_msg(MSGT_OPEN,MSGL_V, "STREAM: Description: %s\n",sinfo->info);
@@ -214,8 +213,7 @@ stream_t* open_stream_full(char* filename,int mode, char** options, int* file_fo
     for(j = 0 ; sinfo->protocols[j] ; j++) {
       l = strlen(sinfo->protocols[j]);
       // l == 0 => Don't do protocol matching (ie network and filenames)
-      if((l == 0 && !strstr(filename, "://")) ||
-         ((strncmp(sinfo->protocols[j],filename,l) == 0) &&
+      if((l == 0) || ((strncmp(sinfo->protocols[j],filename,l) == 0) &&
 		      (strncmp("://",filename+l,3) == 0))) {
 	*file_format = DEMUXER_TYPE_UNKNOWN;
 	s = open_stream_plugin(sinfo,filename,mode,options,file_format,&r);
@@ -231,16 +229,6 @@ stream_t* open_stream_full(char* filename,int mode, char** options, int* file_fo
 
   mp_msg(MSGT_OPEN,MSGL_ERR, "No stream found to handle url %s\n",filename);
   return NULL;
-}
-
-stream_t* open_output_stream(char* filename,char** options) {
-  int file_format; //unused
-  if(!filename) {
-    mp_msg(MSGT_OPEN,MSGL_ERR,"open_output_stream(), NULL filename, report this bug\n");
-    return NULL;
-  }
-
-  return open_stream_full(filename,STREAM_WRITE,options,&file_format);
 }
 
 //=================== STREAMER =========================
@@ -275,17 +263,6 @@ int stream_fill_buffer(stream_t *s){
   return len;
 }
 
-int stream_write_buffer(stream_t *s, unsigned char *buf, int len) {
-  int rd;
-  if(!s->write_buffer)
-    return -1;
-  rd = s->write_buffer(s, buf, len);
-  if(rd < 0)
-    return -1;
-  s->pos += rd;
-  return rd;
-}
-
 int stream_seek_long(stream_t *s,off_t pos){
 off_t newpos=0;
 
@@ -293,16 +270,26 @@ off_t newpos=0;
 
   s->buf_pos=s->buf_len=0;
 
-  if(s->mode == STREAM_WRITE) {
-    if(!s->seek || !s->seek(s,pos))
-      return 0;
-    return 1;
+  switch(s->type){
+  case STREAMTYPE_STREAM:
+#ifdef _LARGEFILE_SOURCE
+    newpos=pos&(~((long long)STREAM_BUFFER_SIZE-1));break;
+#else
+    newpos=pos&(~(STREAM_BUFFER_SIZE-1));break;
+#endif
+  default:
+    // Round on sector size
+    if(s->sector_size)
+      newpos=(pos/s->sector_size)*s->sector_size;
+    else { // Otherwise on the buffer size
+#ifdef _LARGEFILE_SOURCE
+      newpos=pos&(~((long long)STREAM_BUFFER_SIZE-1));break;
+#else
+      newpos=pos&(~(STREAM_BUFFER_SIZE-1));break;
+#endif
+    }
+    break;
   }
-
-  if(s->sector_size)
-      newpos = (pos/s->sector_size)*s->sector_size;
-  else
-      newpos = pos&(~((off_t)STREAM_BUFFER_SIZE-1));
 
 if( mp_msg_test(MSGT_STREAM,MSGL_DBG3) ){
   mp_msg(MSGT_STREAM,MSGL_DBG3, "s->pos=%"PRIX64"  newpos=%"PRIX64"  new_bufpos=%"PRIX64"  buflen=%X  \n",

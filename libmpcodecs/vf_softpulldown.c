@@ -10,6 +10,7 @@
 #include "vf.h"
 
 #include "libvo/fastmemcpy.h"
+#include "libvo/sub.h"
 
 struct vf_priv_s {
 	int state;
@@ -24,7 +25,7 @@ static inline void *my_memcpy_pic(void * dst, void * src, int bytesPerLine, int 
 
 	for(i=0; i<height; i++)
 	{
-		fast_memcpy(dst, src, bytesPerLine);
+		memcpy(dst, src, bytesPerLine);
 		src+= srcStride;
 		dst+= dstStride;
 	}

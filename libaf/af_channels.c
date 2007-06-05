@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <inttypes.h>
 
 #include "af.h"
@@ -233,10 +234,10 @@ static int control(struct af_instance_s* af, int cmd, void* arg)
 // Deallocate memory 
 static void uninit(struct af_instance_s* af)
 {
-  free(af->setup);
-  if (af->data)
-      free(af->data->audio);
-  free(af->data);
+  if(af->setup)
+    free(af->setup);
+  if(af->data)
+    free(af->data);
 }
 
 // Filter data through filter
@@ -267,7 +268,7 @@ static af_data_t* play(struct af_instance_s* af, af_data_t* data)
 }
 
 // Allocate memory and set function pointers
-static int af_open(af_instance_t* af){
+static int open(af_instance_t* af){
   af->control=control;
   af->uninit=uninit;
   af->play=play;
@@ -287,5 +288,5 @@ af_info_t af_info_channels = {
   "Anders",
   "",
   AF_FLAGS_REENTRANT,
-  af_open
+  open
 };

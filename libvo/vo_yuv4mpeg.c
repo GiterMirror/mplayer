@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 
 #include "config.h"
 #include "subopt-helper.h"
@@ -41,9 +40,7 @@
 
 #include "fastmemcpy.h"
 #include "libswscale/swscale.h"
-#include "libswscale/rgb2rgb.h"
 #include "libmpcodecs/vf_scale.h"
-#include "libavutil/rational.h"
 
 static vo_info_t info = 
 {
@@ -85,9 +82,6 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
        uint32_t d_height, uint32_t flags, char *title, 
        uint32_t format)
 {
-	AVRational pixelaspect = av_div_q((AVRational){d_width, d_height},
-	                                  (AVRational){width, height});
-	AVRational fps_frac = av_d2q(vo_fps, INT_MAX);
 	if (image_width == width && image_height == height &&
 	     image_fps == vo_fps && vo_config_count)
 	  return 0;
@@ -159,10 +153,14 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	image_u = image_y + image_width * image_height;
 	image_v = image_u + image_width * image_height / 4;
 	
-	fprintf(yuv_out, "YUV4MPEG2 W%d H%d F%d:%d I%c A%d:%d\n", 
-			image_width, image_height, fps_frac.num, fps_frac.den,
-			config_interlace,
-			pixelaspect.num, pixelaspect.den);
+	// This isn't right.  
+	// But it should work as long as the file isn't interlaced
+	// or otherwise unusual (the "Ip A0:0" part).
+
+	/* At least the interlacing is ok now */
+	fprintf(yuv_out, "YUV4MPEG2 W%d H%d F%ld:%ld I%c A0:0\n", 
+			image_width, image_height, (long)(image_fps * 1000000.0), 
+			(long)1000000, config_interlace);
 
 	fflush(yuv_out);
 	return 0;
@@ -175,9 +173,9 @@ static void swap_fields(uint8_t *ptr, const int h, const int stride)
 	
 	for (i=0; i<h; i +=2)
 	{
-		fast_memcpy(rgb_line_buffer     , ptr + stride *  i   , stride);
-		fast_memcpy(ptr + stride *  i   , ptr + stride * (i+1), stride);
-		fast_memcpy(ptr + stride * (i+1), rgb_line_buffer     , stride);
+		memcpy(rgb_line_buffer     , ptr + stride *  i   , stride);
+		memcpy(ptr + stride *  i   , ptr + stride * (i+1), stride);
+		memcpy(ptr + stride * (i+1), rgb_line_buffer     , stride);
 	}
 }
 
@@ -227,16 +225,16 @@ static void deinterleave_fields(uint8_t *ptr, const int stride,
 	while(k_start < modv)
 	{
 		i = j = k_start;
-		fast_memcpy(rgb_line_buffer, ptr + stride * i, stride);
+		memcpy(rgb_line_buffer, ptr + stride * i, stride);
 
 		while (!line_state[j])
 		{
 			line_state[j] = 1;
 			i = j;
 			j = j * 2 % modv;
-			fast_memcpy(ptr + stride * i, ptr + stride * j, stride);
+			memcpy(ptr + stride * i, ptr + stride * j, stride);
 		}
-		fast_memcpy(ptr + stride * i, rgb_line_buffer, stride);
+		memcpy(ptr + stride * i, rgb_line_buffer, stride);
 		
 		while(k_start < modv && line_state[k_start])
 			k_start++;
@@ -377,7 +375,7 @@ static int draw_slice(uint8_t *srcimg[], int stride[], int w,int h,int x,int y)
 		dst = image_y + image_width * y + x;
 		for (i = 0; i < h; i++)
 		{
-			fast_memcpy(dst, src, w);
+			memcpy(dst, src, w);
 			src += stride[0];
 			dst += image_width;
 		}
@@ -390,8 +388,8 @@ static int draw_slice(uint8_t *srcimg[], int stride[], int w,int h,int x,int y)
 			uint8_t *dstv = image_v + imgstride * (y >> 1) + (x >> 1);
 			for (i = 0; i < h / 2; i++)
 			{
-				fast_memcpy(dstu, src1 , w >> 1);
-				fast_memcpy(dstv, src2, w >> 1);
+				memcpy(dstu, src1 , w >> 1);
+				memcpy(dstv, src2, w >> 1);
 				src1 += stride[1];
 				src2 += stride[2];
 				dstu += imgstride;
@@ -405,7 +403,7 @@ static int draw_slice(uint8_t *srcimg[], int stride[], int w,int h,int x,int y)
 			dst = rgb_buffer + (image_width * y + x) * 3;
 			for (i = 0; i < h; i++)
 			{
-				fast_memcpy(dst, src, w * 3);
+				memcpy(dst, src, w * 3);
 				src += stride[0];
 				dst += image_width * 3;
 			}
@@ -424,7 +422,7 @@ static int draw_frame(uint8_t * src[])
 
 		case IMGFMT_BGR24:
 		case IMGFMT_RGB24:
-			fast_memcpy(rgb_buffer, src[0], image_width * image_height * 3);
+			memcpy(rgb_buffer, src[0], image_width * image_height * 3);
 			break;
 	}
     return 0;

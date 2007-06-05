@@ -23,7 +23,9 @@
 #ifdef USE_UNRARLIB
 #include "unrarlib.h"
 #endif
-#include "libavutil/common.h"
+
+#define MIN(a, b)	((a)<(b)?(a):(b))
+#define MAX(a, b)	((a)>(b)?(a):(b))
 
 extern int vobsub_id;
 
@@ -818,9 +820,9 @@ vobsub_parse_palette(vobsub_t *vob, const char *line)
 	r = tmp >> 16 & 0xff;
 	g = tmp >> 8 & 0xff;
 	b = tmp & 0xff;
-	y = av_clip_uint8( 0.1494  * r + 0.6061 * g + 0.2445 * b);
-	u = av_clip_uint8( 0.6066  * r - 0.4322 * g - 0.1744 * b + 128);
-	v = av_clip_uint8(-0.08435 * r - 0.3422 * g + 0.4266 * b + 128);
+	y = MIN(MAX((int)(0.1494 * r + 0.6061 * g + 0.2445 * b), 0), 0xff);
+	u = MIN(MAX((int)(0.6066 * r - 0.4322 * g - 0.1744 * b) + 128, 0), 0xff);
+	v = MIN(MAX((int)(-0.08435 * r - 0.3422 * g + 0.4266 * b) + 128, 0), 0xff);
 	vob->palette[n++] = y << 16 | u << 8 | v;
 	if (n == 16)
 	    break;
@@ -1330,9 +1332,9 @@ create_idx(vobsub_out_t *me, const unsigned int *palette, unsigned int orig_widt
 	    if (i)
 		putc(',', me->fidx);
 	    fprintf(me->fidx, " %02x%02x%02x",
-		    av_clip_uint8(y + 1.4022 * u),
-		    av_clip_uint8(y - 0.3456 * u - 0.7145 * v),
-		    av_clip_uint8(y + 1.7710 * v));
+		    MIN(MAX((int)(y + 1.4022 * u), 0), 0xff),
+		    MIN(MAX((int)(y - 0.3456 * u - 0.7145 * v), 0), 0xff),
+		    MIN(MAX((int)(y + 1.7710 * v), 0), 0xff));
 	}
 	putc('\n', me->fidx);
     }
@@ -1355,12 +1357,12 @@ vobsub_out_open(const char *basename, const unsigned int *palette,
 	    result->aid = index;
 	    strcpy(filename, basename);
 	    strcat(filename, ".sub");
-	    result->fsub = fopen(filename, "ab");
+	    result->fsub = fopen(filename, "a");
 	    if (result->fsub == NULL)
 		perror("Error: vobsub_out_open subtitle file open failed");
 	    strcpy(filename, basename);
 	    strcat(filename, ".idx");
-	    result->fidx = fopen(filename, "ab");
+	    result->fidx = fopen(filename, "a");
 	    if (result->fidx) {
 		if (ftell(result->fidx) == 0){
 		    create_idx(result, palette, orig_width, orig_height);

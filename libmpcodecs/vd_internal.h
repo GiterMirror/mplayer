@@ -2,9 +2,9 @@
 #include "codec-cfg.h"
 #include "img_format.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
 #include "vd.h"
 

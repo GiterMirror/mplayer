@@ -6,10 +6,9 @@
 #include <sys/types.h>
 #include "m_option.h"
 #include "mp_msg.h"
-#include "libmpdemux/aviheader.h"
-#include "libmpdemux/ms_hdr.h"
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "aviheader.h"
+#include "ms_hdr.h"
+#include "muxer.h"
 #include "ae_lavc.h"
 #include "help_mp.h"
 #include "config.h"
@@ -28,13 +27,8 @@ extern int  lavc_param_atag;
 extern int  lavc_param_audio_global_header;
 extern int  avcodec_inited;
 static int compressed_frame_size = 0;
-#ifdef USE_LIBAVFORMAT
-#ifdef USE_LIBAVFORMAT_SO
-#include <ffmpeg/avformat.h>
-#else
-#include "libavformat/avformat.h"
-#endif
-extern const struct AVCodecTag *mp_wav_taglists[];
+#if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
+extern unsigned int codec_get_wav_tag(int id);
 #endif
 
 static int bind_lavc(audio_encoder_t *encoder, muxer_stream_t *mux_a)
@@ -60,12 +54,9 @@ static int bind_lavc(audio_encoder_t *encoder, muxer_stream_t *mux_a)
 			mux_a->h.dwSampleSize = 0; // Blocksize not constant
 		} 
 		else 
-			mux_a->h.dwSampleSize = 0;
+			mux_a->h.dwSampleSize = mux_a->h.dwScale;
 	}
-        if(mux_a->h.dwSampleSize)
-                mux_a->wf->nBlockAlign = mux_a->h.dwSampleSize;
-        else
-                mux_a->wf->nBlockAlign = 1;
+	mux_a->wf->nBlockAlign = mux_a->h.dwScale;
 	mux_a->h.dwSuggestedBufferSize = (encoder->params.audio_preload*mux_a->wf->nAvgBytesPerSec)/1000;
 	mux_a->h.dwSuggestedBufferSize -= mux_a->h.dwSuggestedBufferSize % mux_a->wf->nBlockAlign;
 
@@ -179,8 +170,8 @@ int mpae_init_lavc(audio_encoder_t *encoder)
 	}
 	if(lavc_param_atag == 0)
 	{
-#ifdef USE_LIBAVFORMAT
-		lavc_param_atag = av_codec_get_tag(mp_wav_taglists, lavc_acodec->id);
+#if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
+		lavc_param_atag = codec_get_wav_tag(lavc_acodec->id);
 #else
 		lavc_param_atag = lavc_find_atag(lavc_param_acodec);
 #endif
@@ -206,7 +197,7 @@ int mpae_init_lavc(audio_encoder_t *encoder)
 
 	/*
 	* Special case for adpcm_ima_wav.
-	* The bitrate is only dependent on samplerate.
+	* The bitrate is only dependant on samplerate.
 	* We have to known frame_size and block_align in advance,
 	* so I just copied the code from libavcodec/adpcm.c
 	*

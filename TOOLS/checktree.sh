@@ -19,7 +19,6 @@
 _spaces=yes
 _extensions=yes
 _crlf=yes
-_tabs=no
 _trailws=no
 _rcsid=no
 _oll=no
@@ -46,7 +45,6 @@ enable_all_tests() {
     _spaces=yes
     _extensions=yes
     _crlf=yes
-    _tabs=yes
     _trailws=yes
     _rcsid=yes
     _oll=yes
@@ -58,7 +56,6 @@ disable_all_tests() {
     _spaces=no
     _extensions=no
     _crlf=no
-    _tabs=no
     _trailws=no
     _rcsid=no
     _oll=no
@@ -82,9 +79,24 @@ all_filenames() {
         | grep -v "\.\#\|\~$\|\.depend\|\/\.svn\/\|config.mak\|^\./config\.h" \
         | grep -v "^\./version\.h\|\.o$\|\.a$\|configure.log\|^\./help_mp.h"
     else
-        svn info -R | sed -n '/Path:/bb; :a; d; b; :b; s/Path: /.\//; h; :c; n;
-                              /Node Kind:/bd; bc; :d; /directory/ba; g; p;'
+        list_svn .
     fi
+}
+
+list_svn() {
+    tmpfiles=`sed '/name/ba; /kind/ba; d; b;
+                   :a; s/^ *....=\"\(.*\)\".*$/\1/;' $1/.svn/entries | \
+              sed '/$/N; s/\n/ /; / dir$/d; s/ file$//;'`
+    tmpdirs=`sed ' /name/ba; /kind/ba; d; b;
+                   :a; s/^ *....=\"\(.*\)\".*$/\1/;' $1/.svn/entries | \
+             sed ' /$/N; s/\n/ /; / file$/d; /^ dir$/d; s/ dir$//;'`
+
+    for i in $tmpfiles; do
+        echo $1/$i
+    done
+    for j in $tmpdirs; do
+        list_svn $1/$j
+    done
 }
 
 # -----------------------------------------------------------------------------
@@ -93,13 +105,12 @@ all_filenames() {
 
 for i in "$@"; do
     case "$i" in
-    -help|--help|-h|-\?)
+    -help)
         echo -e "\n$0 [options] [files]\n"
         echo -e "options:\n"
         printoption "spaces    " "test for spaces in filenames" "$_spaces"
         printoption "extensions" "test for uppercase extensions" "$_extensions"
         printoption "crlf      " "test for MSDOS line endings" "$_crlf"
-        printoption "tabs      " "test for tab characters" "$_tabs"
         printoption "trailws   " "test for trailing whitespace" "$_trailws"
         printoption "rcsid     " "test for missing RCS Id's" "$_rcsid"
         printoption "oll       " "test for overly long lines" "$_oll"
@@ -107,15 +118,14 @@ for i in "$@"; do
         printoption "stupid    " "test for stupid code" "$_stupid"
         echo
         printoption "all       " "enable all tests" "no"
-        echo  "                   (-noall can be specified as -none)"
         echo
         printoption "showcont  " "show offending content of file(s)" \
                                                                    "$_showcont"
         echo
         printoption "color     " "colored output" "$_color"
         printoption "head      " "print heading for each test" "$_head"
-        printoption "svn       " \
-                    "use svn info to determine which files to check" "$_svn"
+        printoption "svn       " "use .svn/ to determine which files to " \
+                                                                "check" "$_svn"
         echo -e "\nIf no files are specified, the whole tree is traversed."
         echo -e "If there are, -(no)svn has no effect.\n"
         exit
@@ -173,12 +183,6 @@ for i in "$@"; do
         ;;
     -nocrlf)
         _crlf=no
-        ;;
-    -tabs)
-        _tabs=yes
-        ;;
-    -notabs)
-        _tabs=no
         ;;
     -trailws)
         _trailws=yes
@@ -269,14 +273,6 @@ fi
 
 # -----------------------------------------------------------------------------
 
-if [ "$_tabs" = "yes" ]; then
-    printhead "checking for TAB characters ..."
-    TAB=`echo " " | tr ' ' '\011'`
-    grep $_grepopts "$TAB" $filelist
-fi
-
-# -----------------------------------------------------------------------------
-
 if [ "$_trailws" = "yes" ]; then
     printhead "checking for trailing whitespace ..."
     grep $_grepopts "[[:space:]]\+$" $filelist
@@ -321,7 +317,6 @@ if [ "$_stupid" = "yes" ]; then
     # avoid false-positives in xpm files, docs, etc, only check .c and .h files
     chfilelist=`echo $filelist | tr ' ' '\n' | grep "[\.][ch]$"`
 
-  if [ -n "$chfilelist" ]; then
     for i in calloc malloc realloc memalign av_malloc av_mallocz faad_malloc \
              lzo_malloc safe_malloc mpeg2_malloc _ogg_malloc; do
         printhead "--> casting of void* $i()"
@@ -356,7 +351,6 @@ if [ "$_stupid" = "yes" ]; then
 
     printhead "--> usage of -0"
     grep $_grepopts "[a-zA-Z0-9)]\+[ 	]*-[ 	]*0[^.0-9xa-fA-F_]" $chfilelist
-  fi
 fi
 
 # -----------------------------------------------------------------------------

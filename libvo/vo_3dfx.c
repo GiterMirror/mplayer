@@ -17,8 +17,9 @@
  *  GNU General Public License for more details.
  *   
  *  You should have received a copy of the GNU General Public License
- *  along with mpeg2dec; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
+ *
  */
 
 #include <stdio.h>
@@ -238,10 +239,10 @@ dump_yuv_planar(uint32_t *y, uint32_t *u, uint32_t *v, uint32_t to, uint32_t wid
 	for (j=0;j<jmax;j++) 
 	{
 		//XXX this should be hand-rolled 32 bit memcpy for safeness.
-		fast_memcpy(fb_YUV->U + (uint32_t) VOODOO_YUV_STRIDE*  j       ,((uint8_t*) u) + uv_imax*  j       , uv_imax);
-		fast_memcpy(fb_YUV->V + (uint32_t) VOODOO_YUV_STRIDE*  j       ,((uint8_t*) v) + uv_imax*  j       , uv_imax);
-		fast_memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE* (j<<1)   ,((uint8_t*) y) + y_imax * (j<<1)   , y_imax);
-		fast_memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE*((j<<1)+1),((uint8_t*) y) + y_imax *((j<<1)+1), y_imax);
+		memcpy(fb_YUV->U + (uint32_t) VOODOO_YUV_STRIDE*  j       ,((uint8_t*) u) + uv_imax*  j       , uv_imax);
+		memcpy(fb_YUV->V + (uint32_t) VOODOO_YUV_STRIDE*  j       ,((uint8_t*) v) + uv_imax*  j       , uv_imax);
+		memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE* (j<<1)   ,((uint8_t*) y) + y_imax * (j<<1)   , y_imax);
+		memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE*((j<<1)+1),((uint8_t*) y) + y_imax *((j<<1)+1), y_imax);
 	}
   LOG("video_out_3dfx: done planar dump\n");
 }

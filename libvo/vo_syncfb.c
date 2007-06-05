@@ -20,8 +20,9 @@
  *  GNU General Public License for more details.
  *   
  *  You should have received a copy of the GNU General Public License
- *  along with mpeg2dec; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
+ *
  */
 
 #include <stdio.h>
@@ -127,7 +128,7 @@ write_frame_YUV420P2(uint_8 *y,uint_8 *cr, uint_8 *cb)
 
 	for(h=0; h < _config.src_height; h++)
 	{
-		fast_memcpy(dest, y, _config.src_width);
+		memcpy(dest, y, _config.src_width);
 		y += _config.src_width;
 		dest += bespitch;
 	}
@@ -161,7 +162,7 @@ write_slice_YUV420P2(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 
 	for(h=0; h < 16; h++)
 	{
-		fast_memcpy(dest, y, _config.src_width);
+		memcpy(dest, y, _config.src_width);
 		y += _config.src_width;
 		dest += bespitch;
 	}
@@ -190,7 +191,7 @@ write_slice_YUV420P3(uint_8 *y,uint_8 *cr, uint_8 *cb,int stride[],uint_32 ypos,
 	dest = frame_mem + bufinfo.offset + (bespitch * ypos);
 	for(h=0; h < ysize; h++)
 	{
-		fast_memcpy(dest, y, xsize);
+		memcpy(dest, y, xsize);
 		y += stride[0];
 		dest += bespitch;
 	}
@@ -201,7 +202,7 @@ write_slice_YUV420P3(uint_8 *y,uint_8 *cr, uint_8 *cb,int stride[],uint_32 ypos,
 	dest = frame_mem + bufinfo.offset_p2 + (bespitch * ypos)/4;
 	for(h=0; h < ysize; h++)
 	{
-		fast_memcpy(dest, cr, xsize);
+		memcpy(dest, cr, xsize);
 		cr += stride[1];
 		dest += bespitch/2;
 	}
@@ -209,7 +210,7 @@ write_slice_YUV420P3(uint_8 *y,uint_8 *cr, uint_8 *cb,int stride[],uint_32 ypos,
 	dest = frame_mem + bufinfo.offset_p3 + (bespitch * ypos)/4;
 	for(h=0; h < ysize; h++)
 	{
-		fast_memcpy(dest, cb, xsize);
+		memcpy(dest, cb, xsize);
 		cb += stride[2];
 		dest += bespitch/2;
 	}

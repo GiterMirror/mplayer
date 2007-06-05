@@ -2,8 +2,19 @@
 #define	_aviheader_h
 
 //#include "config.h"	/* get correct definition WORDS_BIGENDIAN */
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
+#ifndef min
+#define min(a,b) (((a)<(b))?(a):(b))
+#endif
+
+#ifndef max
+#define max(a,b) (((a)>(b))?(a):(b))
+#endif
 
 #ifndef mmioFOURCC
 #define mmioFOURCC( ch0, ch1, ch2, ch3 )				\

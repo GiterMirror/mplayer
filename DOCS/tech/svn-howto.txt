@@ -102,10 +102,6 @@ I. BASICS:
   It's very easy for stray debug output or cosmetic modifications to slip in,
   please avoid problems through this extra level of scrutiny.
 
-  For cosmetics-only commits you should get (almost) empty output from
-
-    svn diff --diff-cmd diff -x '-duwbB' <filename(s)>
-
   Also check the output of
 
     svn status
@@ -122,7 +118,7 @@ I. BASICS:
 
   When prompted for a password, type the password you got assigned by the
   project admins. By default, Subversion caches all authentication tokens.
-  This behavior can be disabled by setting both 'store-passwords' and
+  This behaviour can be disabled by setting both 'store-passwords' and
   'store-auth-creds' to "no" in ~/.subversion/config. You might need to remove
   previous cache files, which are located in ~/.subversion/auth, by hand.
 
@@ -163,41 +159,41 @@ I. BASICS:
 9. Reverting broken commits
 
   There are 2 ways to reverse a change, they differ significantly in what they
-  do to the repository.
+  do to the svn repository
   The recommit old method:
     svn merge
     svn ci <file>
-    This simply changes the file(s) back to their old version locally and then
-    the change is committed as if it were a new change.
+    This simply changes the file(s) back to their old version localy and then
+    the change is commited as if it is a new change
   The svn copy method
     svn rm <file>
     svn ci <file>
     svn cp -r<good revision> svn://svn.mplayerhq.hu/mplayer/trunk/[<path>/]<file> <file>
     svn ci <file>
     This simply removes the file and then copies the last good version with
-    its history over it. This method can only be used to revert the n last
-    commits but not to revert a bad commit in the middle of its history.
+    its history over it, this method can only be used to revert the n last
+    commits but not to revert a bad commit in the middle of its history
   Neither method will change the history, checking out an old version will
   always return exactly that revision with all its bugs and features. The
   difference is that with the svn copy method the broken commit will not be
-  part of the directly visible history of the revisions after the reversal
-  So if the change was completely broken like reindenting a file against the
-  maintainers decision, or a change which mixed functional and cosmetic
-  changes then it is better if it is not part of the visible history as it
-  would make it hard to read, review and would also break svn annotate.
+  part of the directly vissible history of the revisions after the reversal
+  So if the change was completly broken like reindenting a file against the
+  maintainers decission, or a change which mixed functional and cosmetic
+  changes then its better if its not part of the vissible history as it
+  would make it hard to read, review and would also break svn annotate
   For the example of a change which mixed functional and cosmetic parts they
-  should of course be committed again after the reversal but separately, so one
-  change with the functional stuff and one with the cosmetics.
+  should of course be commited again after the reversal but seperatly, so one
+  change with the functional stuff and one with the cosmetics
   OTOH if the change which you want to reverse was simply buggy but not
   totally broken then it should be reversed with svn merge as otherwise
-  the fact that the change was bad would be hidden.
+  the fact that the change was bad would be hidden
   One method to decide which reversal method is best is to ask yourself
-  if there is any value in seeing the whole bad change and its removal
-  in SVN vs. just seeing a comment that says what has been reversed while
-  the actual change does not clutter the immediately visible history and
+  if theres any value in seeing the whole bad change and its removial
+  in svn vs. just seeing a comment that says what has been reversed while
+  the actual change does not clutter the immedeatly vissible history and
   svn annotate.
   If you are even just slightly uncertain how to revert something then ask on
-  the mplayer-dev-eng mailing list.
+  the mplayer-dev mailinglist.
 
 
 10. Reverting local changes
@@ -241,8 +237,7 @@ II. POLICY / RULES:
 
 
 3. Do not commit unrelated changes together, split them into self-contained
-   pieces, but not smaller. Do not split commits by files or directories,
-   keep related changes together.
+   pieces.
 
 
 4. Do not change behavior of the program (renaming options etc) or
@@ -251,7 +246,7 @@ II. POLICY / RULES:
 
 
 5. Do not commit changes to the build system (Makefiles, configure script)
-   which change behavior, defaults etc, without asking first. The same
+   which change behaviour, defaults etc, without asking first. The same
    applies to compiler warning fixes, trivial looking fixes and to code
    maintained by other developers. We usually have a reason for doing things
    the way we do. Send your changes as patches to the mplayer-dev-eng mailing
@@ -297,21 +292,6 @@ II. POLICY / RULES:
 11. Update the documentation if you change behavior or add features. If you are
     unsure how best to do this, send a patch to mplayer-docs, the documentation
     maintainers will review and commit your stuff.
-
-
-12. Always send a patch to the mplayer-dev-eng mailing list before committing
-    if you suspect that the change is going to be controversial. Based on past
-    experience, these changes are likely to be controversial:
-     - feature removal, even if obsolete
-     - changes to "special" output messages (like the "Core dumped ;)" message)
-     - verbosity changes from default (info) level
-     - changes to "historical" parts of docs and web pages
-     - use of internal or external libraries
-
-
-13. Try to keep important discussions and requests (also) on the
-    mplayer-dev-eng mailing list, so that all developers can benefit from them.
-    IRC is good for quick discussions, but nobody is there 24/7.
 
 
 Also read DOCS/tech/patches.txt !!!!

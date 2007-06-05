@@ -5,7 +5,6 @@
  */
 
 #include "config.h"
-#include "debug.h"
 
 #include <stdio.h>
 #ifdef HAVE_MALLOC_H
@@ -153,10 +152,12 @@ HDRVR DrvOpen(LPARAM lParam2)
     char unknown[0x124];
     const char* filename = (const char*) ((ICOPEN*) lParam2)->pV1Reserved;
 
+#ifdef MPLAYER
 #ifdef WIN32_LOADER
     Setup_LDT_Keeper();
 #endif
     printf("Loading codec DLL: '%s'\n",filename);
+#endif
 
     hDriver = (NPDRVR) malloc(sizeof(DRVR));
     if (!hDriver)

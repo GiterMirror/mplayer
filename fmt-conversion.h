@@ -1,8 +1,4 @@
-#ifdef USE_LIBAVUTIL_SO
-#include <ffmpeg/avutil.h>
-#else
 #include "avutil.h"
-#endif
 #include "img_format.h"
 
 enum PixelFormat imgfmt2pixfmt(int fmt)

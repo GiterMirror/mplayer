@@ -8,7 +8,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "parse_es.h"
 
@@ -26,7 +26,7 @@ int sync_video_packet(demux_stream_t *ds){
   int skipped=0;
     if (!demux_pattern_3(ds, NULL, MAX_SYNCLEN, &skipped, 0x100)) {
       if (skipped == MAX_SYNCLEN)
-      mp_msg(MSGT_DEMUXER, MSGL_ERR, "parse_es: could not sync video stream!\n");
+      mp_msg(MSGT_DEMUXER, MSGL_ERR, "parse_es: could not sync video stream!\n", skipped);
       goto eof_out;
     }
     next_nal = demux_getc(ds);

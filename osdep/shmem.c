@@ -8,6 +8,8 @@
 
 #include "config.h"
 
+#if defined(USE_STREAM_CACHE) && !defined(WIN32)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,3 +116,5 @@ void shmem_free(void* p,int size){
       break;
   }
 }
+
+#endif

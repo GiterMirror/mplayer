@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h> 
 
+#include <unistd.h>
 #include <inttypes.h>
 #include <math.h>
 #include <limits.h>
@@ -310,7 +311,7 @@ static af_data_t* play(struct af_instance_s* af, af_data_t* data)
 }
 
 // Allocate memory and set function pointers
-static int af_open(af_instance_t* af){
+static int open(af_instance_t* af){
   int i = 0;
   af->control=control;
   af->uninit=uninit;
@@ -342,5 +343,5 @@ af_info_t af_info_volnorm = {
     "Alex Beregszaszi & Pierre Lombard",
     "",
     AF_FLAGS_NOT_REENTRANT,
-    af_open
+    open
 };

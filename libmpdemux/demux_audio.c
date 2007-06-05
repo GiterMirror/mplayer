@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "genres.h"
@@ -31,8 +31,8 @@ typedef struct da_priv {
 //! rather arbitrary value for maximum length of wav-format headers
 #define MAX_WAVHDR_LEN (1 * 1024 * 1024)
 
-//! how many valid frames in a row we need before accepting as valid MP3
-#define MIN_MP3_HDRS 12
+// how many valid frames in a row we need before accepting as valid MP3
+#define MIN_MP3_HDRS 5
 
 //! Used to describe a potential (chain of) MP3 headers we found
 typedef struct mp3_hdr {
@@ -423,8 +423,7 @@ static int demux_audio_open(demuxer_t* demuxer) {
     w->nSamplesPerSec = sh_audio->samplerate = stream_read_dword_le(s);
     w->nAvgBytesPerSec = stream_read_dword_le(s);
     w->nBlockAlign = stream_read_word_le(s);
-    w->wBitsPerSample = stream_read_word_le(s);
-    sh_audio->samplesize = (w->wBitsPerSample + 7) / 8;
+    w->wBitsPerSample = sh_audio->samplesize = stream_read_word_le(s);
     w->cbSize = 0;
     sh_audio->i_bps = sh_audio->wf->nAvgBytesPerSec;
     l -= 16;
@@ -453,9 +452,9 @@ static int demux_audio_open(demuxer_t* demuxer) {
       chunk_size = stream_read_dword_le(demuxer->stream);
       if (chunk_type != mmioFOURCC('d', 'a', 't', 'a'))
         stream_skip(demuxer->stream, chunk_size);
-    } while (!s->eof && chunk_type != mmioFOURCC('d', 'a', 't', 'a'));
+    } while (chunk_type != mmioFOURCC('d', 'a', 't', 'a'));
     demuxer->movi_start = stream_tell(s);
-    demuxer->movi_end = chunk_size ? demuxer->movi_start + chunk_size : s->end_pos;
+    demuxer->movi_end = s->end_pos;
 //    printf("wav: %X .. %X\n",(int)demuxer->movi_start,(int)demuxer->movi_end);
     // Check if it contains dts audio
     if((w->wFormatTag == 0x01) && (w->nChannels == 2) && (w->nSamplesPerSec == 44100)) {
@@ -599,11 +598,6 @@ static int demux_audio_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds) {
   case WAV : {
     unsigned align = sh_audio->wf->nBlockAlign;
     l = sh_audio->wf->nAvgBytesPerSec;
-    if (demux->movi_end && l > demux->movi_end - stream_tell(s)) {
-      // do not read beyond end, there might be junk after data chunk
-      l = demux->movi_end - stream_tell(s);
-      if (l <= 0) return 0;
-    }
     if (align)
       l = (l + align - 1) / align * align;
     dp = new_demux_packet(l);

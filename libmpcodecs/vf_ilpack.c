@@ -11,6 +11,8 @@
 #include "mp_image.h"
 #include "vf.h"
 
+#include "libvo/fastmemcpy.h"
+
 typedef void (pack_func_t)(unsigned char *dst, unsigned char *y,
 	unsigned char *u, unsigned char *v, int w, int us, int vs);
 
@@ -61,6 +63,7 @@ static void pack_li_1_C(unsigned char *dst, unsigned char *y,
 static void pack_nn_MMX(unsigned char *dst, unsigned char *y,
 	unsigned char *u, unsigned char *v, int w)
 {
+	int j;
 	asm volatile (""
 		ASMALIGN(4)
 		"1: \n\t"

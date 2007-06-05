@@ -35,12 +35,11 @@
 
 #include "m_option.h"
 #include "codec-cfg.h"
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "muxer.h"
 
 #include "img_format.h"
 #include "mp_image.h"
@@ -86,11 +85,6 @@ void x264enc_set_param(m_option_t* opt, char* arg)
         initted = 1;
     }
 
-    if(!arg) {
-        parse_error = 1;
-        return;
-    }
-
     while(*arg) {
         char *name = arg;
         char *value;
@@ -130,7 +124,7 @@ void x264enc_set_param(m_option_t* opt, char* arg)
         if(turbo == 1)
         {
             param.i_frame_reference = ( param.i_frame_reference + 1 ) >> 1;
-            param.analyse.i_subpel_refine = FFMAX( FFMIN( 3, param.analyse.i_subpel_refine - 1 ), 1 );
+            param.analyse.i_subpel_refine = max( min( 3, param.analyse.i_subpel_refine - 1 ), 1 );
             param.analyse.inter &= ( ~X264_ANALYSE_PSUB8x8 );
             param.analyse.inter &= ( ~X264_ANALYSE_BSUB16x16 );
             param.analyse.i_trellis = 0;
@@ -324,7 +318,6 @@ static int encode_frame(struct vf_instance_s *vf, x264_picture_t *pic_in)
 static void uninit(struct vf_instance_s *vf)
 {
     h264_module_t *mod=(h264_module_t*)vf->priv;
-    if (mod->x264)
     x264_encoder_close(mod->x264);
 }
 

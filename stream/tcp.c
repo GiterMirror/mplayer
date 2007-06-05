@@ -19,7 +19,6 @@
 
 #include "mp_msg.h"
 #include "help_mp.h"
-#include "input/input.h"
 
 #ifndef HAVE_WINSOCK2
 #include <netdb.h>
@@ -77,9 +76,6 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 	
 #ifdef HAVE_WINSOCK2
 	u_long val;
-	int to;
-#else
-	struct timeval to;
 #endif
 	
 	socket_server_fd = socket(af, SOCK_STREAM, 0);
@@ -89,18 +85,6 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 //		mp_msg(MSGT_NETWORK,MSGL_ERR,"Failed to create %s socket:\n", af2String(af));
 		return TCP_ERROR_FATAL;
 	}
-
-#if defined(SO_RCVTIMEO) && defined(SO_SNDTIMEO)
-#ifdef HAVE_WINSOCK2
-	/* timeout in milliseconds */
-	to = 10 * 1000;
-#else
-	to.tv_sec = 10;
-	to.tv_usec = 0;
-#endif
-	setsockopt(socket_server_fd, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
-	setsockopt(socket_server_fd, SOL_SOCKET, SO_SNDTIMEO, &to, sizeof(to));
-#endif
 
 	switch (af) {
 		case AF_INET:  our_s_addr = (void *) &server_address.four.sin_addr; break;

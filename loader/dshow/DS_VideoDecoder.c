@@ -8,7 +8,12 @@
 #include "guids.h"
 #include "interfaces.h"
 #include "registry.h"
+
+#ifndef NOAVIFILE_HEADERS
+#include "videodecoder.h"
+#else
 #include "libwin32.h"
+#endif
 #include "DS_Filter.h"
 
 struct _DS_VideoDecoder
@@ -26,13 +31,18 @@ struct _DS_VideoDecoder
     int m_bIsDivX;             // for speed
     int m_bIsDivX4;            // for speed
 };
-static SampleProcUserData sampleProcData;
 
 #include "DS_VideoDecoder.h"
 
 #include "../wine/winerror.h"
 #ifdef WIN32_LOADER
 #include "../ldt_keeper.h"
+#endif
+
+#ifndef NOAVIFILE_HEADERS
+#define VFW_E_NOT_RUNNING               0x80040226
+#include "fourcc.h"
+#include "except.h"
 #endif
 
 #include <unistd.h>
@@ -47,6 +57,8 @@ static SampleProcUserData sampleProcData;
 
 // strcmp((const char*)info.dll,...)  is used instead of  (... == ...)
 // so Arpi could use char* pointer in his simplified DS_VideoDecoder class
+
+#define __MODULE__ "DirectShow_VideoDecoder"
 
 #define false 0
 #define true 1
@@ -104,7 +116,6 @@ DS_VideoDecoder * DS_VideoDecoder_Open(char* dllname, GUID* guid, BITMAPINFOHEAD
      
         this->iv.m_bh = malloc(bihs);
         memcpy(this->iv.m_bh, format, bihs);
-        this->iv.m_bh->biSize = bihs;
 
         this->iv.m_State = STOP;
         //this->iv.m_pFrame = 0;
@@ -165,7 +176,7 @@ DS_VideoDecoder * DS_VideoDecoder_Open(char* dllname, GUID* guid, BITMAPINFOHEAD
                               * ((this->iv.m_obh.biBitCount + 7) / 8);
 
 
-	this->m_pDS_Filter = DS_FilterCreate(dllname, guid, &this->m_sOurType, &this->m_sDestType,&sampleProcData);
+	this->m_pDS_Filter = DS_FilterCreate(dllname, guid, &this->m_sOurType, &this->m_sDestType);
 	
 	if (!this->m_pDS_Filter)
 	{
@@ -268,8 +279,14 @@ void DS_VideoDecoder_StartInternal(DS_VideoDecoder *this)
     ALLOCATOR_PROPERTIES props, props1;
     Debug printf("DS_VideoDecoder_StartInternal\n");
     //cout << "DSSTART" << endl;
-    this->m_pDS_Filter->m_pAll->vt->Commit(this->m_pDS_Filter->m_pAll);
     this->m_pDS_Filter->Start(this->m_pDS_Filter);
+    
+    props.cBuffers = 1;
+    props.cbBuffer = this->m_sDestType.lSampleSize;
+    props.cbAlign = 1;
+    props.cbPrefix = 0;
+    this->m_pDS_Filter->m_pAll->vt->SetProperties(this->m_pDS_Filter->m_pAll, &props, &props1);
+    this->m_pDS_Filter->m_pAll->vt->Commit(this->m_pDS_Filter->m_pAll);
     
     this->iv.m_State = START;
 }
@@ -297,6 +314,10 @@ int DS_VideoDecoder_DecodeInternal(DS_VideoDecoder *this, const void* src, int s
     }
     
     //cout << "DECODE " << (void*) pImage << "   d: " << (void*) pImage->Data() << endl;
+    if (pImage)
+    {
+	this->m_pDS_Filter->m_pOurOutput->SetPointer2(this->m_pDS_Filter->m_pOurOutput,pImage);
+    }
 
 
     sample->vt->SetActualDataLength(sample, size);
@@ -326,10 +347,7 @@ int DS_VideoDecoder_DecodeInternal(DS_VideoDecoder *this, const void* src, int s
     {
 	Debug printf("DS_VideoDecoder::DecodeInternal() error putting data into input pin %x\n", result);
     }
-    if (pImage)
-    {
-        memcpy(pImage, sampleProcData.frame_pointer, sampleProcData.frame_size);
-    }
+
     sample->vt->Release((IUnknown*)sample);
 
 #if 0
@@ -407,7 +425,6 @@ int DS_VideoDecoder_DecodeInternal(DS_VideoDecoder *this, const void* src, int s
 int DS_VideoDecoder_SetDestFmt(DS_VideoDecoder *this, int bits, unsigned int csp)
 {
     HRESULT result;
-    ALLOCATOR_PROPERTIES props,props1;
     int should_test=1;
     int stoped = 0;   
     
@@ -599,24 +616,6 @@ int DS_VideoDecoder_SetDestFmt(DS_VideoDecoder *this, int bits, unsigned int csp
 	printf("Error reconnecting input pin 0x%x\n", (int)result);
 	return -1;
     }
-
-    if(this->m_pDS_Filter->m_pAll)
-        this->m_pDS_Filter->m_pAll->vt->Release(this->m_pDS_Filter->m_pAll);
-    this->m_pDS_Filter->m_pAll=MemAllocatorCreate();
-    if (!this->m_pDS_Filter->m_pAll)
-    {
-        printf("Call to MemAllocatorCreate failed\n");
-        return -1;
-    }
-    //Seting allocator property according to our media type
-    props.cBuffers=1;
-    props.cbBuffer=this->m_sDestType.lSampleSize;
-    props.cbAlign=1;
-    props.cbPrefix=0;
-    this->m_pDS_Filter->m_pAll->vt->SetProperties(this->m_pDS_Filter->m_pAll, &props, &props1);
-    //Notify remote pin about choosed allocator
-    this->m_pDS_Filter->m_pImp->vt->NotifyAllocator(this->m_pDS_Filter->m_pImp, this->m_pDS_Filter->m_pAll, 0);
-
     result = this->m_pDS_Filter->m_pOutputPin->vt->ReceiveConnection(this->m_pDS_Filter->m_pOutputPin,
 							       (IPin *)this->m_pDS_Filter->m_pOurOutput,
 							       &this->m_sDestType);

@@ -1,68 +1,169 @@
+
+LIBNAME = stream.a
+
 include ../config.mak
 
-LIBNAME_COMMON = stream.a
+# Core
+SRCS += open.c \
+        url.c \
 
-SRCS_COMMON = open.c \
-              stream.c \
-              stream_cue.c \
-              stream_file.c \
-              stream_mf.c \
-              stream_null.c \
-              url.c \
-
-SRCS_COMMON-$(CDDA)              += stream_cdda.c cdinfo.c
-SRCS_COMMON-$(CDDB)              += stream_cddb.c
-SRCS_COMMON-$(DVBIN)             += dvb_tune.c stream_dvb.c
-SRCS_COMMON-$(DVDNAV)            += stream_dvdnav.c
-SRCS_COMMON-$(DVDREAD)           += stream_dvd.c
-SRCS_COMMON-$(FTP)               += stream_ftp.c
-SRCS_COMMON-$(LIBSMBCLIENT)      += stream_smb.c
-SRCS_COMMON-$(MPLAYER_NETWORK)   += stream_netstream.c     \
-                                    asf_mmst_streaming.c   \
-                                    asf_streaming.c        \
-                                    cookies.c              \
-                                    http.c                 \
-                                    network.c              \
-                                    pnm.c                  \
-                                    rtp.c                  \
-                                    udp.c                  \
-                                    tcp.c                  \
-                                    stream_rtp.c           \
-                                    stream_rtsp.c          \
-                                    stream_udp.c           \
-                                    freesdp/common.c       \
-                                    freesdp/errorlist.c    \
-                                    freesdp/parser.c       \
-                                    librtsp/rtsp.c         \
-                                    librtsp/rtsp_rtp.c     \
-                                    librtsp/rtsp_session.c \
-                                    realrtsp/asmrp.c       \
-                                    realrtsp/real.c        \
-                                    realrtsp/rmff.c        \
-                                    realrtsp/sdpplin.c     \
-                                    realrtsp/xbuffer.c     \
-
-SRCS_COMMON-$(PVR)               += stream_pvr.c
-SRCS_COMMON-$(RADIO)             += stream_radio.c
-SRCS_COMMON-$(RADIO_CAPTURE)     += audio_in.c
-SRCS_COMMON-$(STREAM_CACHE)      += cache2.c
-SRCS_COMMON-$(STREAMING_LIVE555) += stream_livedotcom.c
-SRCS_COMMON-$(TV)                += stream_tv.c tv.c frequencies.c tvi_dummy.c
-SRCS_COMMON-$(TV_BSDBT848)       += tvi_bsdbt848.c
-SRCS_COMMON-$(TV_V4L1)           += tvi_v4l.c  audio_in.c
-SRCS_COMMON-$(TV_V4L2)           += tvi_v4l2.c audio_in.c
-SRCS_COMMON-$(VCD)               += stream_vcd.c
-SRCS_COMMON-$(VSTREAM)           += stream_vstream.c
-
-ifeq ($(AUDIO_INPUT),yes)
-SRCS_COMMON-$(ALSA1X)            += ai_alsa1x.c
-SRCS_COMMON-$(ALSA9)             += ai_alsa.c
-SRCS_COMMON-$(OSS)               += ai_oss.c
+ifeq ($(STREAM_CACHE),yes)
+SRCS += cache2.c
 endif
 
-include ../mpcommon.mak
+ifeq ($(CDDA),yes)
+SRCS += stream_cdda.c cdinfo.c
+  ifeq ($(MPLAYER_NETWORK),yes)
+  SRCS += stream_cddb.c
+  endif
+endif
 
-clean::
-	rm -f realrtsp/*.o realrtsp/*.a realrtsp/*~ \
+# Stream readers/writers
+SRCS += stream.c \
+        stream_cue.c \
+        stream_file.c \
+        stream_mf.c \
+        stream_null.c \
+
+ifeq ($(HAVE_DVD),yes)
+SRCS += stream_dvd.c
+endif
+ifeq ($(DVDNAV),yes)
+SRCS += stream_dvdnav.c
+endif
+ifeq ($(VCD),yes)
+SRCS += stream_vcd.c
+endif
+ifeq ($(FTP),yes)
+SRCS += stream_ftp.c
+endif
+ifeq ($(LIBSMBCLIENT),yes)
+SRCS += stream_smb.c
+endif
+ifeq ($(MPLAYER_NETWORK),yes)
+  SRCS += stream_netstream.c
+  ifeq ($(STREAMING_LIVE555),yes)
+  SRCS += stream_livedotcom.c
+  endif
+endif
+ifeq ($(VSTREAM),yes)
+SRCS += stream_vstream.c
+endif
+
+# TV in
+ifeq ($(TV),yes)
+SRCS += stream_tv.c tv.c frequencies.c tvi_dummy.c
+  ifeq ($(TV_BSDBT848),yes)
+  SRCS += tvi_bsdbt848.c
+  endif
+  ifeq ($(TV_V4L2),yes)
+  SRCS += tvi_v4l2.c audio_in.c
+    ifeq ($(PVR),yes)
+    SRCS += stream_pvr.c
+    endif
+  endif
+  ifeq ($(TV_V4L1),yes)
+  SRCS += tvi_v4l.c audio_in.c
+  endif
+  ifeq ($(TV_V4L),yes)
+    ifeq ($(ALSA1X),yes)
+     SRCS += ai_alsa1x.c
+    endif
+    ifeq ($(ALSA9),yes)
+     SRCS += ai_alsa.c
+    endif
+    ifeq ($(OSS),yes)
+     SRCS += ai_oss.c
+    endif
+  endif
+endif
+
+# Radio in
+ifeq ($(RADIO),yes)
+SRCS += stream_radio.c  
+  ifeq ($(RADIO_CAPTURE),yes)
+    SRCS += audio_in.c
+    ifeq ($(ALSA1X),yes)
+     SRCS += ai_alsa1x.c
+    endif
+    ifeq ($(ALSA9),yes)
+     SRCS += ai_alsa.c
+    endif
+    ifeq ($(OSS),yes)
+     SRCS += ai_oss.c
+    endif
+ endif  
+endif
+
+ifeq ($(MPLAYER_NETWORK),yes)
+SRCS += asf_streaming.c \
+        http.c \
+        network.c \
+        cookies.c \
+        asf_mmst_streaming.c \
+        pnm.c \
+        rtp.c \
+        udp.c \
+        tcp.c \
+        stream_rtsp.c \
+        stream_rtp.c \
+        stream_udp.c \
+
+SRCS += realrtsp/asmrp.c \
+        realrtsp/real.c \
+        realrtsp/rmff.c \
+        realrtsp/sdpplin.c \
+        realrtsp/xbuffer.c \
+
+SRCS += librtsp/rtsp.c \
+        librtsp/rtsp_rtp.c \
+        librtsp/rtsp_session.c \
+
+SRCS += freesdp/common.c \
+        freesdp/errorlist.c \
+        freesdp/parser.c \
+
+endif
+
+ifeq ($(DVBIN),yes)
+SRCS += stream_dvb.c
+SRCS += dvb_tune.c
+endif
+
+OBJS	= $(SRCS:.c=.o)
+INCLUDE = -I.. -I../loader $(LIBAV_INC)
+CFLAGS  = $(INCLUDE) $(OPTFLAGS)
+
+.SUFFIXES: .c .o
+
+# .PHONY: all clean
+
+all:	$(LIBNAME)
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(LIBNAME):	$(OBJS)
+	$(AR) r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~ \
+	realrtsp/*.o realrtsp/*.a realrtsp/*~ \
 	librtsp/*.o librtsp/*.a librtsp/*~ \
 	freesdp/*.o freesdp/*.a freesdp/*~
+
+distclean: clean
+	rm -f .depend
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

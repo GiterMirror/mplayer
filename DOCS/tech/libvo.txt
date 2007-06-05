@@ -77,7 +77,7 @@ Each vo driver _has_ to implement these:
 	0x08	- flipping (-flip)
       They're defined as VOFLAG_* (see libvo/video_out.h)
       
-      IMPORTANT NOTE: config() may be called 0 (zero), 1 or more (2,3...)
+      IMPORTAMT NOTE: config() may be called 0 (zero), 1 or more (2,3...)
       times between preinit() and uninit() calls. You MUST handle it, and
       you shouldn't crash at second config() call or at uninit() without
       any config() call! To make your life easier, vo_config_count is
@@ -90,7 +90,7 @@ Each vo driver _has_ to implement these:
       window size and position. The code should look as following:
       ---
       set x,y,w,h to the values supplied by the caller or to those you deam
-      useful.
+      usefull.
       call geometry(&x, &y, &w, &h, screenw, screenh)
       call aspect()
       ---
@@ -114,7 +114,7 @@ Each vo driver _has_ to implement these:
 	 draw_alpha() for each. As a help, osd.c contains draw_alpha for
 	 each pixelformats, use this if possible!
 	 
-	 NOTE: This one will be obsolete soon! But it's still useful when
+	 NOTE: this one will be obsolete soon! But it's still usefull when
 	 you want to do tricks, like rendering osd _after_ hardware scaling
 	 (tdfxfb) or render subtitles under of the image (vo_mpegpes, sdl)
 

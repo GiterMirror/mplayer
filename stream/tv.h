@@ -6,13 +6,13 @@ extern int tv_param_on;
 #ifdef USE_TV
 //#include "libao2/afmt.h"
 //#include "libmpcodecs/img_format.h"
+//#include "libvo/fastmemcpy.h"
 //#include "mp_msg.h"
 
 extern char *tv_param_freq;
 extern char *tv_param_channel;
 extern char *tv_param_chanlist;
 extern char *tv_param_norm;
-extern int tv_param_automute;
 #ifdef HAVE_TV_V4L2
 extern int tv_param_normid;
 #endif
@@ -52,7 +52,6 @@ extern int tv_param_saturation;
 
 typedef struct tvi_info_s
 {
-    struct tvi_handle_s * (*tvi_init)(char *device,char *adevice);
     const char *name;
     const char *short_name;
     const char *author;
@@ -66,12 +65,16 @@ typedef struct tvi_functions_s
     int (*control)();
     int (*start)();
     double (*grab_video_frame)();
+#ifdef HAVE_TV_BSDBT848
+    double (*grabimmediate_video_frame)();
+#endif
     int (*get_video_framesize)();
     double (*grab_audio_frame)();
     int (*get_audio_framesize)();
 } tvi_functions_t;
 
 typedef struct tvi_handle_s {
+    tvi_info_t		*info;
     tvi_functions_t	*functions;
     void		*priv;
     int 		seq;
@@ -181,7 +184,6 @@ int tv_step_chanlist(tvi_handle_t *tvh);
 
 int tv_set_freq(tvi_handle_t *tvh, unsigned long freq);
 int tv_get_freq(tvi_handle_t *tvh, unsigned long *freq);
-int tv_step_freq(tvi_handle_t *tvh, float step_interval);
 
 int tv_set_norm(tvi_handle_t *tvh, char* norm);
 

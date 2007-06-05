@@ -113,15 +113,15 @@ int dvb_open_devices(dvb_priv_t *priv, int n, int demux_cnt, int *pids)
 		return 0;
 	}
 #ifdef HAVE_DVB_HEAD
-	priv->sec_fd=0;
+    priv->sec_fd=0;
 #else
 	priv->sec_fd = open(dvb_secdev[n], O_RDWR);
-	if(priv->sec_fd < 0)
-	{
+    if(priv->sec_fd < 0)
+    {
 		mp_msg(MSGT_DEMUX, MSGL_ERR, "ERROR OPENING SEC DEVICE %s: ERRNO %d\n", dvb_secdev[n], errno);
 		close(priv->fe_fd);
-		return 0;
-	}
+      	return 0;
+    }
 #endif
 	priv->demux_fds_cnt = 0;
 	mp_msg(MSGT_DEMUX, MSGL_V, "DVB_OPEN_DEVICES(%d)\n", demux_cnt);
@@ -148,7 +148,7 @@ int dvb_open_devices(dvb_priv_t *priv, int n, int demux_cnt, int *pids)
 		return 0;
 	}
 
-	return 1;
+    return 1;
 }
 
 
@@ -312,7 +312,7 @@ static int SecGetStatus (int fd, struct secStatus *state)
 		break;
     }
 
-    mp_msg(MSGT_DEMUX, MSGL_V, "SEC CONT TONE: %s\n", (state->contTone == SEC_TONE_ON ? "ON" : "OFF"));
+ 	mp_msg(MSGT_DEMUX, MSGL_V, "SEC CONT TONE: %s\n", (state->contTone == SEC_TONE_ON ? "ON" : "OFF"));
     return 0;
 }
 
@@ -338,13 +338,19 @@ static void print_status(fe_status_t festatus)
 
 
 #ifdef HAVE_DVB_HEAD
-static int check_status(int fd_frontend, int tmout)
+static int check_status(int fd_frontend,struct dvb_frontend_parameters* feparams, int tuner_type, uint32_t base, int tmout)
 {
 	int32_t strength;
 	fe_status_t festatus;
 	struct pollfd pfd[1];
 	int ok=0, locks=0;
 	time_t tm1, tm2;
+
+	if (ioctl(fd_frontend,FE_SET_FRONTEND,feparams) < 0)
+	{
+	mp_msg(MSGT_DEMUX, MSGL_ERR, "ERROR tuning channel\n");
+	return -1;
+	}
 
 	pfd[0].fd = fd_frontend;
 	pfd[0].events = POLLPRI;
@@ -371,6 +377,35 @@ static int check_status(int fd_frontend, int tmout)
 
 	if(festatus & FE_HAS_LOCK)
 	{
+		if(ioctl(fd_frontend,FE_GET_FRONTEND,feparams) >= 0)
+		{
+		switch(tuner_type)
+		{
+			case FE_OFDM:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",feparams->frequency);
+			break;
+			case FE_QPSK:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",(unsigned int)((feparams->frequency)+base));
+			mp_msg(MSGT_DEMUX, MSGL_V, "        SymbolRate: %d\n",feparams->u.qpsk.symbol_rate);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        FEC_inner:  %d\n",feparams->u.qpsk.fec_inner);
+			mp_msg(MSGT_DEMUX, MSGL_V, "\n");
+			break;
+			case FE_QAM:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",feparams->frequency);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        SymbolRate: %d\n",feparams->u.qpsk.symbol_rate);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        FEC_inner:  %d\n",feparams->u.qpsk.fec_inner);
+			break;
+#ifdef DVB_ATSC
+			case FE_ATSC:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",feparams->frequency);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        Modulation: %d\n",feparams->u.vsb.modulation);
+			break;
+#endif
+			default:
+			break;
+		}
+		}
+
 		strength=0;
 		if(ioctl(fd_frontend,FE_READ_BER,&strength) >= 0)
 		mp_msg(MSGT_DEMUX, MSGL_V, "Bit error rate: %d\n",strength);
@@ -399,7 +434,7 @@ static int check_status(int fd_frontend, int tmout)
 
 #else
 
-static int check_status(int fd_frontend, int tmout)
+static int check_status(int fd_frontend,FrontendParameters* feparams,int tuner_type,uint32_t base, int tmout)
 {
 	int i,res;
 	int32_t strength;
@@ -408,9 +443,21 @@ static int check_status(int fd_frontend, int tmout)
 	
 	struct pollfd pfd[1];
 
+	while(1)
+	{
+	    if(ioctl(fd_frontend, FE_GET_EVENT, &event) == -1)
+	    break;
+	}
+
 	i = 0; res = -1;
 	while ((i < 3) && (res < 0))
 	{
+		if (ioctl(fd_frontend,FE_SET_FRONTEND,feparams) < 0)
+		{
+			mp_msg(MSGT_DEMUX, MSGL_ERR, "ERROR tuning channel\n");
+			return -1;
+		}
+
 		pfd[0].fd = fd_frontend;
 		pfd[0].events = POLLIN | POLLPRI;
 
@@ -460,6 +507,29 @@ static int check_status(int fd_frontend, int tmout)
 
 	if (event.type == FE_COMPLETION_EV)
 	{
+		switch(tuner_type)
+		{
+			case FE_OFDM:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",event.u.completionEvent.Frequency);
+			break;
+
+			case FE_QPSK:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",(unsigned int)((event.u.completionEvent.Frequency)+base));
+			mp_msg(MSGT_DEMUX, MSGL_V, "        SymbolRate: %d\n",event.u.completionEvent.u.qpsk.SymbolRate);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        FEC_inner:  %d\n",event.u.completionEvent.u.qpsk.FEC_inner);
+			mp_msg(MSGT_DEMUX, MSGL_V, "\n");
+			break;
+
+			case FE_QAM:
+			mp_msg(MSGT_DEMUX, MSGL_V, "Event:  Frequency: %d\n",event.u.completionEvent.Frequency);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        SymbolRate: %d\n",event.u.completionEvent.u.qpsk.SymbolRate);
+			mp_msg(MSGT_DEMUX, MSGL_V, "        FEC_inner:  %d\n",event.u.completionEvent.u.qpsk.FEC_inner);
+			break;
+
+			default:
+			break;
+		}
+
 		strength=0;
 		if(ioctl(fd_frontend,FE_READ_BER,&strength) >= 0)
 		mp_msg(MSGT_DEMUX, MSGL_V, "Bit error rate: %d\n",strength);
@@ -476,9 +546,9 @@ static int check_status(int fd_frontend, int tmout)
 		mp_msg(MSGT_DEMUX, MSGL_V, "FE_STATUS:");
 		
 		if(ioctl(fd_frontend,FE_READ_STATUS,&festatus) >= 0)
-			print_status(festatus);
+		    print_status(festatus);
 		else
-			mp_msg(MSGT_DEMUX, MSGL_ERR, " ERROR, UNABLE TO READ_STATUS");
+		    mp_msg(MSGT_DEMUX, MSGL_ERR, " ERROR, UNABLE TO READ_STATUS");
 		    
 		mp_msg(MSGT_DEMUX, MSGL_V, "\n");
 	}
@@ -493,7 +563,7 @@ static int check_status(int fd_frontend, int tmout)
 
 #ifdef HAVE_DVB_HEAD
 
-struct diseqc_cmd {
+static struct diseqc_cmd {
    struct dvb_diseqc_master_cmd cmd;
    uint32_t wait;
 };
@@ -582,20 +652,18 @@ static int tune_it(int fd_frontend, int fd_sec, unsigned int freq, unsigned int 
 #else
   FrontendParameters feparams;
   FrontendInfo fe_info;
-  FrontendEvent event;
   struct secStatus sec_state;
 #endif
 
 
   mp_msg(MSGT_DEMUX, MSGL_V,  "TUNE_IT, fd_frontend %d, fd_sec %d\nfreq %lu, srate %lu, pol %c, tone %i, specInv, diseqc %u, fe_modulation_t modulation,fe_code_rate_t HP_CodeRate, fe_transmit_mode_t TransmissionMode,fe_guard_interval_t guardInterval, fe_bandwidth_t bandwidth\n",
-    fd_frontend, fd_sec, (long unsigned int)freq, (long unsigned int)srate, pol, tone, diseqc);
+	    fd_frontend, fd_sec, (long unsigned int)freq, (long unsigned int)srate, pol, tone, diseqc);
 
 
-  memset(&feparams, 0, sizeof(feparams));
   if ( (res = ioctl(fd_frontend,FE_GET_INFO, &fe_info) < 0))
   {
-        mp_msg(MSGT_DEMUX, MSGL_FATAL, "FE_GET_INFO FAILED\n");
-        return -1;
+  	mp_msg(MSGT_DEMUX, MSGL_FATAL, "FE_GET_INFO FAILED\n");
+	return -1;
   }
 
 
@@ -636,22 +704,22 @@ static int tune_it(int fd_frontend, int fd_sec, unsigned int freq, unsigned int 
       {
         // this must be an absolute frequency
         if (freq < SLOF)
-        {
+	{
 #ifdef HAVE_DVB_HEAD
           freq = feparams.frequency=(freq-LOF1);
 #else
           freq = feparams.Frequency=(freq-LOF1);
 #endif
-          hi_lo = 0;
+	    hi_lo = 0;
         }
-        else
-        {
+	else
+	{
 #ifdef HAVE_DVB_HEAD
           freq = feparams.frequency=(freq-LOF2);
 #else
           freq = feparams.Frequency=(freq-LOF2);
 #endif
-          hi_lo = 1;
+	    hi_lo = 1;
         }
       }
       else
@@ -676,15 +744,15 @@ static int tune_it(int fd_frontend, int fd_sec, unsigned int freq, unsigned int 
       dfd = fd_sec;
 #endif
 
-      mp_msg(MSGT_DEMUX, MSGL_V, "tuning DVB-S to Freq: %u, Pol: %c Srate: %d, 22kHz: %s, LNB:  %d\n",freq,pol,srate,hi_lo ? "on" : "off", diseqc);
+	mp_msg(MSGT_DEMUX, MSGL_V, "tuning DVB-S to Freq: %u, Pol: %c Srate: %d, 22kHz: %s, LNB:  %d\n",freq,pol,srate,hi_lo ? "on" : "off", diseqc);
 
-      if(do_diseqc(dfd, diseqc, (pol == 'V' ? 1 : 0), hi_lo) == 0)
-          mp_msg(MSGT_DEMUX, MSGL_V, "DISEQC SETTING SUCCEDED\n");
-      else
-      {
-          mp_msg(MSGT_DEMUX, MSGL_ERR, "DISEQC SETTING FAILED\n");
-          return -1;
-      }
+   if(do_diseqc(dfd, diseqc, (pol == 'V' ? 1 : 0), hi_lo) == 0)
+	mp_msg(MSGT_DEMUX, MSGL_V, "DISEQC SETTING SUCCEDED\n");
+   else
+   {
+	mp_msg(MSGT_DEMUX, MSGL_ERR, "DISEQC SETTING FAILED\n");
+	return -1;
+   }
       break;
     case FE_QAM:
       mp_msg(MSGT_DEMUX, MSGL_V, "tuning DVB-C to %d, srate=%d\n",freq,srate);
@@ -717,18 +785,7 @@ static int tune_it(int fd_frontend, int fd_sec, unsigned int freq, unsigned int 
 
 #ifndef HAVE_DVB_HEAD
   if (fd_sec) SecGetStatus(fd_sec, &sec_state);
-  while(1)
-  {
-    if(ioctl(fd_frontend, FE_GET_EVENT, &event) == -1)
-    break;
-  }
 #endif
 
-  if(ioctl(fd_frontend,FE_SET_FRONTEND,&feparams) < 0)
-  {
-    mp_msg(MSGT_DEMUX, MSGL_ERR, "ERROR tuning channel\n");
-    return -1;
-  }
-
-  return(check_status(fd_frontend, timeout));
+  return(check_status(fd_frontend,&feparams,fe_info.type, (hi_lo ? LOF2 : LOF1), timeout));
 }

@@ -64,7 +64,7 @@ extern int verbose;
 
 #define MSGT_TV 24	// TV input subsystem
 
-#define MSGT_OSDEP 25	// OS-dependent parts
+#define MSGT_OSDEP 25	// OS Dependant parts (linux/ for now)
 
 #define MSGT_SPUDEC 26	// spudec.c
 
@@ -99,12 +99,6 @@ extern int verbose;
 
 #define MSGT_RADIO 42
 
-#define MSGT_ASS 43 // libass messages
-
-#define MSGT_LOADER 44 // dll loader messages
-
-#define MSGT_STATUSLINE 45 // playback/encoding status line
-
 #define MSGT_MAX 64
 
 void mp_msg_init(void);
@@ -123,18 +117,17 @@ void mp_msg(int mod, int lev, const char *format, ... ) __attribute__ ((format (
 #   ifdef MP_DEBUG
 #      define mp_dbg(mod,lev, args... ) mp_msg(mod, lev, ## args )
 #   else
-#      define mp_dbg(mod,lev, args... ) /* only useful for developers */
+#      define mp_dbg(mod,lev, args... ) /* only usefull for developers */
 #   endif
 #else // not GNU C
 void mp_msg(int mod, int lev, const char *format, ... );
 #   ifdef MP_DEBUG
 #      define mp_dbg(mod,lev, ... ) mp_msg(mod, lev, __VA_ARGS__)
 #   else
-#      define mp_dbg(mod,lev, ... ) /* only useful for developers */
+#      define mp_dbg(mod,lev, ... ) /* only usefull for developers */
 #   endif
 #endif
 
-const char* filename_recode(const char* filename);
 
 #endif
 #endif

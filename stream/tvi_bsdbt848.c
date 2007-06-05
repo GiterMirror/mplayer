@@ -38,16 +38,18 @@
 #include <string.h>
 
 #include <sys/param.h>
-#ifdef USE_SUN_AUDIO
+#ifdef __NetBSD__
+#include <dev/ic/bt8xx.h>
 #include <sys/audioio.h>
-#endif
-
-#ifdef IOCTL_METEOR_H_NAME
-#include IOCTL_METEOR_H_NAME
-#endif
-
-#ifdef IOCTL_BT848_H_NAME
-#include IOCTL_BT848_H_NAME
+#elif defined(__DragonFly__)
+#include <dev/video/meteor/ioctl_meteor.h>
+#include <dev/video/bktr/ioctl_bt848.h>
+#elif __FreeBSD_version >= 502100
+#include <dev/bktr/ioctl_meteor.h>
+#include <dev/bktr/ioctl_bt848.h>
+#else
+#include <machine/ioctl_meteor.h>
+#include <machine/ioctl_bt848.h>
 #endif
 
 #ifdef HAVE_SYS_SOUNDCARD_H
@@ -64,10 +66,8 @@
 #include "libmpcodecs/img_format.h"
 #include "tv.h"
 
-static tvi_handle_t *tvi_init_bsdbt848(char *device, char *adevice);
 /* information about this file */
-tvi_info_t tvi_info_bsdbt848 = {
-    tvi_init_bsdbt848,
+static tvi_info_t info = {
     "Brooktree848 Support",
     "bsdbt848",
     "Charles Henrich",
@@ -169,48 +169,9 @@ return;
 }
 
 /* handler creator - entry point ! */
-static tvi_handle_t *tvi_init_bsdbt848(char *device,char* adevice)
+tvi_handle_t *tvi_init_bsdbt848(char *device)
 {
-    char* sep ;
-    tvi_handle_t* tvh;
-    priv_t* priv;
-
-    tvh=new_handle();
-    if(!tvh)
-        return NULL;
-    priv=(priv_t*)tvh->priv;
-    /* 
-    if user needs to specify both /dev/bktr<n> and /dev/tuner<n>
-    it can do this with "-tv device=/dev/bktr1,/dev/tuner1"
-    */
-
-    /* set video device name */
-    if (!device){
-        priv->btdev = strdup("/dev/bktr0");
-        priv->tunerdev = strdup("/dev/tuner0");
-    }else{
-        sep = strchr(device,',');
-        priv->btdev = strdup(device);
-        if(sep){
-            // tuner device is also passed
-            priv->tunerdev = strdup(sep+1);
-            priv->btdev[sep - device] = 0;
-        }else{
-            priv->tunerdev = strdup("/dev/tuner0");
-        }
-    }
-
-    /* set audio device name */
-    if (!adevice)
-#ifdef USE_SUN_AUDIO
-        priv->dspdev = strdup("/dev/sound");
-#else
-        priv->dspdev = strdup("/dev/dsp");
-#endif
-    else
-        priv->dspdev = strdup(adevice);
-
-    return tvh;
+    return(new_handle());
 }
 
 static int control(priv_t *priv, int cmd, void *arg)
@@ -516,6 +477,7 @@ G_private = priv; /* Oooh, sick */
 /* Video Configuration */
 
 priv->videoready = TRUE;
+priv->btdev = strdup("/dev/bktr0");
 priv->immediatemode = FALSE;
 priv->iformat = METEOR_FMT_PAL;
 priv->maxheight = PAL_HEIGHT;
@@ -597,6 +559,7 @@ if(priv->videoready == TRUE)
 
 /* Tuner Configuration */
 
+priv->tunerdev = strdup("/dev/tuner0");
 priv->tunerready = TRUE;
 
 priv->tunerfd = open(priv->tunerdev, O_RDONLY);
@@ -610,6 +573,11 @@ if(priv->tunerfd < 0)
 /* Audio Configuration */
 
 priv->dspready = TRUE;
+#ifdef __NetBSD__
+priv->dspdev = strdup("/dev/sound");
+#else
+priv->dspdev = strdup("/dev/dsp");
+#endif
 priv->dspsamplesize = 16;
 priv->dspstereo = 1;
 priv->dspspeed = 44100;
@@ -832,13 +800,13 @@ return(priv->dspbytesread * 1.0 / priv->dsprate);
 static int get_audio_framesize(priv_t *priv)
 {
 int bytesavail;
-#ifdef USE_SUN_AUDIO
+#ifdef __NetBSD__
 struct audio_info auinf;
 #endif
 
 if(priv->dspready == FALSE) return 0;
 
-#ifdef USE_SUN_AUDIO
+#ifdef __NetBSD__
 if(ioctl(priv->dspfd, AUDIO_GETINFO, &auinf) < 0) 
     {
     perror("AUDIO_GETINFO");

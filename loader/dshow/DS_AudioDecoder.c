@@ -6,7 +6,12 @@
 *********************************************************/
 #include "config.h"
 
+#ifndef NOAVIFILE_HEADERS
+#include "audiodecoder.h"
+#include "except.h"
+#else
 #include "libwin32.h"
+#endif
 
 #include "DS_Filter.h"
 
@@ -28,10 +33,9 @@ struct _DS_AudioDecoder
 #include <stdio.h>
 #include <stdlib.h>
 
+#define __MODULE__ "DirectShow audio decoder"
+
 typedef long STDCALL (*GETCLASS) (GUID*, GUID*, void**);
-
-static SampleProcUserData sampleProcData;
-
 
 DS_AudioDecoder * DS_AudioDecoder_Open(char* dllname, GUID* guid, WAVEFORMATEX* wf)
 //DS_AudioDecoder * DS_AudioDecoder_Create(const CodecInfo * info, const WAVEFORMATEX* wf)
@@ -96,17 +100,20 @@ DS_AudioDecoder * DS_AudioDecoder_Open(char* dllname, GUID* guid, WAVEFORMATEX* 
     /*try*/
     {
         ALLOCATOR_PROPERTIES props, props1;
-        this->m_pDS_Filter = DS_FilterCreate(dllname, guid, &this->m_sOurType, &this->m_sDestType,&sampleProcData);
+        this->m_pDS_Filter = DS_FilterCreate(dllname, guid, &this->m_sOurType, &this->m_sDestType);
 	if( !this->m_pDS_Filter ) {
            free(this);
            return NULL;
         }
         
-        //Commit should be done before binary codec start
-        this->m_pDS_Filter->m_pAll->vt->Commit(this->m_pDS_Filter->m_pAll);
-
         this->m_pDS_Filter->Start(this->m_pDS_Filter);
 
+	props.cBuffers=1;
+        props.cbBuffer=this->m_sOurType.lSampleSize;
+	props.cbAlign=1;
+	props.cbPrefix=0;
+	this->m_pDS_Filter->m_pAll->vt->SetProperties(this->m_pDS_Filter->m_pAll, &props, &props1);
+	this->m_pDS_Filter->m_pAll->vt->Commit(this->m_pDS_Filter->m_pAll);
     }
     /*
     catch (FatalError& e)
@@ -146,9 +153,15 @@ int DS_AudioDecoder_Convert(DS_AudioDecoder *this, const void* in_data, unsigned
     in_size -= in_size%this->in_fmt.nBlockAlign;
     while (in_size>0)
     {
+	unsigned int frame_size = 0;
+	char* frame_pointer;
 	IMediaSample* sample=0;
 	char* ptr;
 	int result;
+	
+//	this->m_pOurOutput->SetFramePointer(out_data+written);
+	this->m_pDS_Filter->m_pOurOutput->SetFramePointer(this->m_pDS_Filter->m_pOurOutput,&frame_pointer);
+	this->m_pDS_Filter->m_pOurOutput->SetFrameSizePointer(this->m_pDS_Filter->m_pOurOutput,(long*)&frame_size);
 	this->m_pDS_Filter->m_pAll->vt->GetBuffer(this->m_pDS_Filter->m_pAll, &sample, 0, 0, 0);
 	if (!sample)
 	{
@@ -163,15 +176,15 @@ int DS_AudioDecoder_Convert(DS_AudioDecoder *this, const void* in_data, unsigned
 	result = this->m_pDS_Filter->m_pImp->vt->Receive(this->m_pDS_Filter->m_pImp, sample);
         if (result)
 	    Debug printf("DS_AudioDecoder::Convert() Error: putting data into input pin %x\n", result);
-	if ((written + sampleProcData.frame_size) > out_size)
+	if ((written + frame_size) > out_size)
 	{
 	    sample->vt->Release((IUnknown*)sample);
 	    break;
 	}
-	memcpy((uint8_t*)out_data + written, sampleProcData.frame_pointer, sampleProcData.frame_size);
+	memcpy((uint8_t*)out_data + written, frame_pointer, frame_size);
         sample->vt->Release((IUnknown*)sample);
 	read+=this->in_fmt.nBlockAlign;
-	written+=sampleProcData.frame_size;
+	written+=frame_size;
 	break;
     }
     if (size_read)

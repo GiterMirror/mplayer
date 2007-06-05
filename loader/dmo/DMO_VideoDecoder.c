@@ -5,14 +5,18 @@
 
 *********************************************************/
 #include "config.h"
-#include "dshow/guids.h"
-#include "dshow/interfaces.h"
+#include "guids.h"
+#include "interfaces.h"
 #include "registry.h"
 #ifdef WIN32_LOADER
 #include "../ldt_keeper.h"
 #endif
 
-#include "dshow/libwin32.h"
+#ifndef NOAVIFILE_HEADERS
+#include "videodecoder.h"
+#else
+#include "libwin32.h"
+#endif
 #include "DMO_Filter.h"
 
 #include "DMO_VideoDecoder.h"
@@ -35,6 +39,12 @@ struct _DMO_VideoDecoder
 
 #include "../wine/winerror.h"
 
+#ifndef NOAVIFILE_HEADERS
+#define VFW_E_NOT_RUNNING               0x80040226
+#include "fourcc.h"
+#include "except.h"
+#endif
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -47,6 +57,8 @@ struct _DMO_VideoDecoder
 
 // strcmp((const char*)info.dll,...)  is used instead of  (... == ...)
 // so Arpi could use char* pointer in his simplified DMO_VideoDecoder class
+
+#define __MODULE__ "DirectShow_VideoDecoder"
 
 #define false 0
 #define true 1
@@ -109,7 +121,6 @@ DMO_VideoDecoder * DMO_VideoDecoder_Open(char* dllname, GUID* guid, BITMAPINFOHE
      
         this->iv.m_bh = malloc(bihs);
         memcpy(this->iv.m_bh, format, bihs);
-        this->iv.m_bh->biSize = bihs;
 
         this->iv.m_State = STOP;
         //this->iv.m_pFrame = 0;

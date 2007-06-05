@@ -60,11 +60,11 @@ static struct vf_priv_s {
 	// 0 = insert always
 	int auto_insert;
 
-	ass_renderer_t* ass_priv;
+	ass_instance_t* ass_priv;
 
 	unsigned char* planes[3];
 	unsigned char* dirty_rows;
-} const vf_priv_dflt;
+} vf_priv_dflt;
 
 extern int opt_screen_size_x;
 extern int opt_screen_size_y;
@@ -77,6 +77,8 @@ static int config(struct vf_instance_s* vf,
 	int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt)
 {
+	ass_settings_t settings;
+	
 	if (outfmt == IMGFMT_IF09) return 0;
 
 	vf->priv->outh = height + ass_top_margin + ass_bottom_margin;
@@ -92,8 +94,17 @@ static int config(struct vf_instance_s* vf,
 	vf->priv->dirty_rows = malloc(vf->priv->outh);
 	
 	if (vf->priv->ass_priv) {
-		ass_configure(vf->priv->ass_priv, vf->priv->outw, vf->priv->outh, 0);
-		ass_set_aspect_ratio(vf->priv->ass_priv, ((double)d_width) / d_height);
+		memset(&settings, 0, sizeof(ass_settings_t));
+		settings.frame_width = vf->priv->outw;
+		settings.frame_height = vf->priv->outh;
+		settings.font_size_coeff = ass_font_scale;
+		settings.line_spacing = ass_line_spacing;
+		settings.top_margin = ass_top_margin;
+		settings.bottom_margin = ass_bottom_margin;
+		settings.use_margins = ass_use_margins;
+		settings.aspect = ((double)d_width) / d_height;
+		
+		ass_configure(vf->priv->ass_priv, &settings);
 	}
 
 	return vf_next_config(vf, vf->priv->outw, vf->priv->outh, d_width, d_height, flags, outfmt);
@@ -107,13 +118,13 @@ static void get_image(struct vf_instance_s* vf, mp_image_t *mpi)
 	    
 	// width never changes, always try full DR
 	mpi->priv = vf->dmpi = vf_get_image(vf->next, mpi->imgfmt,
-			mpi->type, mpi->flags | MP_IMGFLAG_READABLE, 
+			mpi->type, mpi->flags, 
 			vf->priv->outw,
 			vf->priv->outh);
 
 	if((vf->dmpi->flags & MP_IMGFLAG_DRAW_CALLBACK) &&
 			!(vf->dmpi->flags & MP_IMGFLAG_DIRECT)){
-		mp_msg(MSGT_ASS, MSGL_INFO, MSGTR_MPCODECS_FullDRNotPossible);
+		mp_msg(MSGT_VFILTER, MSGL_INFO, MSGTR_MPCODECS_FullDRNotPossible);
 		return;
 	}
 
@@ -162,7 +173,7 @@ static int prepare_image(struct vf_instance_s* vf, mp_image_t *mpi)
 {
 	if(mpi->flags&MP_IMGFLAG_DIRECT || mpi->flags&MP_IMGFLAG_DRAW_CALLBACK){
 		vf->dmpi = mpi->priv;
-		if (!vf->dmpi) { mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_MPCODECS_FunWhydowegetNULL); return 0; }
+		if (!vf->dmpi) { mp_msg(MSGT_VFILTER, MSGL_WARN, MSGTR_MPCODECS_FunWhydowegetNULL); return 0; }
 		mpi->priv = NULL;
 		// we've used DR, so we're ready...
 		if (ass_top_margin)
@@ -176,7 +187,7 @@ static int prepare_image(struct vf_instance_s* vf, mp_image_t *mpi)
 
 	// hope we'll get DR buffer:
 	vf->dmpi = vf_get_image(vf->next, vf->priv->outfmt,
-			MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE | MP_IMGFLAG_READABLE,
+			MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE,
 			vf->priv->outw, vf->priv->outh);
 
 	// copy mpi->dmpi...
@@ -218,7 +229,7 @@ static void copy_from_image(struct vf_instance_s* vf, int first_row, int last_ro
 	chroma_rows = (last_row - first_row) / 2;
 
 	for (pl = 1; pl < 3; ++pl) {
-		int dst_stride = vf->priv->outw;
+		int dst_stride = vf->dmpi->stride[pl] * 2;
 		int src_stride = vf->dmpi->stride[pl];
 		
 		unsigned char* src = vf->dmpi->planes[pl] + (first_row/2) * src_stride;
@@ -254,7 +265,7 @@ static void copy_to_image(struct vf_instance_s* vf)
 	int i, j, k;
 	for (pl = 1; pl < 3; ++pl) {
 		int dst_stride = vf->dmpi->stride[pl];
-		int src_stride = vf->priv->outw;
+		int src_stride = vf->dmpi->stride[pl] * 2;
 		
 		unsigned char* dst = vf->dmpi->planes[pl];
 		unsigned char* src = vf->priv->planes[pl];
@@ -291,8 +302,8 @@ static void my_draw_bitmap(struct vf_instance_s* vf, unsigned char* bitmap, int 
 
 	src = bitmap;
 	dsty = dmpi->planes[0] + dst_x + dst_y * dmpi->stride[0];
-	dstu = vf->priv->planes[1] + dst_x + dst_y * vf->priv->outw;
-	dstv = vf->priv->planes[2] + dst_x + dst_y * vf->priv->outw;
+	dstu = vf->priv->planes[1] + dst_x + dst_y * 2 * dmpi->chroma_width;
+	dstv = vf->priv->planes[2] + dst_x + dst_y * 2 * dmpi->chroma_width;
 	for (i = 0; i < bitmap_h; ++i) {
 		for (j = 0; j < bitmap_w; ++j) {
 			unsigned k = ((unsigned)src[j]) * opacity / 255;
@@ -302,8 +313,8 @@ static void my_draw_bitmap(struct vf_instance_s* vf, unsigned char* bitmap, int 
 		}
 		src += stride;
 		dsty += dmpi->stride[0];
-		dstu += vf->priv->outw;
-		dstv += vf->priv->outw;
+		dstu += 2 * dmpi->chroma_width;
+		dstv += 2 * dmpi->chroma_width;
 	} 
 }
 
@@ -326,7 +337,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 {
 	ass_image_t* images = 0;
 	if (sub_visibility && vf->priv->ass_priv && ass_track && (pts != MP_NOPTS_VALUE))
-		images = ass_render_frame(vf->priv->ass_priv, ass_track, (pts+sub_delay) * 1000 + .5, NULL);
+		images = ass_render_frame(vf->priv->ass_priv, ass_track, (pts+sub_delay) * 1000 + .5);
 	
 	prepare_image(vf, mpi);
 	if (images) render_frame(vf, mpi, images);
@@ -349,10 +360,8 @@ static int control(vf_instance_t *vf, int request, void *data)
 {
 	switch (request) {
 	case VFCTRL_INIT_EOSD:
-		vf->priv->ass_priv = ass_renderer_init((ass_library_t*)data);
-		if (!vf->priv->ass_priv) return CONTROL_FALSE;
-		ass_configure_fonts(vf->priv->ass_priv);
-		return CONTROL_TRUE;
+		vf->priv->ass_priv = ass_init();
+		return vf->priv->ass_priv ? CONTROL_TRUE : CONTROL_FALSE;
 	case VFCTRL_DRAW_EOSD:
 		if (vf->priv->ass_priv) return CONTROL_TRUE;
 		break;
@@ -363,7 +372,7 @@ static int control(vf_instance_t *vf, int request, void *data)
 static void uninit(struct vf_instance_s* vf)
 {
 	if (vf->priv->ass_priv)
-		ass_renderer_done(vf->priv->ass_priv);
+		ass_done(vf->priv->ass_priv);
 	if (vf->priv->planes[1])
 		free(vf->priv->planes[1]);
 	if (vf->priv->planes[2])
@@ -392,7 +401,7 @@ static int open(vf_instance_t *vf, char* args)
 	}
 	
 	if (vf->priv->auto_insert)
-		mp_msg(MSGT_ASS, MSGL_INFO, "[ass] auto-open\n");
+		mp_msg(MSGT_VFILTER, MSGL_INFO, "[ass] auto-open\n");
 	
 	vf->config = config;
 	vf->query_format = query_format;

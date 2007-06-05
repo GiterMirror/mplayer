@@ -6,11 +6,12 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "parse_es.h"
 #include "stheader.h"
 
+#include "bswap.h"
 #include "ms_hdr.h"
 
 typedef struct {

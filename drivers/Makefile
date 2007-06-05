@@ -1,39 +1,57 @@
-KERNEL_INC = /lib/modules/`uname -r`/build/include
-VERSION = $(shell grep RELEASE $(KERNEL_INC)/linux/version.h | cut -d'"' -f2)
+KERNEL_DIR=/lib/modules/`uname -r`/build
+KERNEL_INCLUDES= $(KERNEL_DIR)/include
+INCLUDES = -I$(KERNEL_INCLUDES) -I$(KERNEL_INCLUDES)/asm
+VERSION = $(shell grep UTS_RELEASE $(KERNEL_INCLUDES)/linux/version.h | cut -d '"' -f2)
 MDIR = /lib/modules/$(VERSION)/misc
 
-CFLAGS = -O2 -D__KERNEL__ -DMODULE -Wall -I$(KERNEL_INC) \
-  -include $(KERNEL_INC)/linux/modversions.h
+ifneq (,$(findstring 2.6, $(VERSION)))
+obj-m += mga_vid.o
+CFLAGS = -O2  -D__KERNEL__  -DMODULE  	 -include $(KERNEL_INCLUDES)/config/modversions.h -Wall
+else
+CFLAGS = -O2  -D__KERNEL__  -DMODULE  	 -include $(KERNEL_INCLUDES)/linux/modversions.h -Wall
+endif
 
-OBJS = mga_vid.o tdfx_vid.o radeon_vid.o rage128_vid.o
-
-all: $(OBJS) mga_vid_test tdfx_vid_test
+all:
+ifneq (,$(findstring 2.6, $(VERSION)))
+	$(MAKE) mga_vid.ko mga_vid_test
+else
+	$(MAKE) mga_vid.o mga_vid_test
+endif
+# sis_vid.o
 
 mga_vid.o: mga_vid.c mga_vid.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(basename $@).c
+
+mga_vid.ko: mga_vid.c mga_vid.h
+	$(MAKE) -C $(KERNEL_DIR) SUBDIRS=$(PWD) modules
+
+sis_vid.o: sis_vid.c sis_vid.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(basename $@).c
+
+mga_vid_test: mga_vid_test.c
+	$(CC) -O $(INCLUDES) -o $@ $@.c
+
 tdfx_vid.o: tdfx_vid.c 3dfx.h
-radeon_vid.o: radeon_vid.c radeon.h radeon_vid.h
-rage128_vid.o: radeon_vid.c radeon.h radeon_vid.h
-	$(CC) $(CFLAGS) -DRAGE128 -c $< -o $@
-radeon_vid.o rage128_vid.o:
-  CFLAGS += -fomit-frame-pointer -fno-strict-aliasing -fno-common -ffast-math
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(basename $@).c
 
-%_test: %_test.c
-	$(CC) -O -o $@ $<
+tdfx_vid_tst: tdfx_vid_tst.c
+	$(CC) -O $(INCLUDES) -o $@ $@.c
 
-install:
+install: mga_vid.o
 	-mkdir -p $(MDIR)
-	install -m 644 $(OBJS) $(MDIR)
+ifneq (,$(findstring 2.6, $(VERSION)))
+	install -m 644 mga_vid.ko $(MDIR)/mga_vid.ko
+else
+	install -m 644 mga_vid.o $(MDIR)/mga_vid.o
+endif
 	depmod -a
-	-mknod /dev/mga_vid  c 178 0
-	-mknod /dev/tdfx_vid c 178 0
-	-mknod /dev/radeon_vid c 178 0
-	-ln -s /dev/radeon_vid /dev/rage128_vid
 
-dep depend:
+dep:
 
-clean:
-	rm -f *.o *~ mga_vid_test tdfx_vid_test
+clean: 
+	rm -f *.o *.a *~
+	rm -f *.ko .mga* mga_vid.mod.c
 
 distclean: clean
+	rm -f mga_vid_test tdfx_vid_tst
 
-.PHONY: all install dep depend clean distclean

@@ -8,22 +8,12 @@ In this directory you can find some nice scripts and code that makes
 using MPlayer and MEncoder easier, for example scripts for DVD track
 encoding in three pass mode or creating SVCDs from a movie.
 
-FIXME: Document the following tools:
+FIXME: Document all the stuff in the subdirectories.
 
-bmovl-test
 
 
 MPlayer scripts in the TOOLS dir
 --------------------------------
-
-edgedetect.fp, emboss.fp
-
-Author:       Reimar Döffinger
-
-Description:  Examples of custom fragment program for OpenGL video out driver
-
-Usage:        mplayer -vo gl:yuv=4:customprog=edgedetect.fp
-
 
 midentify
 
@@ -54,9 +44,9 @@ Description:  Example how to output video on multiple windows in sync. Might
               the video arbitrarily.
 
 Usage:        mplmult.sh <n> <options>
-              n        Number of MPlayer instances that display the video.
-              options  Any options you would pass to MPlayer, more than
-                       one file will usually not work.
+              n        number of MPlayer instances that display the video
+              options  any options you would pass to MPlayer, more than
+                       one file will usually not work
 
 
 subsearch.sh
@@ -69,6 +59,32 @@ Description:  Collects subtitle files from the directory given as argument
 
 Usage:        subsearch.sh [directory]
               mplayer -sub `subsearch.sh` movie
+
+
+x2mpsub.sh
+
+Author:       Gabucino
+
+Description:  Converts the subtitles in the current directory into MPsub
+              format (subtitles go in ./converted-subtitles/).
+
+Usage:        x2mpsub.sh
+
+
+mp.pl
+
+Author:       Felix Bünemann
+
+Description:  Small helper script that allows to play multiple files with
+              MPlayer. Wildcards are supported.
+
+Usage:        mp.pl <parameters> <files>
+              Where <parameters> are all possible command line switches
+              for MPlayer and <files> can be either a list of files,
+              like file1 file2 file3 and/or a wildcard definition,
+              like *.avi.
+
+              example: mp.pl -vo x11 /dvd/VIDEO_TS/VTS_05_*.VOB movie.asf
 
 
 wma2ogg.pl
@@ -99,6 +115,17 @@ Description:  A simple utility that creates an SVCD from a video in an AVI
 
 Usage:        divx2svcd <input_avi> [options]
               see 'divx2svcd -h' for more info
+
+
+menc2pass
+
+Author:       Felix Bünemann
+
+Description:  Helper script to ease MEncoder two pass encoding. Give it all
+              the encoding parameters you would pass to mencoder, but leave
+              out the (v)pass=<n> suboption.
+
+Usage:        menc2pass <options>
 
 
 mencvcd
@@ -155,7 +182,7 @@ Usage:        aconvert <"input file"> <"output file"> <"options">
               -oac lavc -lavcopts acodec=mp3:abitrate=192
 
 Note:         The script is probably bash dependent and it's just a quick
-              hack, feel free to improve it (or much better: fix MEncoder ;).
+              hack, feel free to improve it (or much better: fix mencoder ;).
 
 
 
@@ -163,7 +190,7 @@ qepdvcd.sh
 
 Author:       Reynaldo H. Verdejo Pinochet
 
-Description:  converter from any supported format to VCD/SVCD PAL/NTSC
+Description:  anything supported to VCD/SVCD PAL/NTSC converter
 
 Usage:        qepdvcd.sh file <options>
               Run with no arguments to see the list of options.
@@ -177,7 +204,7 @@ encode2mpeglight
 
 Author:       Giacomo Comes
 
-Description:  Convert anything MPlayer can play to VCD/SVCD/DVD MPEG.
+Description:  Convert anything MPlayer can play to VCD/SVCD/DVD mpeg
 
 Usage:        encode2mpeglight -o <NAME> -n <NORM> [options] <source>
               For help and documentation run:
@@ -191,6 +218,27 @@ Note:         This script uses only MEncode/MPlayer. Check the final log
 
 Tech scripts in the TOOLS dir
 -----------------------------
+
+fastmem.sh
+
+Author:       Arpi
+
+Description:  benchmark/testbed for fastmemcpy stuff
+
+Usage:        fastmem.sh
+
+
+sws-test
+
+Author:       Michael Niedermayer
+
+Description:  Very simple script to generate PNG images from a video with all
+              -sws methods.
+
+Usage:        sws-test <video-file> <start-pos> <res>
+
+              example: sws-test abc.avi 10 160:120
+
 
 calcbpp.pl
 
@@ -226,6 +274,15 @@ Usage:        countquant.pl < divx2pass.log
               It will print out which quantizer was used how often. If you see
               that e.g. the lowest quantizer (vqmin=2) gets used for > 95% of
               the frames then you can safely increase your picture size.
+
+
+perlbench.pl
+
+Author:       Felix Bünemann
+
+Description:  fastmemcpy benchmark script
+
+Usage:        perlbench.pl
 
 
 plotpsnr.pl
@@ -296,7 +353,7 @@ Usage:        psnr-video.sh <file1> <file2> [<frames>] [<options1>] [<options2>]
 Note:         This script relies on the the tool "pnmpsnr" for the
               frame-by-frame PSNR calculation.
               Be aware that psnr-video.sh needs a lot of temporary space
-              in /tmp/.
+              inside /temp/.
 
 
 asfinfo
@@ -322,6 +379,20 @@ Note:         It does not check or fix the index, to do this use
               'mencoder -forceidx -oac copy -ovc copy'.
 
 
+bios2dump
+
+Author:       Nick Kurshev
+
+Description:  Extract your PC BIOS and save it to file.
+
+Usage:        As argument requires DOS interrupt number in hexadecimal form.
+              As output - will write 64KB file which will named:
+              SSSS_OOOO.intXX
+      where:  SSSS - segment of BIOS interrupt handler
+              OOOO - offset of BIOS interrupt handler
+              XX   - interrupt number which was passed as argument
+
+
 checktree.sh
 
 Author:       Ivo van Poorten
@@ -330,7 +401,7 @@ Description:  Check the source tree for anomalies.
 
 Usage:        checktree.sh -help
 
-Note:         This script is meant for developers to check the current
+Note:         This script is meant for developers to check the current (CVS)
               source tree and/or the patches they are working on.
 
 
@@ -372,6 +443,20 @@ Description:  benchmark/testbed for fastmemcpy stuff
 Note:         Also see fastmem.sh.
 
 
+mem2dump
+
+Author:   Nick Kurshev
+
+Description:  Dump memory block to file.
+
+Usage:        As argument requires absolute address of memory dump and its
+              length (in hexadecimal form).
+              As output - will write file which will be named:
+              memADDR_LEN.dump
+       where: ADDR - given address of memory
+              LEN  - given length of memory
+
+
 movinfo
 
 Author:       Arpi
@@ -379,6 +464,15 @@ Author:       Arpi
 Description:  Show QuickTime MOV file structure.
 
 Usage:        movinfo <filename.mov>
+
+
+png2raw
+
+Author:       Arpi
+
+Description:  PNG to RAW image converter, used by .raw font creators.
+
+Usage:        png2raw <file1> [file2...]
 
 
 vivodump
@@ -478,73 +572,29 @@ avisubdump.c
 
 Author:       Tobias Diedrich
 
-Description:  Dumps vobsub soft subtitles streams embedded in AVI files.
+Description:  Dumps vobsub soft subtitles streams embedded in avi files.
 
-Usage:        avisubdump <movie.avi>
-
-
-vfw2menc.c
-
-Author:       Gianluigi Tiesi
-
-Description:  Creates a codec settings file from the Video for Windows codecs
-              found in the mplayer codec packs.
-
-Usage:        vfw2menc -f <fourcc> -d <codec.dll> -s <settingsfile.mcf>
-              -h|--help            - displays this help
-              -d|--driver filename - dll or drv to load
-              -f|--fourcc fourcc   - fourcc of selected driver
-              -s|--save filename   - save settings to file
-              -c|--check filename  - load and show setting in filename
-              -v|--view            - displays the config dialog and do nothing
-
-Notes:        Works on x86 only.
-
-
-realcodecs/
-
-Author:       miscellaneous
-
-Description:  Wrappers for Linux Real binary codecs used to analyze, alter and
-              dump the data flow between RealPlayer and its codecs.
-
-Usage:        - Set the path to the RealPlayer codecs directory in the C files.
-              - Run 'make realcodecs'.
-              - Rename the original codecs to match the names expected in the
-                wrapper sources. The default is to give them a "real" prefix,
-                e.g. realcook.so.6.0.
-              - Put the wrappers in the RealPlayer codecs directory.
-
-Notes:        Known to work at least on Linux x86 with RealPlayer8.
+Usage:        avisubdump <avi>
 
 
 
-netstream - access remote streams
----------------------------------
+Format conversion scripts in the TOOLS dir
+------------------------------------------
 
-NOTE: netstream does not link at the moment - help welcome.
+302m_convert.c
 
-netstream allows you to access most MPlayer stream types from a remote host.
-The main purpose of this feature is to make it possible to directly use the
-CD or DVD drive of another computer on the network (provided you have the
-required bandwidth). On the downside some stream types (currently TV and MF)
-are not usable remotely because they are implemented at the demuxer level.
+Author:       Reimar Döffinger
 
-Be aware that currently the server is not secure at all.
+Description:  Converts D-Cinema Audio (SMPTE 302M?) to WAV.
 
-Compile the server by running 'make netstream' and then copy the netstream
-binary to the right place on your system (usually /usr/local/bin on Unix).
-Start the netstream server on the computer you intend to access remotely.
-There are no command line arguments.
+Usage:        302m_convert <in.302> <out.wav>
 
-Play the second track of a VCD on the server with:
 
-  mplayer -cache 5000 mpst://servername/vcd://2
+360m_convert.c
 
-Access files on this server with:
+Author:       Reimar Döffinger
 
-  mplayer -cache 5000 mpst://servername//usr/local/movies/lol.avi
+Description:  Converts D-Cinema Video (MPEG-2 in GXF, SMPTE 360M) to MPEG-ES.
+              Use -demuxer mpeges to play the converted file.
 
-Note that paths which do not start with a / will be interpreted as relative to
-the directory where the server is running. The '-cache' option is not needed
-but highly recommended.
+Usage:        360m_convert <in.gxf> <out.m2v>

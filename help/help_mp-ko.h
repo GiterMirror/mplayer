@@ -58,6 +58,7 @@ static char help_text[]=
 #define MSGTR_NoHomeDir "홈디렉토리를 찾을 수 없습니다.\n"
 #define MSGTR_GetpathProblem "get_path(\"config\") 문제 발생\n"
 #define MSGTR_CreatingCfgFile "설정파일을 만듭니다.: %s\n"
+#define MSGTR_CopyCodecsConf "((MPlayer 소스 트리의) etc/codecs.conf를 ~/.mplayer/codecs.conf로 복사 또는 링크하세요.)\n"
 #define MSGTR_BuiltinCodecsConf "내장된 기본 codecs.conf를 사용합니다.\n"
 #define MSGTR_CantLoadFont "폰트를 읽어 들일 수 없습니다.: %s\n"
 #define MSGTR_CantLoadSub "자막을 읽어 들일 수 없습니다.: %s\n"
@@ -260,6 +261,8 @@ static char help_text[]=
 #define MSGTR_CantSeekRawAVI "raw AVI 스트림에서는 탐색할 수 없습니다. (인덱스가 필요합니다. -idx 스위치로 시도해보세요.)  \n"
 #define MSGTR_CantSeekFile "이 파일에서는 탐색할 수 없습니다.\n"
 
+#define MSGTR_EncryptedVOB "암호화된 VOB 파일입니다! DOCS/HTML/en/dvd.html을 참조하세요.\n"
+
 #define MSGTR_MOVcomprhdr "MOV: 압축된 헤더는 (아직) 지원되지않습니다.\n"
 #define MSGTR_MOVvariableFourCC "MOV: 경고: 가변적인 FOURCC 발견!?\n"
 #define MSGTR_MOVtooManyTrk "MOV: 경고: 트랙이 너무 많습니다."
@@ -273,6 +276,7 @@ static char help_text[]=
 #define MSGTR_OpeningAudioDemuxerFailed "오디오 해석기를 여는데 실패했습니다.: %s\n"
 #define MSGTR_OpeningSubtitlesDemuxerFailed "자막 해석기를 여는데 실패했습니다.: %s\n"
 #define MSGTR_TVInputNotSeekable "TV 입력을 찾을 수 없습니다! (채널을 바꾸고 하면 될수도 있습니다. ;)\n"
+#define MSGTR_DemuxerInfoAlreadyPresent "해석기 정보 %s(이)가 이미 존재합니다!\n"
 #define MSGTR_ClipInfo "클립 정보: \n"
 
 #define MSGTR_LeaveTelecineMode "\ndemux_mpg: 30fps NTSC 항목을 감지하여, 프레임속도를 바꿉니다.\n"
@@ -314,6 +318,7 @@ static char help_text[]=
 
 // LIRC:
 #define MSGTR_SettingUpLIRC "LIRC 지원을 시작합니다...\n"
+#define MSGTR_LIRCdisabled "리모콘을 사용할 수 없습니다.\n"
 #define MSGTR_LIRCopenfailed "LIRC 지원 시작을 실패했습니다.\n"
 #define MSGTR_LIRCcfgerr "LIRC 설정파일 %s를 읽는데 실패했습니다.\n"
 
@@ -370,6 +375,7 @@ static char help_text[]=
 #define MSGTR_NEMDB "죄송합니다. 그리기 버퍼를 위한 충분한 메모리가 없습니다."
 #define MSGTR_NEMFMR "죄송합니다. 메뉴 렌더링을 위한 충분한 메모리가 없습니다."
 #define MSGTR_IDFGCVD "죄송합니다. GUI 호환 비디오 출력 드라이버를 찾지 못했습니다."
+#define MSGTR_NEEDLAVCFAME "죄송합니다. MPEG가 아닌 파일을 DXR3/H+ 장치로 재생하려면 다시 인코딩해야만 합니다.\nDXR3/H+ 설정 대화상자에서 lavc나 frame이 가능하도록 하세요."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[스킨] 스킨 설정파일의 %d번째 줄에 오류가 있습니다.: %s" 
@@ -510,6 +516,7 @@ static char help_text[]=
 #define MSGTR_PREFERENCES_Message "선택사항들을 적용하려면 재생기를 다시 시작해야 합니다!"
 #define MSGTR_PREFERENCES_DXR3_VENC "비디오 인코더:"
 #define MSGTR_PREFERENCES_DXR3_LAVC "LAVC 사용 (FFmpeg)"
+#define MSGTR_PREFERENCES_DXR3_FAME "FAME 사용"
 #define MSGTR_PREFERENCES_FontEncoding1 "유니코드"
 #define MSGTR_PREFERENCES_FontEncoding2 "서유럽어 (ISO-8859-1)"
 #define MSGTR_PREFERENCES_FontEncoding3 "Euro 포함 서유럽어 (ISO-8859-15)"

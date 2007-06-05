@@ -40,7 +40,7 @@ LIBAO_EXTERN(sdl)
 #undef USE_SDL_INTERNAL_MIXER
 
 // Samplesize used by the SDLlib AudioSpec struct
-#if defined(WIN32) || defined(SYS_AMIGAOS4)
+#ifdef WIN32
 #define SAMPLESIZE 2048
 #else
 #define SAMPLESIZE 1024
@@ -88,10 +88,10 @@ static int write_buffer(unsigned char* data,int len){
   if (len > free) len = free;
   if (first_len > len) first_len = len;
   // till end of buffer
-  fast_memcpy (&buffer[write_pos], data, first_len);
+  memcpy (&buffer[write_pos], data, first_len);
   if (len > first_len) { // we have to wrap around
     // remaining part from beginning of buffer
-    fast_memcpy (buffer, &data[first_len], len - first_len);
+    memcpy (buffer, &data[first_len], len - first_len);
   }
   write_pos = (write_pos + len) % BUFFSIZE;
   return len;
@@ -106,14 +106,14 @@ static int read_buffer(unsigned char* data,int len){
 #ifdef USE_SDL_INTERNAL_MIXER
   SDL_MixAudio (data, &buffer[read_pos], first_len, volume);
 #else
-  fast_memcpy (data, &buffer[read_pos], first_len);
+  memcpy (data, &buffer[read_pos], first_len);
 #endif
   if (len > first_len) { // we have to wrap around
     // remaining part from beginning of buffer
 #ifdef USE_SDL_INTERNAL_MIXER
     SDL_MixAudio (&data[first_len], buffer, len - first_len, volume);
 #else
-    fast_memcpy (&data[first_len], buffer, len - first_len);
+    memcpy (&data[first_len], buffer, len - first_len);
 #endif
   }
   read_pos = (read_pos + len) % BUFFSIZE;
@@ -321,7 +321,6 @@ static int get_space(void){
 // return: number of bytes played
 static int play(void* data,int len,int flags){
 
-	if (!(flags & AOPLAY_FINAL_CHUNK))
 	len = (len/ao_data.outburst)*ao_data.outburst;
 #if 0	
 	int ret;

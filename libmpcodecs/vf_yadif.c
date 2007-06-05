@@ -54,7 +54,6 @@ struct vf_priv_s {
     mp_image_t *buffered_mpi;
     int stride[3];
     uint8_t *ref[4][3];
-    int do_deinterlace;
 };
 
 static void (*filter_line)(struct vf_priv_s *p, uint8_t *dst, uint8_t *prev, uint8_t *cur, uint8_t *next, int w, int refs, int parity);
@@ -347,7 +346,7 @@ static void filter_line_c(struct vf_priv_s *p, uint8_t *dst, uint8_t *prev, uint
 }
 
 static void filter(struct vf_priv_s *p, uint8_t *dst[3], int dst_stride[3], int width, int height, int parity, int tff){
-    int y, i;
+    int x, y, i;
 
     for(i=0; i<3; i++){
         int is_chroma= !!i;
@@ -363,7 +362,7 @@ static void filter(struct vf_priv_s *p, uint8_t *dst[3], int dst_stride[3], int 
                 uint8_t *dst2= &dst[i][y*dst_stride[i]];
                 filter_line(p, dst2, prev, cur, next, w, refs, parity ^ tff);
             }else{
-                fast_memcpy(&dst[i][y*dst_stride[i]], &p->ref[1][i][y*refs], w);
+                memcpy(&dst[i][y*dst_stride[i]], &p->ref[1][i][y*refs], w);
             }
         }
     }
@@ -411,13 +410,7 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
     vf->priv->buffered_i = 0;
     vf->priv->buffered_pts = pts;
 
-    if(vf->priv->do_deinterlace == 0)
-        return vf_next_put_image(vf, mpi, pts);
-    else if(vf->priv->do_deinterlace == 1){
-        vf->priv->do_deinterlace= 2;
-        return 0;
-    }else
-        return continue_buffered_image(vf);
+    return continue_buffered_image(vf);
 }
 
 static int continue_buffered_image(struct vf_instance_s *vf)
@@ -476,18 +469,6 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     return 0;
 }
 
-static int control(struct vf_instance_s* vf, int request, void* data){
-    switch (request){
-      case VFCTRL_GET_DEINTERLACE:
-        *(int*)data = vf->priv->do_deinterlace;
-        return CONTROL_OK;
-      case VFCTRL_SET_DEINTERLACE:
-        vf->priv->do_deinterlace = 2*!!*(int*)data;
-        return CONTROL_OK;
-    }
-    return vf_next_control (vf, request, data);
-}
-
 static int open(vf_instance_t *vf, char* args){
 
     vf->config=config;
@@ -495,12 +476,10 @@ static int open(vf_instance_t *vf, char* args){
     vf->query_format=query_format;
     vf->uninit=uninit;
     vf->priv=malloc(sizeof(struct vf_priv_s));
-    vf->control=control;
     memset(vf->priv, 0, sizeof(struct vf_priv_s));
 
     vf->priv->mode=0;
     vf->priv->parity= -1;
-    vf->priv->do_deinterlace=1;
 
     if (args) sscanf(args, "%d:%d", &vf->priv->mode, &vf->priv->parity);
 

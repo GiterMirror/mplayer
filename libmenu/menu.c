@@ -11,7 +11,6 @@
 
 #include "libvo/osd.h"
 #include "libvo/font_load.h"
-#include "libvo/sub.h"
 #include "osdep/keycodes.h"
 #include "asxparser.h"
 #include "stream/stream.h"
@@ -53,9 +52,8 @@ typedef struct menu_def_st {
   char* args;
 } menu_def_t;
 
-static struct MPContext *menu_ctx = NULL;
 static menu_def_t* menu_list = NULL;
-static int menu_count = 0;
+static int mcount = 0;
 
 
 static int menu_parse_config(char* buffer) {
@@ -93,20 +91,20 @@ static int menu_parse_config(char* buffer) {
     }
     // Got it : add this to our list
     if(minfo) {
-      menu_list = realloc(menu_list,(menu_count+2)*sizeof(menu_def_t));
-      menu_list[menu_count].name = name;
-      menu_list[menu_count].type = minfo;
-      menu_list[menu_count].cfg = m_struct_alloc(&minfo->priv_st);
-      menu_list[menu_count].args = body;
+      menu_list = realloc(menu_list,(mcount+2)*sizeof(menu_def_t));
+      menu_list[mcount].name = name;
+      menu_list[mcount].type = minfo;
+      menu_list[mcount].cfg = m_struct_alloc(&minfo->priv_st);
+      menu_list[mcount].args = body;
       // Setup the attribs
       for(i = 0 ; attribs[2*i] ; i++) {
 	if(strcasecmp(attribs[2*i],"name") == 0) continue;
-	if(!m_struct_set(&minfo->priv_st,menu_list[menu_count].cfg,attribs[2*i], attribs[2*i+1]))
+	if(!m_struct_set(&minfo->priv_st,menu_list[mcount].cfg,attribs[2*i], attribs[2*i+1]))
 	  mp_msg(MSGT_GLOBAL,MSGL_WARN,MSGTR_LIBMENU_BadAttrib,attribs[2*i],attribs[2*i+1],
 		 name,parser->line);
       }
-      menu_count++;
-      memset(&menu_list[menu_count],0,sizeof(menu_def_t));
+      mcount++;
+      memset(&menu_list[mcount],0,sizeof(menu_def_t));
     } else {
       mp_msg(MSGT_GLOBAL,MSGL_WARN,MSGTR_LIBMENU_UnknownMenuType,element,parser->line);
       free(name);
@@ -124,7 +122,7 @@ static int menu_parse_config(char* buffer) {
 #define BUF_STEP 1024
 #define BUF_MIN 128
 #define BUF_MAX BUF_STEP*1024
-int menu_init(struct MPContext *mpctx, char* cfg_file) {
+int menu_init(char* cfg_file) {
   char* buffer = NULL;
   int bl = BUF_STEP, br = 0;
   int f, fd;
@@ -162,7 +160,6 @@ int menu_init(struct MPContext *mpctx, char* cfg_file) {
 
   close(fd);
 
-  menu_ctx = mpctx;
   f = menu_parse_config(buffer);
   free(buffer);
   return f;
@@ -177,7 +174,7 @@ void menu_unint(void) {
     if(menu_list[i].args) free(menu_list[i].args);
   }
   free(menu_list);
-  menu_count = 0;
+  mcount = 0;
 }
 
 /// Default read_key function
@@ -219,7 +216,6 @@ menu_t* menu_open(char *name) {
   m = calloc(1,sizeof(menu_t));
   m->priv_st = &(menu_list[i].type->priv_st);
   m->priv = m_struct_copy(m->priv_st,menu_list[i].cfg);
-  m->ctx = menu_ctx;
   if(menu_list[i].type->open(m,menu_list[i].args))
     return m;
   if(m->priv)
@@ -297,60 +293,12 @@ static inline int get_height(int c,int h){
     return h;
 }
 
-static void render_txt(char *txt)
-{
-  while (*txt) {
-    int c = utf8_get_char(&txt);
-    render_one_glyph(vo_font, c);
-  }
-}
-
-#ifdef USE_FRIBIDI
-#include <fribidi/fribidi.h>
-#include "libavutil/common.h"
-char *menu_fribidi_charset = NULL;
-int menu_flip_hebrew = 0;
-int menu_fribidi_flip_commas = 0;
-
-static char *menu_fribidi(char *txt)
-{
-  static int char_set_num = -1;
-  static FriBidiChar *logical, *visual;
-  static size_t buffer_size = 1024;
-  static char *outputstr;
-
-  FriBidiCharType base;
-  fribidi_boolean log2vis;
-  size_t len;
-
-  if (menu_flip_hebrew) {
-    len = strlen(txt);
-    if (char_set_num == -1) {
-      fribidi_set_mirroring (1);
-      fribidi_set_reorder_nsm (0);
-      char_set_num = fribidi_parse_charset("UTF-8");
-      buffer_size = FFMAX(1024,len+1);
-      logical = malloc(buffer_size);
-      visual = malloc(buffer_size);
-      outputstr = malloc(buffer_size);
-    } else if (len+1 > buffer_size) {
-      buffer_size = len+1;
-      logical = realloc(logical, buffer_size);
-      visual = realloc(visual, buffer_size);
-      outputstr = realloc(outputstr, buffer_size);
-    }
-    len = fribidi_charset_to_unicode (char_set_num, txt, len, logical);
-    base = menu_fribidi_flip_commas?FRIBIDI_TYPE_ON:FRIBIDI_TYPE_L;
-    log2vis = fribidi_log2vis (logical, len, &base, visual, NULL, NULL, NULL);
-    if (log2vis) {
-      len = fribidi_remove_bidi_marks (visual, len, NULL, NULL, NULL);
-      fribidi_unicode_to_charset (char_set_num, visual, len, outputstr);
-      return outputstr;
-    }
-  }
-  return txt;
-}
+#ifdef HAVE_FREETYPE
+#define render_txt(t)  { char* p = t;  while(*p) render_one_glyph(vo_font,*p++); }
+#else
+#define render_txt(t)
 #endif
+    
 
 void menu_draw_text(mp_image_t* mpi,char* txt, int x, int y) {
   draw_alpha_f draw_alpha = get_draw_alpha(mpi->imgfmt);
@@ -361,13 +309,10 @@ void menu_draw_text(mp_image_t* mpi,char* txt, int x, int y) {
     return;
   }
 
-#ifdef USE_FRIBIDI
-  txt = menu_fribidi(txt);
-#endif
   render_txt(txt);
 
   while (*txt) {
-    int c=utf8_get_char(&txt);
+    unsigned char c=*txt++;
     if ((font=vo_font->font[c])>=0 && (x + vo_font->width[c] <= mpi->w) && (y + vo_font->pic_a[font]->h <= mpi->h))
       draw_alpha(vo_font->width[c], vo_font->pic_a[font]->h,
 		 vo_font->pic_b[font]->bmp+vo_font->start[c],
@@ -395,9 +340,6 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
     return;
   }
 
-#ifdef USE_FRIBIDI
-  txt = menu_fribidi(txt);
-#endif
   render_txt(txt);
 
   if(x > mpi->w || y > mpi->h)
@@ -460,7 +402,7 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
   
   // Jump some the beginnig text if needed
   while(sy < ymin && *txt) {
-    int c=utf8_get_char(&txt);
+    unsigned char c=*txt++;
     if(c == '\n' || (warp && ll + vo_font->width[c] > w)) {
       ll = 0;
       sy += vo_font->height + vspace;
@@ -534,7 +476,7 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
     }
 
     while(sx < xmax && txt != line_end) {
-      int c=utf8_get_char(&txt);
+      unsigned char c = *txt++;
       font = vo_font->font[c];
       if(font >= 0) {
  	int cs = (vo_font->pic_a[font]->h - vo_font->height) / 2;
@@ -562,7 +504,7 @@ int menu_text_length(char* txt) {
   int l = 0;
   render_txt(txt);
   while (*txt) {
-    int c=utf8_get_char(&txt);
+    unsigned char c=*txt++;
     l += vo_font->width[c]+vo_font->charspace;
   }
   return l - vo_font->charspace;
@@ -574,7 +516,7 @@ void menu_text_size(char* txt,int max_width, int vspace, int warp, int* _w, int*
 
   render_txt(txt);
   while (*txt) {
-    int c=utf8_get_char(&txt);
+    unsigned char c=*txt++;
     if(c == '\n' || (warp && i + vo_font->width[c] >= max_width)) {
       if(*txt)
 	l++;
@@ -594,7 +536,7 @@ int menu_text_num_lines(char* txt, int max_width) {
   int l = 1, i = 0;
   render_txt(txt);
   while (*txt) {
-    int c=utf8_get_char(&txt);
+    unsigned char c=*txt++;
     if(c == '\n' || i + vo_font->width[c] > max_width) {
       l++;
       i = 0;
@@ -609,7 +551,7 @@ char* menu_text_get_next_line(char* txt, int max_width) {
   int i = 0;
   render_txt(txt);
   while (*txt) {
-    int c=utf8_get_char(&txt);
+    unsigned char c=*txt;
     if(c == '\n') {
       txt++;
       break;

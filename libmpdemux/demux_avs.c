@@ -21,26 +21,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "libvo/fastmemcpy.h"
 
-#include "loader/wine/windef.h"
+#include "wine/windef.h"
 
 #ifdef WIN32_LOADER
-#include "loader/ldt_keeper.h"
+#include "ldt_keeper.h"
 #endif
 
 #include "demux_avs.h"
 
 #define MAX_AVS_SIZE    16 * 1024 /* 16k should be enough */
+#undef ENABLE_AUDIO
 
 HMODULE WINAPI LoadLibraryA(LPCSTR);
 FARPROC WINAPI GetProcAddress(HMODULE,LPCSTR);
@@ -53,7 +53,10 @@ typedef WINAPI AVS_Clip* (*imp_avs_take_clip)(AVS_Value, AVS_ScriptEnvironment *
 typedef WINAPI void (*imp_avs_release_clip)(AVS_Clip *);
 typedef WINAPI AVS_VideoFrame* (*imp_avs_get_frame)(AVS_Clip *, int n);
 typedef WINAPI void (*imp_avs_release_video_frame)(AVS_VideoFrame *);
-typedef WINAPI int (*imp_avs_get_audio)(AVS_Clip *, void * buf, uint64_t start, uint64_t count); 
+#ifdef ENABLE_AUDIO
+//typedef WINAPI int (*imp_avs_get_audio)(AVS_Clip *, void * buf, uint64_t start, uint64_t count); 
+typedef WINAPI int (*imp_avs_get_audio)(AVS_ScriptEnvironment *, void * buf, uint64_t start, uint64_t count); 
+#endif
 
 #define Q(string) # string
 #define IMPORT_FUNC(x) \
@@ -71,7 +74,6 @@ typedef struct tagAVS
 #endif
     HMODULE dll;
     int frameno;
-    uint64_t sampleno;
     int init;
     
     imp_avs_create_script_environment avs_create_script_environment;
@@ -81,12 +83,14 @@ typedef struct tagAVS
     imp_avs_release_clip avs_release_clip;
     imp_avs_get_frame avs_get_frame;
     imp_avs_release_video_frame avs_release_video_frame;
+#ifdef ENABLE_AUDIO
     imp_avs_get_audio avs_get_audio;
+#endif
 } AVS_T;
 
 AVS_T *initAVS(const char *filename)
 {   
-    AVS_T *AVS = malloc (sizeof(AVS_T));
+    AVS_T *AVS = (AVS_T *) malloc (sizeof(AVS_T));
     AVS_Value arg0 = avs_new_value_string(filename);
     AVS_Value args = avs_new_value_array(&arg0, 1);
     
@@ -111,7 +115,9 @@ AVS_T *initAVS(const char *filename)
     IMPORT_FUNC(avs_release_clip);
     IMPORT_FUNC(avs_get_frame);
     IMPORT_FUNC(avs_release_video_frame);
+#ifdef ENABLE_AUDIO
     IMPORT_FUNC(avs_get_audio);
+#endif
     
     AVS->avs_env = AVS->avs_create_script_environment(AVISYNTH_INTERFACE_VERSION);
     if (!AVS->avs_env)
@@ -164,14 +170,16 @@ static int demux_avs_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
 {
     AVS_VideoFrame *curr_frame;
     demux_packet_t *dp = NULL;
-    AVS_T *AVS = demuxer->priv;
+    AVS_T *AVS = (AVS_T *) demuxer->priv;
 
-    if (ds == demuxer->video)
+    demux_stream_t *d_video=demuxer->video;
+    sh_video_t *sh_video=d_video->sh;
+
+    if (avs_has_video(AVS->video_info))
     {
-        sh_video_t *sh_video = demuxer->video->sh;
         char *dst;
         int w, h;
-        if (AVS->video_info->num_frames <= AVS->frameno) return 0; // EOF
+        if (AVS->video_info->num_frames < AVS->frameno) return 0; // EOF
 
         curr_frame = AVS->avs_get_frame(AVS->clip, AVS->frameno);
         if (!curr_frame)
@@ -202,31 +210,23 @@ static int demux_avs_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
         AVS->avs_release_video_frame(curr_frame);
     }
     
+#ifdef ENABLE_AUDIO
     /* Audio */
-    if (ds == demuxer->audio)
+    if (avs_has_audio(AVS->video_info))
     {
-        sh_audio_t *sh_audio = ds->sh;
-        int samples = sh_audio->samplerate;
-        uint64_t l;
-        samples = FFMIN(samples, AVS->video_info->num_audio_samples - AVS->sampleno);
-        if (!samples) return 0;
-        l = samples * sh_audio->channels * sh_audio->samplesize;
-        if (l > INT_MAX) {
-            mp_msg(MSGT_DEMUX, MSGL_FATAL, "AVS: audio packet too big\n");
-            return 0;
-        }
+        demux_stream_t *d_audio=demuxer->audio;
+        sh_audio_t *sh_audio=d_audio->sh;
+        int l = sh_audio->wf->nAvgBytesPerSec;
         dp = new_demux_packet(l);
-        dp->pts = AVS->sampleno / sh_audio->samplerate;
         
-        if (AVS->avs_get_audio(AVS->clip, dp->buffer, AVS->sampleno, samples))
+        if (AVS->avs_get_audio(AVS->avs_env, dp->buffer, AVS->frameno*sh_video->fps*l, l))
         {
             mp_msg(MSGT_DEMUX, MSGL_V, "AVS: avs_get_audio() failed\n");
             return 0;
         }
         ds_add_packet(demuxer->audio, dp);
-
-        AVS->sampleno += samples;
     }
+#endif
     
     return 1;
 }
@@ -234,10 +234,8 @@ static int demux_avs_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
 static demuxer_t* demux_open_avs(demuxer_t* demuxer)
 {
     int found = 0;
-    AVS_T *AVS = demuxer->priv;
-    int audio_samplesize = 0;
+    AVS_T *AVS = (AVS_T *) demuxer->priv;
     AVS->frameno = 0;
-    AVS->sampleno = 0;
 
     mp_msg(MSGT_DEMUX, MSGL_V, "AVS: demux_open_avs()\n");
     demuxer->seekable = 1;
@@ -289,8 +287,6 @@ static demuxer_t* demux_open_avs(demuxer_t* demuxer)
         sh_video_t *sh_video = new_sh_video(demuxer, 0);
         found = 1;
         
-        if (demuxer->video->id == -1) demuxer->video->id = 0;
-        if (demuxer->video->id == 0)
         demuxer->video->sh = sh_video;
         sh_video->ds = demuxer->video;
         
@@ -302,7 +298,7 @@ static demuxer_t* demux_open_avs(demuxer_t* demuxer)
         sh_video->fps = (float) ((float) AVS->video_info->fps_numerator / (float) AVS->video_info->fps_denominator);
         sh_video->frametime = 1.0 / sh_video->fps;
         
-        sh_video->bih = malloc(sizeof(BITMAPINFOHEADER) + (256 * 4));
+        sh_video->bih = (BITMAPINFOHEADER*) malloc(sizeof(BITMAPINFOHEADER) + (256 * 4));
         sh_video->bih->biCompression = sh_video->format;
         sh_video->bih->biBitCount = avs_bits_per_pixel(AVS->video_info);
         //sh_video->bih->biPlanes = 2;
@@ -313,40 +309,29 @@ static demuxer_t* demux_open_avs(demuxer_t* demuxer)
         sh_video->num_frames_decoded = 0;
     }
     
+#ifdef ENABLE_AUDIO
     /* Audio */
     if (avs_has_audio(AVS->video_info))
-      switch (AVS->video_info->sample_type) {
-        case AVS_SAMPLE_INT8:  audio_samplesize = 1; break;
-        case AVS_SAMPLE_INT16: audio_samplesize = 2; break;
-        case AVS_SAMPLE_INT24: audio_samplesize = 3; break;
-        case AVS_SAMPLE_INT32:
-        case AVS_SAMPLE_FLOAT: audio_samplesize = 4; break;
-        default:
-          mp_msg(MSGT_DEMUX, MSGL_ERR, "AVS: unknown audio type, disabling\n");
-      }
-    if (audio_samplesize)
     {
         sh_audio_t *sh_audio = new_sh_audio(demuxer, 0);
         found = 1;
         mp_msg(MSGT_DEMUX, MSGL_V, "AVS: Clip has audio -> Channels = %d - Freq = %d\n", AVS->video_info->nchannels, AVS->video_info->audio_samples_per_second);
 
-        if (demuxer->audio->id == -1) demuxer->audio->id = 0;
-        if (demuxer->audio->id == 0)
         demuxer->audio->sh = sh_audio;
         sh_audio->ds = demuxer->audio;
         
-        sh_audio->wf = malloc(sizeof(WAVEFORMATEX));
-        sh_audio->wf->wFormatTag = sh_audio->format =
-            (AVS->video_info->sample_type == AVS_SAMPLE_FLOAT) ? 0x3 : 0x1;
+        sh_audio->wf = (WAVEFORMATEX*) malloc(sizeof(WAVEFORMATEX));
+        sh_audio->wf->wFormatTag = sh_audio->format = 0x1;
         sh_audio->wf->nChannels = sh_audio->channels = AVS->video_info->nchannels;
         sh_audio->wf->nSamplesPerSec = sh_audio->samplerate = AVS->video_info->audio_samples_per_second;
-        sh_audio->samplesize = audio_samplesize;
-        sh_audio->wf->nAvgBytesPerSec = sh_audio->channels * sh_audio->samplesize * sh_audio->samplerate;
-        sh_audio->wf->nBlockAlign = sh_audio->channels * sh_audio->samplesize;
-        sh_audio->wf->wBitsPerSample = sh_audio->samplesize * 8;
+        sh_audio->wf->nAvgBytesPerSec = AVS->video_info->audio_samples_per_second * 4;
+        sh_audio->wf->nBlockAlign = 4;
+        sh_audio->wf->wBitsPerSample = sh_audio->samplesize = 16; // AVS->video_info->sample_type ??
         sh_audio->wf->cbSize = 0;
         sh_audio->i_bps = sh_audio->wf->nAvgBytesPerSec;
+        sh_audio->o_bps = sh_audio->wf->nAvgBytesPerSec;
     }
+#endif
 
     AVS->init = 1;
     if (found)
@@ -357,26 +342,22 @@ static demuxer_t* demux_open_avs(demuxer_t* demuxer)
 
 static int demux_avs_control(demuxer_t *demuxer, int cmd, void *arg)
 {   
-    sh_video_t *sh_video=demuxer->video->sh;
-    sh_audio_t *sh_audio=demuxer->audio->sh;
-    AVS_T *AVS = demuxer->priv;
+    demux_stream_t *d_video=demuxer->video;
+    sh_video_t *sh_video=d_video->sh;
+    AVS_T *AVS = (AVS_T *) demuxer->priv;
 
     switch(cmd)
     {
         case DEMUXER_CTRL_GET_TIME_LENGTH:
         {
-            double res = sh_video ? (double)AVS->video_info->num_frames / sh_video->fps : 0;
-            if (sh_audio)
-              res = FFMAX(res, (double)AVS->video_info->num_audio_samples / sh_audio->samplerate);
-            *((double *)arg) = res;
+            if (!AVS->video_info->num_frames) return DEMUXER_CTRL_DONTKNOW;
+            *((double *)arg) = (double)AVS->video_info->num_frames / sh_video->fps;
             return DEMUXER_CTRL_OK;
         }
         case DEMUXER_CTRL_GET_PERCENT_POS:
         {
-            if (sh_video)
-            *((int *)arg) = AVS->frameno * 100 / AVS->video_info->num_frames;
-            else
-              *((int *)arg) = AVS->sampleno * 100 / AVS->video_info->num_audio_samples;
+            if (!AVS->video_info->num_frames) return DEMUXER_CTRL_DONTKNOW;
+            *((int *)arg) = (int) (AVS->frameno * 100 / AVS->video_info->num_frames);
             return DEMUXER_CTRL_OK;
         }
     default:
@@ -386,7 +367,7 @@ static int demux_avs_control(demuxer_t *demuxer, int cmd, void *arg)
 
 static void demux_close_avs(demuxer_t* demuxer)
 {
-    AVS_T *AVS = demuxer->priv;
+    AVS_T *AVS = (AVS_T *) demuxer->priv;
 
     if (AVS)
     {
@@ -406,35 +387,24 @@ static void demux_close_avs(demuxer_t* demuxer)
 
 static void demux_seek_avs(demuxer_t *demuxer, float rel_seek_secs, float audio_delay, int flags)
 {
-    sh_video_t *sh_video=demuxer->video->sh;
-    sh_audio_t *sh_audio=demuxer->audio->sh;
-    AVS_T *AVS = demuxer->priv;
-    double video_pos = sh_video ?
-                       (double)AVS->frameno / sh_video->fps :
-                       (double)AVS->sampleno / sh_audio->samplerate;
-    double duration = sh_video ?
-                      (double)AVS->video_info->num_frames / sh_video->fps :
-                      (double)AVS->video_info->num_audio_samples / sh_audio->samplerate;
+    demux_stream_t *d_video=demuxer->video;
+    sh_video_t *sh_video=d_video->sh;
+    AVS_T *AVS = (AVS_T *) demuxer->priv;
+    int video_pos=AVS->frameno;
     
     //mp_msg(MSGT_DEMUX, MSGL_V, "AVS: seek rel_seek_secs = %f - flags = %x\n", rel_seek_secs, flags);
     
     // seek absolute
     if (flags&1) video_pos=0;
-    // seek precent
-    if (flags&2) rel_seek_secs *= duration;
 
-    video_pos += rel_seek_secs;
+    video_pos += (rel_seek_secs * sh_video->fps);
     if (video_pos < 0) video_pos = 0;
+    if (video_pos > AVS->video_info->num_frames) video_pos = AVS->video_info->num_frames;
         
-    if (sh_video) {
-      AVS->frameno = FFMIN(video_pos * sh_video->fps,
-                           AVS->video_info->num_frames);
-      sh_video->num_frames_decoded = AVS->frameno;
-      sh_video->num_frames = AVS->frameno;
-    }
-    if (sh_audio)
-      AVS->sampleno = FFMIN(video_pos * sh_audio->samplerate,
-                            AVS->video_info->num_audio_samples);
+    AVS->frameno = video_pos;
+    sh_video->num_frames_decoded = video_pos;
+    sh_video->num_frames = video_pos;
+    d_video->pts=AVS->frameno / sh_video->fps; // OSD
 }
 
 static int avs_check_file(demuxer_t *demuxer)

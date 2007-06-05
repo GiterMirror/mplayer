@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <unistd.h>
 #include <inttypes.h>
 #include <math.h>
 
@@ -218,7 +219,7 @@ static af_data_t* play(struct af_instance_s* af, af_data_t* data)
 }
 
 // Allocate memory and set function pointers
-static int af_open(af_instance_t* af){
+static int open(af_instance_t* af){
   af->control=control;
   af->uninit=uninit;
   af->play=play;
@@ -238,7 +239,7 @@ af_info_t af_info_equalizer = {
   "Anders",
   "",
   AF_FLAGS_NOT_REENTRANT,
-  af_open
+  open
 };
 
 

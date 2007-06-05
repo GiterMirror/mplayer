@@ -6,11 +6,11 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
+#include "stream.h"
+#include "demuxer.h"
 
 #include "codec-cfg.h"
-#include "libmpdemux/stheader.h"
+#include "stheader.h"
 
 #include "dec_audio.h"
 #include "ad.h"
@@ -333,8 +333,6 @@ int init_audio_filters(sh_audio_t *sh_audio,
   if(out_maxsize<8192) out_maxsize=MAX_OUTBURST; // not sure this is ok
 
   sh_audio->a_out_buffer_size=out_maxsize;
-  if (sh_audio->a_out_buffer != sh_audio->a_buffer)
-      free(sh_audio->a_out_buffer);
   sh_audio->a_out_buffer=memalign(16,sh_audio->a_out_buffer_size);
   memset(sh_audio->a_out_buffer,0,sh_audio->a_out_buffer_size);
   sh_audio->a_out_buffer_len=0;
@@ -417,8 +415,7 @@ int decode_audio(sh_audio_t *sh_audio,unsigned char *buf,int minlen,int maxlen)
   
   // copy filter==>out:
   if(maxlen < pafd->len) {
-    af_stream_t *afs = sh_audio->afilter;
-    maxlen -= maxlen % (afs->output.nch * afs->output.bps);
+    maxlen -= maxlen % (sh_audio->channels * sh_audio->samplesize);
     mp_msg(MSGT_DECAUDIO,MSGL_WARN,"%i bytes of audio data lost due to buffer overflow, len = %i\n", pafd->len - maxlen,pafd->len);
   }
   else

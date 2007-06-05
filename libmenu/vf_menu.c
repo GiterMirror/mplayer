@@ -11,7 +11,6 @@
 #include <malloc.h>
 #endif
 
-#include "mplayer.h"
 #include "mp_msg.h"
 
 #include "libmpcodecs/img_format.h"
@@ -24,7 +23,8 @@
 #include "input/input.h"
 #include "m_struct.h"
 #include "menu.h"
-#include "access_mpcontext.h"
+
+extern vo_functions_t* video_out;
 
 
 static struct vf_priv_s* st_priv = NULL;
@@ -37,7 +37,6 @@ int attribute_used menu_startup = 0;
 struct vf_priv_s {
   menu_t* root;
   menu_t* current;
-  int passthrough;
 };
 
 static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts);
@@ -78,7 +77,6 @@ static mp_image_t* alloc_mpi(int w, int h, uint32_t fmt) {
 }
 
 void vf_menu_pause_update(struct vf_instance_s* vf) {
-  vo_functions_t *video_out = mpctx_get_video_out(vf->priv->current->ctx);
   if(pause_mpi) {
     put_image(vf,pause_mpi, MP_NOPTS_VALUE);
     // Don't draw the osd atm
@@ -91,7 +89,7 @@ static int cmd_filter(mp_cmd_t* cmd, int paused, struct vf_priv_s * priv) {
 
   switch(cmd->id) {
   case MP_CMD_PAUSE :
-#if 0 // http://lists.mplayerhq.hu/pipermail/mplayer-dev-eng/2003-March/017286.html
+#if 0 // http://mplayerhq.hu/pipermail/mplayer-dev-eng/2003-March/017331.html
     if(!paused && !go2pause) { // Initial pause cmd -> wait the next put_image
       go2pause = 1;
       return 1;
@@ -180,13 +178,6 @@ inline static void copy_mpi(mp_image_t *dmpi, mp_image_t *mpi) {
 static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
   mp_image_t *dmpi = NULL;
 
-  if (vf->priv->passthrough) {
-    dmpi=vf_get_image(vf->next, IMGFMT_MPEGPES, MP_IMGTYPE_EXPORT,
-                      0, mpi->w, mpi->h);
-    dmpi->planes[0]=mpi->planes[0];
-    return vf_next_put_image(vf,dmpi, pts);
-  }
-
   if(vf->priv->current->show 
   || (vf->priv->current->parent && vf->priv->current->parent->show)) {
   // Close all menu who requested it
@@ -234,22 +225,17 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
   } else {
     if(mp_input_key_cb)
       mp_input_key_cb = NULL;
+    dmpi = vf_get_image(vf->next,mpi->imgfmt,
+			MP_IMGTYPE_EXPORT, MP_IMGFLAG_ACCEPT_STRIDE,
+			mpi->w,mpi->h);
 
-    if(mpi->flags&MP_IMGFLAG_DIRECT)
-      dmpi = mpi->priv;
-    else {
-      dmpi = vf_get_image(vf->next,mpi->imgfmt,
-                          MP_IMGTYPE_EXPORT, MP_IMGFLAG_ACCEPT_STRIDE,
-                          mpi->w,mpi->h);
-
-      dmpi->stride[0] = mpi->stride[0];
-      dmpi->stride[1] = mpi->stride[1];
-      dmpi->stride[2] = mpi->stride[2];
-      dmpi->planes[0] = mpi->planes[0];
-      dmpi->planes[1] = mpi->planes[1];
-      dmpi->planes[2] = mpi->planes[2];
-      dmpi->priv      = mpi->priv;
-    }
+    dmpi->stride[0] = mpi->stride[0];
+    dmpi->stride[1] = mpi->stride[1];
+    dmpi->stride[2] = mpi->stride[2];
+    dmpi->planes[0] = mpi->planes[0];
+    dmpi->planes[1] = mpi->planes[1];
+    dmpi->planes[2] = mpi->planes[2];
+    dmpi->priv      = mpi->priv;
   }
   return vf_next_put_image(vf,dmpi, pts);
 }
@@ -268,19 +254,12 @@ static int config(struct vf_instance_s* vf, int width, int height, int d_width, 
   // here is the right place to get screen dimensions
   if (force_load_font) {
     force_load_font = 0;
-    load_font_ft(width,height,&vo_font,font_name);
+    load_font_ft(width,height);
   }
 #endif
-  if(outfmt == IMGFMT_MPEGPES)
-    vf->priv->passthrough = 1;
   return vf_next_config(vf,width,height,d_width,d_height,flags,outfmt);
 }
-
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
-  return (vf_next_query_format(vf,fmt));
-}
-
-static int open_vf(vf_instance_t *vf, char* args){
+static int open(vf_instance_t *vf, char* args){
   if(!st_priv) {
     st_priv = calloc(1,sizeof(struct vf_priv_s));
     st_priv->root = st_priv->current = menu_open(args);
@@ -294,7 +273,6 @@ static int open_vf(vf_instance_t *vf, char* args){
   }
 
   vf->config = config;
-  vf->query_format=query_format;
   vf->put_image = put_image;
   vf->get_image = get_image;
   vf->uninit=uninit;
@@ -310,7 +288,7 @@ vf_info_t vf_info_menu  = {
   "menu",
   "Albeu",
   "",
-  open_vf,
+  open,
   NULL
 };
 

@@ -9,11 +9,12 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
+#include "bswap.h"
 #include "aviheader.h"
 #include "ms_hdr.h"
 
-#include "stream/stream.h"
 #include "muxer.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "m_option.h"
@@ -23,8 +24,9 @@
 #include "avformat.h"
 #endif
 
-extern const struct AVCodecTag *mp_wav_taglists[];
-extern const struct AVCodecTag *mp_bmp_taglists[];
+extern unsigned int codec_get_wav_tag(int id);
+extern enum CodecID codec_get_bmp_id(unsigned int tag);
+extern enum CodecID codec_get_wav_id(unsigned int tag);
 
 extern char *info_name;
 extern char *info_artist;
@@ -81,37 +83,21 @@ static int mp_close(URLContext *h)
 
 static int mp_read(URLContext *h, unsigned char *buf, int size)
 {
-	mp_msg(MSGT_MUXER, MSGL_WARN, "READ %d\n", size);
+	fprintf(stderr, "READ %d\n", size);
 	return -1;
 }
 
 static int mp_write(URLContext *h, unsigned char *buf, int size)
 {
 	muxer_t *muxer = (muxer_t*)h->priv_data;
-	return stream_write_buffer(muxer->stream, buf, size);
+	return fwrite(buf, 1, size, muxer->file);
 }
 
 static offset_t mp_seek(URLContext *h, offset_t pos, int whence)
 {
 	muxer_t *muxer = (muxer_t*)h->priv_data;
-	if(whence == SEEK_CUR)
-	{
-		off_t cur = stream_tell(muxer->stream);
-		if(cur == -1)
-			return -1;
-		pos += cur;
-	}
-	else if(whence == SEEK_END)
-	{
-		off_t size=0;
-		if(stream_control(muxer->stream, STREAM_CTRL_GET_SIZE, &size) == STREAM_UNSUPORTED || size < pos)
-			return -1;
-		pos = size - pos;
-	}
-	mp_msg(MSGT_MUXER, MSGL_DBG2, "SEEK %"PRIu64"\n", (int64_t)pos);
-	if(!stream_seek(muxer->stream, pos))
-		return -1;
-	return 0;
+	fprintf(stderr, "SEEK %"PRIu64"\n", (int64_t)pos);
+	return fseeko(muxer->file, pos, whence);
 }
 
 
@@ -207,7 +193,7 @@ static void fix_parameters(muxer_stream_t *stream)
 
 	if(stream->type == MUXER_TYPE_AUDIO)
 	{
-		ctx->codec_id = av_codec_get_id(mp_wav_taglists, stream->wf->wFormatTag); 
+		ctx->codec_id = codec_get_wav_id(stream->wf->wFormatTag); 
 #if 0 //breaks aac in mov at least
 		ctx->codec_tag = codec_get_wav_tag(ctx->codec_id);
 #endif
@@ -236,12 +222,10 @@ static void fix_parameters(muxer_stream_t *stream)
 	}
 	else if(stream->type == MUXER_TYPE_VIDEO)
 	{
-		ctx->codec_id = av_codec_get_id(mp_bmp_taglists, stream->bih->biCompression);
-                if(ctx->codec_id <= 0 || force_fourcc)
+		ctx->codec_id = codec_get_bmp_id(stream->bih->biCompression);
+                if(ctx->codec_id <= 0)
                     ctx->codec_tag= stream->bih->biCompression;
 		mp_msg(MSGT_MUXER, MSGL_INFO, "VIDEO CODEC ID: %d\n", ctx->codec_id);
-		if (stream->imgfmt)
-		    ctx->pix_fmt = imgfmt2pixfmt(stream->imgfmt);
 		ctx->width = stream->bih->biWidth;
 		ctx->height = stream->bih->biHeight;
 		ctx->bit_rate = 800000;
@@ -249,16 +233,15 @@ static void fix_parameters(muxer_stream_t *stream)
 		ctx->time_base.num = stream->h.dwScale;
 		if(stream->bih+1 && (stream->bih->biSize > sizeof(BITMAPINFOHEADER)))
 		{
-			ctx->extradata_size = stream->bih->biSize - sizeof(BITMAPINFOHEADER);
-			ctx->extradata = av_malloc(ctx->extradata_size);
+			ctx->extradata = av_malloc(stream->bih->biSize - sizeof(BITMAPINFOHEADER));
 			if(ctx->extradata != NULL)
-				memcpy(ctx->extradata, stream->bih+1, ctx->extradata_size);
-			else
 			{
-				mp_msg(MSGT_MUXER, MSGL_ERR, "MUXER_LAVF(video stream) error! couldn't allocate %d bytes for extradata\n",
-					ctx->extradata_size);
-				ctx->extradata_size = 0;
+				ctx->extradata_size = stream->bih->biSize - sizeof(BITMAPINFOHEADER);
+				memcpy(ctx->extradata, stream->bih+1, ctx->extradata_size);
 			}
+			else
+				mp_msg(MSGT_MUXER, MSGL_ERR, "MUXER_LAVF(video stream) error! couldn't allocate %d bytes for extradata\n",
+					stream->bih->biSize - sizeof(BITMAPINFOHEADER));
 		}
 	}
 }
@@ -324,26 +307,12 @@ static void write_trailer(muxer_t *muxer)
 	av_free(priv->oc);
 }
 
-static void list_formats(void) {
-	AVOutputFormat *fmt;
-	mp_msg(MSGT_DEMUX, MSGL_INFO, "Available lavf output formats:\n");
-	for (fmt = first_oformat; fmt; fmt = fmt->next)
-		mp_msg(MSGT_DEMUX, MSGL_INFO, "%15s : %s\n", fmt->name, fmt->long_name);
-}
-
 extern char *out_filename;
 int muxer_init_muxer_lavf(muxer_t *muxer)
 {
 	muxer_priv_t *priv;
 	AVOutputFormat *fmt = NULL;
 	char mp_filename[256] = "menc://stream.dummy";
-
-	av_register_all();
-
-	if (conf_format && strcmp(conf_format, "help") == 0) {
-		list_formats();
-		return 0;
-	}
 
 	mp_msg(MSGT_MUXER, MSGL_WARN, "** MUXER_LAVF *****************************************************************\n");
 	if (!conf_allow_lavf) {
@@ -367,6 +336,8 @@ int muxer_init_muxer_lavf(muxer_t *muxer)
 	if(priv == NULL)
 		return 0;
 
+	av_register_all();
+	
 	priv->oc = av_alloc_format_context();
 	if(!priv->oc) 
 	{

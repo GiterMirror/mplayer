@@ -14,9 +14,9 @@
 #include <libdv/dv.h>
 #include <libdv/dv_types.h>
 
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
 #include "ad_internal.h"
 
@@ -32,7 +32,7 @@ static ad_info_t info =
 LIBAD_EXTERN(libdv)
 
 // defined in vd_libdv.c:
-dv_decoder_t*  init_global_rawdv_decoder(void);
+dv_decoder_t*  init_global_rawdv_decoder();
 
 static int preinit(sh_audio_t *sh_audio)
 {

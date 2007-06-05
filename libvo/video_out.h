@@ -65,11 +65,6 @@ typedef struct {
   int mt, mb, ml, mr; // borders (top, bottom, left, right)
 } mp_eosd_res_t;
 
-#define VOCTRL_SET_DEINTERLACE 30
-#define VOCTRL_GET_DEINTERLACE 31
-
-#define VOCTRL_UPDATE_SCREENINFO 32
-
 // Vo can be used by xover
 #define VOCTRL_XOVERLAY_SUPPORT 22
 
@@ -181,9 +176,6 @@ const char *vo_format_name(int format);
 int vo_init(void);
 
 vo_functions_t* init_best_video_out(char** vo_list);
-int config_video_out(vo_functions_t *vo, uint32_t width, uint32_t height,
-                     uint32_t d_width, uint32_t d_height, uint32_t flags,
-                     char *title, uint32_t format);
 void list_video_out(void);
 
 // NULL terminated array of all drivers

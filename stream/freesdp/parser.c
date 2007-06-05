@@ -36,21 +36,6 @@
 #include "parserpriv.h"
 
 /**
- * \brief find the start of the next line
- * \param c pointer to current position in string
- * \return pointer to start of next line or NULL if illegal (i.e.
- *         a '\r' is not followed by a '\n'
- */
-static const char *next_line(const char *c) {
-  c += strcspn(c, "\n\r");
-  if (*c == 0) return c;
-  if (*c == '\r') c++;
-  if (*c == '\n')
-    return c + 1;
-  return NULL;
-}
-
-/**
  * Moves the <code>c<code> pointer up to the beginning of the next
  * line.
  *
@@ -58,7 +43,22 @@ static const char *next_line(const char *c) {
  * @retval FSDPE_ILLEGAL_CHARACTER, when an illegal '\r' character
  * (not followed by a '\n') is found, returns
  */
-#define NEXT_LINE(c) do { if (!(c = next_line(c))) return FSDPE_ILLEGAL_CHARACTER; } while (0);
+#define NEXT_LINE(c)                                                \
+({                                                                  \
+ while ((*(c) != '\0') && (*(c) != '\r') && (*(c) != '\n')) {       \
+    (c)++;                                                          \
+ }                                                                  \
+ if (*(c) == '\n') {                                                \
+    (c)++;                                                          \
+ } else if (*(c) == '\r') {                                         \
+    (c)++;                                                          \
+    if (*(c) == '\n') {                                             \
+       (c)++;                                                       \
+    } else {                                                        \
+       return FSDPE_ILLEGAL_CHARACTER;                              \
+   }                                                                \
+ }                                                                  \
+})
 
 fsdp_error_t
 fsdp_parse (const char *text_description, fsdp_description_t * dsc)
@@ -479,9 +479,9 @@ fsdp_parse (const char *text_description, fsdp_description_t * dsc)
       {
         /* ignore unknown attributes, but provide access to them */
         *longfsdp_buf = '\0';
-        strncat (longfsdp_buf, fsdp_buf[0], MAXLONGFIELDLEN-1);
-        strncat (longfsdp_buf, ":", MAXLONGFIELDLEN-strlen(longfsdp_buf)-1);
-        strncat (longfsdp_buf, fsdp_buf[1], MAXLONGFIELDLEN-strlen(longfsdp_buf)-1);
+        strncat (longfsdp_buf, fsdp_buf[0], MAXLONGFIELDLEN);
+        strncat (longfsdp_buf, ":", MAXLONGFIELDLEN);
+        strncat (longfsdp_buf, fsdp_buf[1], MAXLONGFIELDLEN);
         if (NULL == dsc->unidentified_attributes)
         {
           dsc->unidentified_attributes_count = 0;
@@ -515,7 +515,7 @@ fsdp_parse (const char *text_description, fsdp_description_t * dsc)
       {
         /* ignore unknown attributes, but provide access to them */
         *longfsdp_buf = '\0';
-        strncat (longfsdp_buf, fsdp_buf[0], MAXLONGFIELDLEN-1);
+        strncat (longfsdp_buf, fsdp_buf[0], MAXLONGFIELDLEN);
         if (NULL == dsc->unidentified_attributes)
         {
           dsc->unidentified_attributes_count = 0;
@@ -832,9 +832,9 @@ fsdp_parse (const char *text_description, fsdp_description_t * dsc)
           {
             /* ignore unknown attributes, but provide access to them */
             *fsdp_buf[1] = '\0';
-            strncat (fsdp_buf[1], fsdp_buf[0], MAXSHORTFIELDLEN-1);
-            strncat (fsdp_buf[1], ":", MAXSHORTFIELDLEN-strlen(fsdp_buf[1])-1);
-            strncat (fsdp_buf[1], longfsdp_buf, MAXSHORTFIELDLEN-strlen(fsdp_buf[1])-1);
+            strncat (fsdp_buf[1], fsdp_buf[0], MAXLONGFIELDLEN);
+            strncat (fsdp_buf[1], ":", MAXLONGFIELDLEN);
+            strncat (fsdp_buf[1], longfsdp_buf, MAXLONGFIELDLEN);
             if (NULL == media->unidentified_attributes)
             {
               media->unidentified_attributes_count = 0;
@@ -868,7 +868,7 @@ fsdp_parse (const char *text_description, fsdp_description_t * dsc)
           {
             /* ignore unknown attributes, but provide access to them */
             *longfsdp_buf = '\0';
-            strncat (longfsdp_buf, fsdp_buf[0], MAXLONGFIELDLEN-1);
+            strncat (longfsdp_buf, fsdp_buf[0], MAXLONGFIELDLEN);
             if (NULL == media->unidentified_attributes)
             {
               media->unidentified_attributes_count = 0;
@@ -984,7 +984,7 @@ fsdp_parse_b (const char **p, fsdp_bw_modifier_t ** bw_modifiers,
   char fsdp_buf[MAXSHORTFIELDLEN];
   unsigned long int wuint;
   unsigned int i = 0;
-  const char *lp = *p;
+  char *lp = (char *) *p;
 
   /* count b= lines */
   while (!strncmp (lp, "b=", 2))

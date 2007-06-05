@@ -65,13 +65,6 @@ static enum {
 } enable_sample_timing;
 
 
-static void flush_audio(int fd) {
-#ifdef AUDIO_FLUSH
-  ioctl(fd, AUDIO_FLUSH, 0);
-#elif defined(__svr4__)
-  ioctl(fd, I_FLUSH, FLUSHW);
-#endif
-}
 
 // convert an OSS audio format specification into a sun audio encoding
 static int af2sunfmt(int format)
@@ -210,9 +203,12 @@ static int realtime_samplecounter_available(char *dev)
 error:
     if (silence != NULL) free(silence);
     if (fd >= 0) {
+#ifdef	__svr4__
 	// remove the 0 bytes from the above measurement from the
 	// audio driver's STREAMS queue
-        flush_audio(fd);
+	ioctl(fd, I_FLUSH, FLUSHW);
+#endif
+	//ioctl(fd, AUDIO_DRAIN, 0);
 	close(fd);
     }
 
@@ -566,6 +562,42 @@ static int init(int rate,int channels,int format,int flags){
     ao_data.bps = byte_per_sec = bytes_per_sample * ao_data.samplerate;
     ao_data.outburst = byte_per_sec > 100000 ? 16384 : 8192;
 
+#ifdef	__not_used__
+    /*
+     * hmm, ao_data.buffersize is currently not used in this driver, do there's
+     * no need to measure it
+     */
+    if(ao_data.buffersize==-1){
+	// Measuring buffer size:
+	void* data;
+	ao_data.buffersize=0;
+#ifdef HAVE_AUDIO_SELECT
+	data = malloc(ao_data.outburst);
+	memset(data, format==AF_FORMAT_U8 ? 0x80 : 0, ao_data.outburst);
+	while(ao_data.buffersize<0x40000){
+	    fd_set rfds;
+	    struct timeval tv;
+	    FD_ZERO(&rfds); FD_SET(audio_fd,&rfds);
+	    tv.tv_sec=0; tv.tv_usec = 0;
+	    if(!select(audio_fd+1, NULL, &rfds, NULL, &tv)) break;
+	    write(audio_fd,data,ao_data.outburst);
+	    ao_data.buffersize+=ao_data.outburst;
+	}
+	free(data);
+	if(ao_data.buffersize==0){
+	    mp_msg(MSGT_AO, MSGL_ERR, MSGTR_AO_SUN_CantUseSelect);
+	    return 0;
+	}
+#ifdef	__svr4__
+	// remove the 0 bytes from the above ao_data.buffersize measurement from the
+	// audio driver's STREAMS queue
+	ioctl(audio_fd, I_FLUSH, FLUSHW);
+#endif
+	ioctl(audio_fd, AUDIO_DRAIN, 0);
+#endif
+    }
+#endif	/* __not_used__ */
+
     AUDIO_INITINFO(&info);
     info.play.samples = 0;
     info.play.eof = 0;
@@ -580,9 +612,11 @@ static int init(int rate,int channels,int format,int flags){
 
 // close audio device
 static void uninit(int immed){
+#ifdef	__svr4__
     // throw away buffered data in the audio driver's STREAMS queue
     if (immed)
-	flush_audio(audio_fd);
+	ioctl(audio_fd, I_FLUSH, FLUSHW);
+#endif
     close(audio_fd);
 }
 
@@ -651,12 +685,17 @@ static int get_space(void){
     }
 #endif
 
-    ioctl(audio_fd, AUDIO_GETINFO, &info);
 #if !defined (__OpenBSD__) && !defined(__NetBSD__)
+    ioctl(audio_fd, AUDIO_GETINFO, &info);
     if (queued_bursts - info.play.eof > 2)
 	return 0;
-#else
+#endif
+
+#if defined(__NetBSD__) || defined(__OpenBSD__)
+    ioctl(audio_fd, AUDIO_GETINFO, &info);
     return info.hiwat * info.blocksize - info.play.seek;
+#else
+    return ao_data.outburst;
 #endif
 
 }

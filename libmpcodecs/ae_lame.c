@@ -6,10 +6,9 @@
 #include <sys/types.h>
 #include "m_option.h"
 #include "mp_msg.h"
-#include "libmpdemux/aviheader.h"
-#include "libmpdemux/ms_hdr.h"
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "aviheader.h"
+#include "ms_hdr.h"
+#include "muxer.h"
 #include "help_mp.h"
 #include "ae_pcm.h"
 #include "libaf/af_format.h"
@@ -74,7 +73,7 @@ static int pass;
 
 static int bind_lame(audio_encoder_t *encoder, muxer_stream_t *mux_a)
 {
-    mp_msg(MSGT_MENCODER, MSGL_INFO, MSGTR_MP3AudioSelected);
+    mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_MP3AudioSelected);
     mux_a->h.dwSampleSize=0; // VBR
     mux_a->h.dwRate=encoder->params.sample_rate;
     mux_a->h.dwScale=encoder->params.samples_per_frame; // samples/frame
@@ -145,7 +144,7 @@ static void fixup(audio_encoder_t *encoder)
         encoder->stream->h.dwRate=encoder->stream->wf->nAvgBytesPerSec;
         encoder->stream->h.dwScale=1;
         encoder->stream->wf->nBlockAlign=1;
-        mp_msg(MSGT_MENCODER, MSGL_V, MSGTR_CBRAudioByterate,
+        mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_CBRAudioByterate,
             encoder->stream->h.dwRate,((MPEGLAYER3WAVEFORMAT*)(encoder->stream->wf))->nBlockSize);
     }
 }
@@ -176,14 +175,14 @@ int mpae_init_lame(audio_encoder_t *encoder)
     if(lame_param_mode>=0) lame_set_mode(lame,lame_param_mode); // j-st
     if(lame_param_ratio>0) lame_set_compression_ratio(lame,lame_param_ratio);
     if(lame_param_scale>0) {
-        mp_msg(MSGT_MENCODER, MSGL_V, MSGTR_SettingAudioInputGain, lame_param_scale);
+        mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_SettingAudioInputGain, lame_param_scale);
         lame_set_scale(lame,lame_param_scale);
     }
     if(lame_param_lowpassfreq>=-1) lame_set_lowpassfreq(lame,lame_param_lowpassfreq);
     if(lame_param_highpassfreq>=-1) lame_set_highpassfreq(lame,lame_param_highpassfreq);
 #ifdef HAVE_MP3LAME_PRESET
     if(lame_param_preset != NULL) {
-        mp_msg(MSGT_MENCODER, MSGL_V, MSGTR_LamePresetEquals,lame_param_preset);
+        mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_LamePresetEquals,lame_param_preset);
         if(lame_presets_set(lame,lame_param_fast, (lame_param_vbr==0), lame_param_preset) < 0)
             return 0;
     }
@@ -213,8 +212,8 @@ static int  lame_presets_set( lame_t gfp, int fast, int cbr, const char* preset_
     int mono = 0;
 
     if (strcmp(preset_name, "help") == 0) {
-        mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_LameVersion, get_lame_version(), get_lame_url());
-        mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_LamePresetsLongInfo);
+        mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_LameVersion, get_lame_version(), get_lame_url());
+        lame_presets_longinfo_dm(stderr);
         return -1;
     }
 
@@ -309,14 +308,23 @@ static int  lame_presets_set( lame_t gfp, int fast, int cbr, const char* preset_
 
         }
         else {
-            mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_LameVersion, get_lame_version(), get_lame_url());
-            mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_InvalidBitrateForLamePreset);
+            mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_LameVersion, get_lame_version(), get_lame_url());
+            mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_InvalidBitrateForLamePreset);
             return -1;
         }
     }
 
-    mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_LameVersion, get_lame_version(), get_lame_url());
-    mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_InvalidLamePresetOptions);
+    mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_LameVersion, get_lame_version(), get_lame_url());
+    mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_InvalidLamePresetOptions);
     return -1;
+}
+#endif
+
+#ifdef HAVE_MP3LAME_PRESET
+/* lame_presets_longinfo_dm
+   taken out of presets_longinfo_dm in lame-3.93.1/frontend/parse.c and modified */
+static void  lame_presets_longinfo_dm ( FILE* msgfp )
+{
+        mp_msg(MSGT_FIXME, MSGL_FIXME, MSGTR_LamePresetsLongInfo);
 }
 #endif

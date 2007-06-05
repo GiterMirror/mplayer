@@ -40,6 +40,7 @@ LIBVD_EXTERN(xanim)
 #include "bswap.h"
 
 #include "osdep/timer.h"
+#include "libvo/fastmemcpy.h"
 
 #if 0
 /* this should be removed */
@@ -355,12 +356,12 @@ void XA_Add_Func_To_Free_Chain(XA_ANIM_HDR *anim_hdr, void (*function)())
 }
 
 
-unsigned long XA_Time_Read(void)
+unsigned long XA_Time_Read()
 {
     return GetTimer(); //(GetRelativeTime());
 }
 
-void XA_dummy(void)
+void XA_dummy()
 {
     XA_Print("dummy() called");
 }

@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 

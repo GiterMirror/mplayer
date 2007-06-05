@@ -26,7 +26,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "osdep/mmap_anon.h"
 #include "wine/windef.h"
 #include "wine/winbase.h"
 #include "wine/debugtools.h"
@@ -234,6 +233,7 @@ LPSTR HEAP_strdupWtoA(HANDLE heap, DWORD flags, LPCWSTR string)
 
 //#define MAP_PRIVATE
 //#define MAP_SHARED
+#undef MAP_ANON
 LPVOID FILE_dommap( int unix_handle, LPVOID start,
                     DWORD size_high, DWORD size_low,
                     DWORD offset_high, DWORD offset_low,
@@ -248,15 +248,36 @@ LPVOID FILE_dommap( int unix_handle, LPVOID start,
 
     if (unix_handle == -1)
     {
-        ret = mmap_anon( start, size_low, prot, flags, offset_low );
-    }
-    else 
-    {
-        fd = unix_handle;
-        ret = mmap( start, size_low, prot, flags, fd, offset_low );
-    }
+#ifdef MAP_ANON
+//	printf("Anonymous\n");
+        flags |= MAP_ANON;
+#else
+        static int fdzero = -1;
 
-    if (ret != (LPVOID)-1)
+        if (fdzero == -1)
+        {
+            if ((fdzero = open( "/dev/zero", O_RDONLY )) == -1)
+            {
+    		perror( "Cannot open /dev/zero for READ. Check permissions! error: " );
+                exit(1);
+            }
+        }
+        fd = fdzero;
+#endif  /* MAP_ANON */
+	/* Linux EINVAL's on us if we don't pass MAP_PRIVATE to an anon mmap */
+#ifdef MAP_SHARED
+	flags &= ~MAP_SHARED;
+#endif
+#ifdef MAP_PRIVATE
+	flags |= MAP_PRIVATE;
+#endif
+    }
+    else fd = unix_handle;
+//    printf("fd %x, start %x, size %x, pos %x, prot %x\n",fd,start,size_low, offset_low, prot);
+//    if ((ret = mmap( start, size_low, prot,
+//                     flags, fd, offset_low )) != (LPVOID)-1)
+    if ((ret = mmap( start, size_low, prot,
+                     MAP_PRIVATE | MAP_FIXED, fd, offset_low )) != (LPVOID)-1)
     {
 //	    printf("address %08x\n", *(int*)ret);
 //	printf("%x\n", ret);
@@ -350,8 +371,14 @@ HANDLE WINAPI CreateFileMappingA(HANDLE handle, LPSECURITY_ATTRIBUTES lpAttr,
     int anon=0;
     int mmap_access=0;
     if(hFile<0)
-        anon=1;
-
+    {
+	anon=1;
+	hFile=open("/dev/zero", O_RDWR);
+	if(hFile<0){
+    	    perror( "Cannot open /dev/zero for READ+WRITE. Check permissions! error: " );
+	    return 0;
+	}
+    }
     if(!anon)
     {
         len=lseek(hFile, 0, SEEK_END);
@@ -364,11 +391,9 @@ HANDLE WINAPI CreateFileMappingA(HANDLE handle, LPSECURITY_ATTRIBUTES lpAttr,
     else
 	mmap_access |=PROT_READ|PROT_WRITE;
 
+    answer=mmap(NULL, len, mmap_access, MAP_PRIVATE, hFile, 0);
     if(anon)
-        answer=mmap_anon(NULL, len, mmap_access, MAP_PRIVATE, 0);
-    else
-        answer=mmap(NULL, len, mmap_access, MAP_PRIVATE, hFile, 0);
-
+        close(hFile);
     if(answer!=(LPVOID)-1)
     {
 	if(fm==0)
@@ -393,6 +418,8 @@ HANDLE WINAPI CreateFileMappingA(HANDLE handle, LPSECURITY_ATTRIBUTES lpAttr,
 	    fm->name=NULL;
 	fm->mapping_size=len;
 
+	if(anon)
+	    close(hFile);
 	return (HANDLE)answer;
     }
     return (HANDLE)0;
@@ -444,6 +471,12 @@ LPVOID WINAPI VirtualAlloc(LPVOID address, DWORD size, DWORD type,  DWORD protec
 
     if ((type&(MEM_RESERVE|MEM_COMMIT)) == 0) return NULL;
 
+    fd=open("/dev/zero", O_RDWR);
+    if(fd<0){
+        perror( "Cannot open /dev/zero for READ+WRITE. Check permissions! error: " );
+	return NULL;
+    }
+
     if (type&MEM_RESERVE && (unsigned)address&0xffff) {
 	size += (unsigned)address&0xffff;
 	address = (unsigned)address&~0xffff;
@@ -480,21 +513,23 @@ LPVOID WINAPI VirtualAlloc(LPVOID address, DWORD size, DWORD type,  DWORD protec
 		   && ((unsigned)address+size<=(unsigned)str->address+str->mapping_size)
 		   && (type & MEM_COMMIT))
 		{
+		    close(fd);
 		    return address; //returning previously reserved memory
 		}
 		//printf(" VirtualAlloc(...) does not commit or not entirely within reserved, and\n");
 	    }
 	    /*printf(" VirtualAlloc(...) (0x%08X, %u) overlaps with (0x%08X, %u, state=%d)\n",
 	           (unsigned)address, size, (unsigned)str->address, str->mapping_size, str->state);*/
+	    close(fd);
 	    return NULL;
 	}
     }
 
-    answer=mmap_anon(address, size, PROT_READ | PROT_WRITE | PROT_EXEC,
-            MAP_PRIVATE, 0);
+    answer=mmap(address, size, PROT_READ | PROT_WRITE | PROT_EXEC,
+		MAP_PRIVATE, fd, 0);
 //    answer=FILE_dommap(-1, address, 0, size, 0, 0,
 //	PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE);
-
+    close(fd);
     if (answer != (void *)-1 && address && answer != address) {
 	/* It is dangerous to try mmap() with MAP_FIXED since it does not
 	   always detect conflicts or non-allocation and chaos ensues after
@@ -559,25 +594,39 @@ INT WINAPI WideCharToMultiByte(UINT codepage, DWORD flags, LPCWSTR src,
      INT srclen,LPSTR dest, INT destlen, LPCSTR defch, WIN_BOOL* used_defch)
 {
     int i;
+    if(src==0)
+	return 0;
+    if ((srclen==-1)&&(dest==0)) return 0;
     if(srclen==-1){srclen=0; while(src[srclen++]);}
-    if(destlen==0)
-	return srclen;
+//    for(i=0; i<srclen; i++)
+//	printf("%c", src[i]);
+//    printf("\n");
+    if(dest==0)
+    {
+    for(i=0; i<srclen; i++)
+    {
+	src++;
+    	if(*src==0)
+	    return i+1;
+    }
+	return srclen+1;
+    }
     if(used_defch)
 	*used_defch=0;
     for(i=0; i<min(srclen, destlen); i++)
-	*dest++=(char)*src++;
+    {
+	*dest=(char)*src;
+	dest++;
+	src++;
+	if(*src==0)
+	    return i+1;
+    }
     return min(srclen, destlen);
 }
 INT WINAPI MultiByteToWideChar(UINT codepage,DWORD flags, LPCSTR src, INT srclen,
     LPWSTR dest, INT destlen)
 {
-    int i;
-    if(srclen==-1){srclen=0; while(src[srclen++]);}
-    if(destlen==0)
-	return srclen;
-    for(i=0; i<min(srclen, destlen); i++)
-	*dest++=(WCHAR)*src++;
-    return min(srclen, destlen);
+    return 0;
 }
 HANDLE WINAPI OpenFileMappingA(DWORD access, WIN_BOOL prot, LPCSTR name)
 {

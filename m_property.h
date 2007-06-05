@@ -48,32 +48,6 @@
  */
 #define M_PROPERTY_STEP_DOWN   5
 
-/// Get a string containg a parsable representation.
-/** Set the variable to a newly allocated string or NULL.
- *  \param arg Pointer to a char* variable.
- */
-#define M_PROPERTY_TO_STRING   6
-
-/// Pass down an action to a sub-property.
-#define M_PROPERTY_KEY_ACTION  7
-
-/// Get a m_option describing the property.
-#define M_PROPERTY_GET_TYPE    8
-
-///@}
-
-/// \defgroup PropertyActionsArg Property actions argument type
-/// \ingroup Properties
-/// \brief  Types used as action argument.
-///@{
-
-/// Argument for \ref M_PROPERTY_KEY_ACTION
-typedef struct {
-    const char* key;
-    int action;
-    void* arg;
-} m_property_action_t;
-
 ///@}
 
 /// \defgroup PropertyActionsReturn Property actions return code
@@ -104,17 +78,28 @@ typedef struct {
 
 /// \ingroup Properties
 /// \brief Property action callback.
-typedef int(*m_property_ctrl_f)(m_option_t* prop,int action,void* arg,void *ctx);
+typedef int(*m_property_ctrl_f)(m_option_t* prop,int action,void* arg);
 
 /// Do an action on a property.
-/** \param prop_list The list of properties.
- *  \param prop The path of the property.
+/** \param prop The property.
  *  \param action See \ref PropertyActions.
  *  \param arg Argument, usually a pointer to the data type used by the property.
  *  \return See \ref PropertyActionsReturn.
  */
-int m_property_do(m_option_t* prop_list, const char* prop,
-                  int action, void* arg, void *ctx);
+int m_property_do(m_option_t* prop, int action, void* arg);
+
+/// Print the current value of a property.
+/** \param prop The property.
+ *  \return A newly allocated string with the current value or NULL on error.
+ */
+char* m_property_print(m_option_t* prop);
+
+/// Set a property.
+/** \param prop The property.
+ *  \param txt The value to set.
+ *  \return 1 on success, 0 on error.
+ */
+int m_property_parse(m_option_t* prop, char* txt);
 
 /// Print a list of properties.
 void m_properties_print_help_list(m_option_t* list);
@@ -130,15 +115,15 @@ void m_properties_print_help_list(m_option_t* list);
  *  \param str The string to expand.
  *  \return The newly allocated expanded string.
  */
-char* m_properties_expand_string(m_option_t* prop_list,char* str, void *ctx);
+char* m_properties_expand_string(m_option_t* prop_list,char* str);
 
 // Helpers to use MPlayer's properties
 
-/// Do an action with an MPlayer property.
-int mp_property_do(const char* name,int action, void* val, void *ctx);
+/// Get an MPlayer property.
+m_option_t*  mp_property_find(const char* name);
 
-/// Get the value of a property as a string suitable for display in an UI.
-char* mp_property_print(const char *name, void* ctx);
+/// Do an action with an MPlayer property.
+int mp_property_do(const char* name,int action, void* val);
 
 /// \defgroup PropertyImplHelper Property implementation helpers
 /// \ingroup Properties
@@ -185,15 +170,8 @@ int m_property_delay(m_option_t* prop,int action,
 int m_property_double_ro(m_option_t* prop,int action,
                          void* arg,double var);
 
-/// Implement print
-int m_property_time_ro(m_option_t* prop,int action,
-                       void* arg,double var);
-
 /// get/print the string
 int m_property_string_ro(m_option_t* prop,int action,void* arg, char* str);
-
-/// get/print a bitrate
-int m_property_bitrate(m_option_t* prop,int action,void* arg,int rate);
 
 ///@}
 

@@ -22,8 +22,10 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <sys/time.h>
+#include <time.h>
 
-#include "mputils.h"
+#include "mp_msg.h"
 #include "ass_utils.h"
 
 int mystrtoi(char** p, int base, int* res)
@@ -57,7 +59,7 @@ int strtocolor(char** q, uint32_t* res)
 	char* p = *q;
 	
 	if (*p == '&') ++p; 
-	else mp_msg(MSGT_ASS, MSGL_DBG2, "suspicious color format: \"%s\"\n", p);
+	else mp_msg(MSGT_GLOBAL, MSGL_DBG2, "suspicious color format: \"%s\"\n", p);
 	
 	if (*p == 'H' || *p == 'h') { 
 		++p;

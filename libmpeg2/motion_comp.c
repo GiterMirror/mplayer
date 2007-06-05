@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Modified for use with MPlayer, see libmpeg-0.4.1.diff for the exact changes.
+ * Modified for use with MPlayer, see libmpeg-0.4.0.diff for the exact changes.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
  * $Id$
  */
@@ -66,16 +66,6 @@ void mpeg2_mc_init (uint32_t accel)
     if (accel & MPEG2_ACCEL_SPARC_VIS)
 	mpeg2_mc = mpeg2_mc_vis;
     else
-#endif
-#ifdef ARCH_ARM
-    if (1 /*accel & MPEG2_ACCEL_ARM*/) {
-#ifdef HAVE_IWMMXT
-	if (1 /*accel & MPEG2_ACCEL_ARM_IWMMXT*/)
-	    mpeg2_mc = mpeg2_mc_iwmmxt;
-	else
-#endif
-	    mpeg2_mc = mpeg2_mc_arm;
-    } else
 #endif
 	mpeg2_mc = mpeg2_mc_c;
 }

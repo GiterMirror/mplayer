@@ -2,8 +2,12 @@
                           How to build an MPlayer mirror
 			  ------------------------------
 
-This document might be inacurate or even incomplete, please
-send feedback + corrections to the mplayer-mirror mailing list.
+=======================================================================
+WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!
+-----------------------------------------------------------------------
+This is a preliminary version. Do not rely on anything here.
+Please send feedback + corrections to the mplayer-mirror mailing list.
+=======================================================================
 
 About this document
 ~~~~~~~~~~~~~~~~~~~
@@ -12,6 +16,7 @@ Mirroring MPlayer is quite easy but requires a few steps to be taken
 and a few things taken care of. This document describes these steps
 in detail so that anyone wishing to build an official or an unofficial
 mirror can do that without much trouble.
+
 
 
 A note on performance issues
@@ -38,27 +43,7 @@ are performed.
 Mirrors should provide their data over HTTP or FTP or both. Each official
 mirror will be assigned a mirror number (wwwXXX.mplayerhq.hu or
 ftpXXX.mplayerhq.hu where XXX is the mirror number). This mirror
-number determines the hostname over which it can be reached directly.
-
-All mirrors are put into our DNS round-robin for the www.mplayerhq.hu and
-ftp.mplayerhq.hu names and should be set up to respond to these names as well.
-
-
-Requirements
-~~~~~~~~~~~~
-The requirements for any (official) mirror are:
-1) rsync installed and some way to run the sync script periodicaly (eg cron)
-2) subscribing to the mplayer-mirror mailinglist (see below)
-
-The requirements for a full website mirror are:
-1) 500MB of free disk space (for the ftp and homepage directories).
-2) A network connection with about 5Mbit/s sustained bandwidth.
-3) A simple webserver that allows redirections and virtual server,
-   no PHP or CGI needed as all pages are static.
-
-The requirements for a full ftp mirror are:
-1) 500MB of free disk space (for the ftp directory).
-2) (No bandwidth data for a ftp only server available)
+number determines the hostname over which it will be reached.
 
 
 Getting the data, mirroring script and cron setup
@@ -171,23 +156,7 @@ Here is an example stanza to paste into your Apache configuration:
         Alias /homepage /path/to/htdocs
         Alias /MPlayer  /path/to/MPlayer
         Alias /DOCS     /path/to/MPlayer/DOCS
-        AddDefaultCharset off
 </VirtualHost>
-
-<VirtualHost www.mplayerhq.hu>
-        DocumentRoot /path/to/htdocs
-        Options FollowSymLinks Indexes
-        Alias /homepage /path/to/htdocs
-        Alias /MPlayer  /path/to/MPlayer
-        Alias /DOCS     /path/to/MPlayer/DOCS
-        AddDefaultCharset off
-</VirtualHost>
-
-The AddDefaultCharset directive is necessary because newer versions of Apache
-appear to default to defining a standard charset. This breaks our documentation
-translations, which are written in different encodings.
-
-The second VirtualHost is necessary for the DNS round-robin address.
 
 
 Setting up an FTP server
@@ -202,7 +171,4 @@ downloadable files.
 Mailinglist
 ~~~~~~~~~~~
 
-All official mirror admins are required to subscribe to the mplayer-mirror
-mailinglist. It's used to coordinate the efforts and distribute information
-among all admins. It is also very low traffic. Please use the webinterface
-on http://lists.mplayerhq.hu/mailman/listinfo/mplayer-mirror to subscribe.
+TO BE DONE

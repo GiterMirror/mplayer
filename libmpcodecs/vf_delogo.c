@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002 Jindrich Makovicka <makovick@gmail.com>
+  Copyright (C) 2002 Jindrich Makovicka <makovick@kmlinux.fjfi.cvut.cz>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
 static struct vf_priv_s {
     unsigned int outfmt;
     int xoff, yoff, lw, lh, band, show;
-} const vf_priv_dflt = {
+} vf_priv_dflt = {
     0,
     0, 0, 0, 0, 0, 0
 };

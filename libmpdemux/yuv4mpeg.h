@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 //#include "mp_msg.h"
-#include "stream/stream.h"
+#include "stream.h"
 
 
 

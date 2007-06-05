@@ -44,7 +44,7 @@ typedef struct vf_instance_s {
         unsigned char** src, int* stride, int w,int h, int x, int y);
     void (*uninit)(struct vf_instance_s* vf);
 
-    int (*continue_buffered_image)(struct vf_instance_s* vf);
+    void (*continue_buffered_image)(struct vf_instance_s* vf);
     // caps:
     unsigned int default_caps; // used by default query_format()
     unsigned int default_reqs; // used by default config()
@@ -79,9 +79,6 @@ typedef struct vf_seteq_s
 #define VFCTRL_SCREENSHOT      14 /* Make a screenshot */
 #define VFCTRL_INIT_EOSD       15 /* Select EOSD renderer */
 #define VFCTRL_DRAW_EOSD       16 /* Render EOSD */
-#define VFCTRL_GET_PTS         17 /* Return last pts value that reached vf_vo*/
-#define VFCTRL_SET_DEINTERLACE 18 /* Set deinterlacing status */
-#define VFCTRL_GET_DEINTERLACE 19 /* Get deinterlacing status */
 
 #include "vfcap.h"
 
@@ -113,6 +110,8 @@ int vf_next_put_image(struct vf_instance_s* vf,mp_image_t *mpi, double pts);
 void vf_next_draw_slice (struct vf_instance_s* vf, unsigned char** src, int* stride, int w,int h, int x, int y);
 
 vf_instance_t* append_filters(vf_instance_t* last);
+
+void vf_list_plugins(void);
 
 void vf_uninit_filter(vf_instance_t* vf);
 void vf_uninit_filter_chain(vf_instance_t* vf);

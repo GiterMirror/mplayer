@@ -3,57 +3,7 @@
 
 #include "demux_rtp_internal.h"
 extern "C" {
-#include <limits.h>
-#include <math.h>
 #include "stheader.h"
-#include "base64.h"
-}
-
-#ifdef USE_LIBAVCODEC
-AVCodecParserContext * h264parserctx;
-#endif
-
-// Copied from vlc
-static unsigned char* parseH264ConfigStr( char const* configStr,
-                                          unsigned int& configSize )
-{
-
-    char *dup, *psz;
-    int i, i_records = 1;
-
-    if( configSize )
-    configSize = 0;
-    if( configStr == NULL || *configStr == '\0' )
-        return NULL;
-    psz = dup = strdup( configStr );
-
- /* Count the number of comma's */
-    for( psz = dup; *psz != '\0'; ++psz )
-    {
-        if( *psz == ',')
-        {
-            ++i_records;
-            *psz = '\0';
-        }
-    }
-
-    unsigned char *cfg = new unsigned char[5 * strlen(dup)];
-    psz = dup;
-    for( i = 0; i < i_records; i++ )
-    {
-
-        cfg[configSize++] = 0x00;
-        cfg[configSize++] = 0x00;
-        cfg[configSize++] = 0x01;
-        configSize += av_base64_decode( (uint8_t*)&cfg[configSize],
-                                        psz,
-                                        5 * strlen(dup) - 3 );
-
-    psz += strlen(psz)+1;
-    }
-    if( dup ) free( dup );
-
-    return cfg;
 }
 
 static void
@@ -65,21 +15,6 @@ static Boolean
 parseQTState_audio(QuickTimeGenericRTPSource::QTState const& qtState,
 		   unsigned& fourcc, unsigned& numChannels); // forward
 		       
-static BITMAPINFOHEADER * insertVideoExtradata(BITMAPINFOHEADER *bih,
-                                               unsigned char * extraData,
-                                               unsigned size)
-{
-    BITMAPINFOHEADER * original = bih;
-    if (!size || size > INT_MAX - sizeof(BITMAPINFOHEADER))
-        return bih;
-    bih = (BITMAPINFOHEADER*)realloc(bih, sizeof(BITMAPINFOHEADER) + size);
-    if (!bih)
-        return original;
-    bih->biSize = sizeof(BITMAPINFOHEADER) + size;
-    memcpy(bih+1, extraData, size);
-    return bih;
-}
-
 void rtpCodecInitialize_video(demuxer_t* demuxer,
 			      MediaSubsession* subsession,
 			      unsigned& flags) {
@@ -103,7 +38,6 @@ void rtpCodecInitialize_video(demuxer_t* demuxer,
 	     strcmp(subsession->codecName(), "MP2T") == 0) {
     flags |= RTPSTATE_IS_MPEG12_VIDEO|RTPSTATE_IS_MULTIPLEXED;
   } else if (strcmp(subsession->codecName(), "H263") == 0 ||
-	     strcmp(subsession->codecName(), "H263-2000") == 0 ||
 	     strcmp(subsession->codecName(), "H263-1998") == 0) {
     bih->biCompression = sh_video->format
       = mmioFOURCC('H','2','6','3');
@@ -111,15 +45,6 @@ void rtpCodecInitialize_video(demuxer_t* demuxer,
   } else if (strcmp(subsession->codecName(), "H264") == 0) {
     bih->biCompression = sh_video->format
       = mmioFOURCC('H','2','6','4');
-    unsigned int configLen = 0;
-    unsigned char* configData
-      = parseH264ConfigStr(subsession->fmtp_spropparametersets(), configLen);
-    sh_video->bih = bih = insertVideoExtradata(bih, configData, configLen);
-    delete[] configData;
-#ifdef USE_LIBAVCODEC
-    av_register_codec_parser(&h264_parser);
-    h264parserctx = av_parser_init(CODEC_ID_H264);
-#endif
     needVideoFrameRate(demuxer, subsession);
   } else if (strcmp(subsession->codecName(), "H261") == 0) {
     bih->biCompression = sh_video->format
@@ -139,7 +64,7 @@ void rtpCodecInitialize_video(demuxer_t* demuxer,
     unsigned configLen;
     unsigned char* configData
       = parseGeneralConfigStr(subsession->fmtp_config(), configLen);
-    sh_video->bih = bih = insertVideoExtradata(bih, configData, configLen);
+    insertRTPData(demuxer, demuxer->video, configData, configLen);
     needVideoFrameRate(demuxer, subsession);
   } else if (strcmp(subsession->codecName(), "X-QT") == 0 ||
 	     strcmp(subsession->codecName(), "X-QUICKTIME") == 0) {
@@ -161,25 +86,6 @@ void rtpCodecInitialize_video(demuxer_t* demuxer,
     } while (!parseQTState_video(qtRTPSource->qtState, fourcc));
 
     bih->biCompression = sh_video->format = fourcc;
-    bih->biWidth = qtRTPSource->qtState.width;
-    bih->biHeight = qtRTPSource->qtState.height;
-      uint8_t *pos = (uint8_t*)qtRTPSource->qtState.sdAtom + 86;
-      uint8_t *endpos = (uint8_t*)qtRTPSource->qtState.sdAtom
-                        + qtRTPSource->qtState.sdAtomSize;
-      while (pos+8 < endpos) {
-        unsigned atomLength = pos[0]<<24 | pos[1]<<16 | pos[2]<<8 | pos[3];
-        if (atomLength == 0 || atomLength > endpos-pos) break;
-        if ((!memcmp(pos+4, "avcC", 4) && fourcc==mmioFOURCC('a','v','c','1') || 
-             !memcmp(pos+4, "esds", 4) || 
-             !memcmp(pos+4, "SMI ", 4) && fourcc==mmioFOURCC('S','V','Q','3')) &&
-            atomLength > 8) {
-          sh_video->bih = bih = 
-              insertVideoExtradata(bih, pos+8, atomLength-8);
-          break;
-        }
-        pos += atomLength;
-      }
-    needVideoFrameRate(demuxer, subsession);
   } else {
     fprintf(stderr,
 	    "Unknown MPlayer format code for MIME type \"video/%s\"\n",
@@ -237,10 +143,6 @@ void rtpCodecInitialize_audio(demuxer_t* demuxer,
     wf->nBlockAlign = 1;
     wf->wBitsPerSample = 8;
     wf->cbSize = 0;
-  } else if (strcmp(subsession->codecName(), "AMR") == 0) {
-    wf->wFormatTag = sh_audio->format = mmioFOURCC('s','a','m','r');
-  } else if (strcmp(subsession->codecName(), "AMR-WB") == 0) {
-    wf->wFormatTag = sh_audio->format = mmioFOURCC('s','a','w','b');
   } else if (strcmp(subsession->codecName(), "GSM") == 0) {
     wf->wFormatTag = sh_audio->format = mmioFOURCC('a','g','s','m');
     wf->nAvgBytesPerSec = 1650;
@@ -263,8 +165,6 @@ void rtpCodecInitialize_audio(demuxer_t* demuxer,
       = parseStreamMuxConfigStr(subsession->fmtp_config(),
 				codecdata_len);
     sh_audio->codecdata_len = codecdata_len;
-    //faad doesn't understand LATM's data length field, so omit it
-    ((MPEG4LATMAudioRTPSource*)subsession->rtpSource())->omitLATMDataLengthField();
   } else if (strcmp(subsession->codecName(), "MPEG4-GENERIC") == 0) {
     wf->wFormatTag = sh_audio->format = mmioFOURCC('m','p','4','a');
     // For the codec to work correctly, it needs "AudioSpecificConfig"
@@ -295,25 +195,6 @@ void rtpCodecInitialize_audio(demuxer_t* demuxer,
 
     wf->wFormatTag = sh_audio->format = fourcc;
     wf->nChannels = numChannels;
-
-    uint8_t *pos = (uint8_t*)qtRTPSource->qtState.sdAtom + 52;
-    uint8_t *endpos = (uint8_t*)qtRTPSource->qtState.sdAtom
-                      + qtRTPSource->qtState.sdAtomSize;
-    while (pos+8 < endpos) {
-      unsigned atomLength = pos[0]<<24 | pos[1]<<16 | pos[2]<<8 | pos[3];
-      if (atomLength == 0 || atomLength > endpos-pos) break;
-      if (!memcmp(pos+4, "wave", 4) && fourcc==mmioFOURCC('Q','D','M','2') &&
-          atomLength > 8 &&
-          atomLength <= INT_MAX) {
-        sh_audio->codecdata = (unsigned char*) malloc(atomLength-8);
-        if (sh_audio->codecdata) {
-          memcpy(sh_audio->codecdata, pos+8, atomLength-8);
-          sh_audio->codecdata_len = atomLength-8;
-        }
-        break;
-      }
-      pos += atomLength;
-    }
   } else {
     fprintf(stderr,
 	    "Unknown MPlayer format code for MIME type \"audio/%s\"\n",
@@ -336,7 +217,6 @@ static void needVideoFrameRate(demuxer_t* demuxer,
   int fps = (int)(subsession->videoFPS());
   if (fps != 0) {
     sh_video->fps = fps;
-    sh_video->frametime = 1.0f/fps;
     return;
   }
   
@@ -345,24 +225,19 @@ static void needVideoFrameRate(demuxer_t* demuxer,
   unsigned char* packetData; unsigned packetDataLen;
   float lastPTS = 0.0, curPTS;
   unsigned const maxNumFramesToWaitFor = 300;
-  int lastfps = 0;
   for (unsigned i = 0; i < maxNumFramesToWaitFor; ++i) {
     if (!awaitRTPPacket(demuxer, d_video, packetData, packetDataLen, curPTS)) {
       break;
     }
 
-    if (curPTS != lastPTS && lastPTS != 0.0) {
+    if (curPTS > lastPTS && lastPTS != 0.0) {
       // Use the difference between these two "pts"s to guess the frame rate.
       // (should really check that there were no missing frames inbetween)#####
       // Guess the frame rate as an integer.  If it's not, use "-fps" instead.
-      fps = (int)(1/fabs(curPTS-lastPTS) + 0.5); // rounding
-        if (fps == lastfps) {
+      fps = (int)(1/(curPTS-lastPTS) + 0.5); // rounding
       fprintf(stderr, "demux_rtp: Guessed the video frame rate as %d frames-per-second.\n\t(If this is wrong, use the \"-fps <frame-rate>\" option instead.)\n", fps);
       sh_video->fps = fps;
-      sh_video->frametime=1.0f/fps;
       return;
-        }
-      if (fps>lastfps) lastfps = fps;
     }
     lastPTS = curPTS;
   }

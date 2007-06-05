@@ -40,7 +40,6 @@ typedef struct {
   BITMAPINFOHEADER *bih;   // in format
   int encoder_delay; // in number of frames
   int decoder_delay; // in number of frames
-  int imgfmt;
   // mpeg specific:
   size_t ipb[3]; // sizes of I/P/B frames
   // muxer of that stream
@@ -80,12 +79,12 @@ typedef struct muxer_t{
   int muxbuf_num;
   int muxbuf_skip_buffer;
   // functions:
-  stream_t *stream;
   void (*fix_stream_parameters)(muxer_stream_t *);
   void (*cont_write_chunk)(muxer_stream_t *,size_t,unsigned int, double dts, double pts);
   void (*cont_write_header)(struct muxer_t *);
   void (*cont_write_index)(struct muxer_t *);
   muxer_stream_t* (*cont_new_stream)(struct muxer_t *,int);
+  FILE* file;
   void *priv;
 } muxer_t;
 
@@ -99,9 +98,7 @@ typedef struct muxbuf_t {
   unsigned int flags;
 } muxbuf_t;
 
-extern char *force_fourcc;
-
-muxer_t *muxer_new_muxer(int type,stream_t *stream);
+muxer_t *muxer_new_muxer(int type,FILE *);
 #define muxer_new_stream(muxer,a) muxer->cont_new_stream(muxer,a)
 #define muxer_stream_fix_parameters(muxer, a) muxer->fix_stream_parameters(a)
 void muxer_write_chunk(muxer_stream_t *s, size_t len, unsigned int flags, double dts, double pts);

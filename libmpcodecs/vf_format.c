@@ -16,7 +16,7 @@
 
 static struct vf_priv_s {
     unsigned int fmt;
-} const vf_priv_dflt = {
+} vf_priv_dflt = {
   IMGFMT_YUY2
 };
 

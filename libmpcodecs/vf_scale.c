@@ -11,8 +11,8 @@
 #include "mp_image.h"
 #include "vf.h"
 #include "fmt-conversion.h"
-#include "bswap.h"
 
+#include "libvo/fastmemcpy.h"
 #include "libswscale/swscale.h"
 #include "vf_scale.h"
 
@@ -31,7 +31,7 @@ static struct vf_priv_s {
     int noup;
     int accurate_rnd;
     int query_format_cache[64];
-} const vf_priv_dflt = {
+} vf_priv_dflt = {
   -1,-1,
   0,
   {SWS_PARAM_DEFAULT, SWS_PARAM_DEFAULT},
@@ -249,17 +249,6 @@ static int config(struct vf_instance_s* vf,
 	vf->priv->palette=NULL;
     }
     switch(best){
-    case IMGFMT_RGB8: {
-      /* set 332 palette for 8 bpp */
-	int i;
-	vf->priv->palette=malloc(4*256);
-	for(i=0; i<256; i++){
-	    vf->priv->palette[4*i+0]=4*(i>>6)*21;
-	    vf->priv->palette[4*i+1]=4*((i>>3)&7)*9;
-	    vf->priv->palette[4*i+2]=4*((i&7)&7)*9;
-            vf->priv->palette[4*i+3]=0;
-	}
-	break; }
     case IMGFMT_BGR8: {
       /* set 332 palette for 8 bpp */
 	int i;
@@ -268,7 +257,6 @@ static int config(struct vf_instance_s* vf,
 	    vf->priv->palette[4*i+0]=4*(i&3)*21;
 	    vf->priv->palette[4*i+1]=4*((i>>2)&7)*9;
 	    vf->priv->palette[4*i+2]=4*((i>>5)&7)*9;
-            vf->priv->palette[4*i+3]=0;
 	}
 	break; }
     case IMGFMT_BGR4: 
@@ -279,18 +267,6 @@ static int config(struct vf_instance_s* vf,
 	    vf->priv->palette[4*i+0]=4*(i&1)*63;
 	    vf->priv->palette[4*i+1]=4*((i>>1)&3)*21;
 	    vf->priv->palette[4*i+2]=4*((i>>3)&1)*63;
-            vf->priv->palette[4*i+3]=0;
-	}
-	break; }
-    case IMGFMT_RGB4: 
-    case IMGFMT_RG4B: {
-	int i;
-	vf->priv->palette=malloc(4*16);
-	for(i=0; i<16; i++){
-	    vf->priv->palette[4*i+0]=4*(i>>3)*63;
-	    vf->priv->palette[4*i+1]=4*((i>>1)&3)*21;
-	    vf->priv->palette[4*i+2]=4*((i&1)&1)*63;
-            vf->priv->palette[4*i+3]=0;
 	}
 	break; }
     }
@@ -323,19 +299,9 @@ static void start_slice(struct vf_instance_s* vf, mp_image_t *mpi){
 
 static void scale(struct SwsContext *sws1, struct SwsContext *sws2, uint8_t *src[3], int src_stride[3], int y, int h, 
                   uint8_t *dst[3], int dst_stride[3], int interlaced){
-    uint8_t *src2[3]={src[0], src[1], src[2]};
-#ifdef WORDS_BIGENDIAN
-    uint32_t pal2[256];
-    if (src[1] && !src[2]){
-        int i;
-        for(i=0; i<256; i++)
-            pal2[i]= bswap_32(((uint32_t*)src[1])[i]);
-        src2[1]= pal2;
-    }
-#endif
-
     if(interlaced){
         int i;
+        uint8_t *src2[3]={src[0], src[1], src[2]};
         uint8_t *dst2[3]={dst[0], dst[1], dst[2]};
         int src_stride2[3]={2*src_stride[0], 2*src_stride[1], 2*src_stride[2]};
         int dst_stride2[3]={2*dst_stride[0], 2*dst_stride[1], 2*dst_stride[2]};
@@ -347,7 +313,7 @@ static void scale(struct SwsContext *sws1, struct SwsContext *sws2, uint8_t *src
         }
         sws_scale_ordered(sws2, src2, src_stride2, y>>1, h>>1, dst2, dst_stride2);
     }else{
-        sws_scale_ordered(sws1, src2, src_stride, y, h, dst, dst_stride);
+        sws_scale_ordered(sws1, src, src_stride, y, h, dst, dst_stride);
     }                  
 }
 
@@ -472,10 +438,6 @@ static int query_format(struct vf_instance_s* vf, unsigned int fmt){
     case IMGFMT_444P: 
     case IMGFMT_422P: 
     case IMGFMT_411P: 
-    case IMGFMT_BGR8: 
-    case IMGFMT_RGB8: 
-    case IMGFMT_BG4B: 
-    case IMGFMT_RG4B: 
     {
 	unsigned int best=find_best_out(vf);
 	int flags;

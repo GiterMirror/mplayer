@@ -4,6 +4,8 @@
 
 #include "config.h"
 
+#ifdef USE_OSD
+
 #include <stdio.h>
 
 #include "libvo/video_out.h"
@@ -149,3 +151,5 @@ void find_sub(sub_data* subd,int key){
 
     vo_sub=NULL; // no sub here
 }
+
+#endif

@@ -17,9 +17,10 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
+#include "bswap.h"
 
 static int smjpeg_check_file(demuxer_t* demuxer){
     int orig_pos = stream_tell(demuxer->stream);

@@ -8,13 +8,6 @@
 typedef struct _COutputMemPin COutputMemPin;
 typedef struct _COutputPin COutputPin;
 
-/**
- Callback routine for copying samples from pin into filter
- \param pUserData pointer to user's data
- \param sample IMediaSample
-*/
-typedef  HRESULT STDCALL (*SAMPLEPROC)(void* pUserData,IMediaSample*sample);
-
 struct _COutputPin
 {
     IPin_vt* vt;
@@ -22,11 +15,12 @@ struct _COutputPin
     COutputMemPin* mempin;
     AM_MEDIA_TYPE type;
     IPin* remote;
-    SAMPLEPROC SampleProc;
-    void* pUserData;
+    void ( *SetFramePointer )(COutputPin*, char** z);
+    void ( *SetPointer2 )(COutputPin*, char* p);
+    void ( *SetFrameSizePointer )(COutputPin*, long* z);
     void ( *SetNewFormat )(COutputPin*, const AM_MEDIA_TYPE* a);
 };
 
-COutputPin* COutputPinCreate(const AM_MEDIA_TYPE* amt,SAMPLEPROC SampleProc,void* pUserData);
+COutputPin* COutputPinCreate(const AM_MEDIA_TYPE* vhdr);
 
 #endif /* DS_OUTPUTPIN_H */

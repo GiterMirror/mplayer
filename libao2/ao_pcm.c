@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "subopt-helper.h"
 #include "libaf/af_format.h"
 #include "audio_out.h"
@@ -54,7 +53,22 @@ struct WaveHeader
 };
 
 /* init with default values */
-static struct WaveHeader wavhdr;
+static struct WaveHeader wavhdr = {
+	le2me_32(WAV_ID_RIFF),
+        /* same conventions than in sox/wav.c/wavwritehdr() */
+	0, //le2me_32(0x7ffff024),
+	le2me_32(WAV_ID_WAVE),
+	le2me_32(WAV_ID_FMT),
+	le2me_32(16),
+	le2me_16(WAV_ID_PCM),
+	le2me_16(2),
+	le2me_32(44100),
+	le2me_32(192000),
+	le2me_16(4),
+	le2me_16(16),
+	le2me_32(WAV_ID_DATA),
+	0, //le2me_32(0x7ffff000)
+};
 
 static FILE *fp = NULL;
 
@@ -107,18 +121,12 @@ static int init(int rate,int channels,int format,int flags){
 	ao_data.format=format;
 	ao_data.bps=channels*rate*(bits/8);
 
-	wavhdr.riff = le2me_32(WAV_ID_RIFF);
-	wavhdr.wave = le2me_32(WAV_ID_WAVE);
-	wavhdr.fmt = le2me_32(WAV_ID_FMT);
-	wavhdr.fmt_length = le2me_32(16);
-	wavhdr.fmt_tag = le2me_16(WAV_ID_PCM);
 	wavhdr.channels = le2me_16(ao_data.channels);
 	wavhdr.sample_rate = le2me_32(ao_data.samplerate);
 	wavhdr.bytes_per_second = le2me_32(ao_data.bps);
 	wavhdr.bits = le2me_16(bits);
 	wavhdr.block_align = le2me_16(ao_data.channels * (bits / 8));
 	
-	wavhdr.data = le2me_32(WAV_ID_DATA);
 	wavhdr.data_length=le2me_32(0x7ffff000);
 	wavhdr.file_length = wavhdr.data_length + sizeof(wavhdr) - 8;
 

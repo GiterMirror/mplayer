@@ -10,6 +10,7 @@
 #include "mp_image.h"
 #include "vf.h"
 
+#include "libvo/fastmemcpy.h"
 #include "libswscale/rgb2rgb.h"
 
 //===========================================================================//

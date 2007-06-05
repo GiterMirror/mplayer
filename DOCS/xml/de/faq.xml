@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- synced with r21152 -->
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- synced with r20304 -->
 <chapter id="faq" xreflabel="FAQ">
-  <title>HÃ¤ufig gestellte Fragen</title>
+  <title>Häufig gestellte Fragen</title>
 
   <qandaset defaultlabel="qanda">
 
@@ -11,49 +11,46 @@
       <qandaentry>
         <question>
           <para>
-            Wie erstelle ich einen ordentlichen Patch fÃ¼r <application>MPlayer</application>?
+            Wie erstelle ich einen ordentlichen Patch für <application>MPlayer</application>?
           </para>
         </question>
         <answer>
           <para>
             Wir haben ein <ulink url="../../tech/patches.txt">kurzes Dokument</ulink> (englisch)
-            verfasst, das alle nÃ¶tigen Details beschreibt. Bitte folge den Anweisungen.
+            verfasst, das alle nötigen Details beschreibt. Bitte folge den Anweisungen.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie Ã¼bersetze ich <application>MPlayer</application> in eine andere Sprache?
+            Wie übersetze ich <application>MPlayer</application> in eine andere Sprache?
           </para>
         </question>
         <answer>
           <para>
-            Lies die <ulink url="../../tech/translations.txt">HOWTO fÃ¼r Ãœbersetzungen</ulink>
-            (englisch), sie sollte alles erklÃ¤ren. Weitere Hilfe kannst du auf der
+            Lies die <ulink url="../../tech/translations.txt">HOWTO für Übersetzungen</ulink>
+            (englisch), sie sollte alles erklären. Weitere Hilfe kannst du auf der
             <ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-translations">MPlayer-translations</ulink>-Mailing-Liste
             bekommen.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich die <application>MPlayer</application>-Entwicklung unterstÃ¼tzen?
+            Wie kann ich die <application>MPlayer</application>-Entwicklung unterstützen?
           </para>
         </question>
         <answer>
           <para>
-            Wir sind mehr als glÃ¼cklich Ã¼ber Hardware- und Software<ulink url="http://www.mplayerhq.hu/donations.html">spenden</ulink>.
+            Wir sind mehr als glücklich über Hardware- und Software<ulink url="http://www.mplayerhq.hu/donations.html">spenden</ulink>.
             Sie helfen uns, <application>MPlayer</application> immer weiter zu verbessern.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -67,13 +64,12 @@
             <ulink url="../../tech/">technische Dokumentation</ulink> (englisch), um einen ersten
             Eindruck zu bekommen. Du solltest dich dann auf der Mailing-Liste
             <ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-dev-eng">MPlayer-dev-eng</ulink>
-            anmelden und mit dem Programmieren beginnen. Wenn du bei der Dokumentation aushelfen mÃ¶chtest,
-            schlieÃŸe dich der
+            anmelden und mit dem Programmieren beginnen. Wenn du bei der Dokumentation aushelfen möchtest,
+            schließe dich der
             <ulink url="http://lists.mplayerhq.hu/mailman/listinfo/mplayer-docs">MPlayer-docs</ulink>-Mailing-Liste an.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -84,13 +80,12 @@
         <answer>
           <para>
             Wir haben ein selbstgeschriebenes modulares Buildsystem. Es leistet ausreichend gute Arbeit, warum
-            also wechseln? Davon abgesehen mÃ¶gen wir die auto*-Tools nicht, wie
+            also wechseln? Davon abgesehen mögen wir die auto*-Tools nicht, wie
             <ulink url="http://freshmeat.net/articles/view/889/">andere Leute auch</ulink>.
           </para>
         </answer>
       </qandaentry>
     </qandadiv>
-
 
     <qandadiv id="faq-compilation-installation">
       <title>Compilierung und Installation</title>
@@ -100,37 +95,35 @@
             Compilierung bricht mit einer Fehlermeldung ab, und <application>gcc</application>
             gibt irgendeine kryptische Nachricht aus, die den Ausdruck
             <systemitem>internal compiler error</systemitem> oder
-            <systemitem>unable to find a register to spill</systemitem> enthÃ¤lt.
+            <systemitem>unable to find a register to spill</systemitem> enthält.
           </para>
         </question>
         <answer>
           <para>
-            Du bist Ã¼ber einen Fehler in <application>gcc</application> gestolpert. Bitte
+            Du bist über einen Fehler in <application>gcc</application> gestolpert. Bitte
             <ulink url="http://gcc.gnu.org/bugs.html">berichte diesen dem gcc-Team</ulink>,
-            nicht uns. Aus irgendeinem Grund geschieht es hÃ¤ufiger, dass <application>MPlayer</application>
-            Compiler-Fehler hervorruft. Nichtsdestotrotz kÃ¶nnen wir diese nicht beheben, und
-            wir fÃ¼gen unserem Sourcecode keine Umgehungen hinzu.
-            Halte dich an eine Compiler-Version, von der bekannt ist, dass sie stabil lÃ¤uft,
-            oder update regelmÃ¤ÃŸig, um dieses Problem zu vermeiden.
+            nicht uns. Aus irgendeinem Grund geschieht es häufiger, dass <application>MPlayer</application>
+            Compiler-Fehler hervorruft. Nichtsdestotrotz können wir diese nicht beheben, und
+            wir fügen unserem Sourcecode keine Umgehungen hinzu.
+            Halte dich an eine Compiler-Version, von der bekannt ist, dass sie stabil läuft,
+            oder update regelmäßig, um dieses Problem zu vermeiden.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Gibt es BinÃ¤rpakete (RPM/Debian) von <application>MPlayer</application>?
+            Gibt es Binärpakete (RPM/Debian) von <application>MPlayer</application>?
           </para>
         </question>
         <answer>
           <para>
             Siehe Abschnitte <link linkend="debian">Debian</link> und <link linkend="rpm">RPM</link>
-            fÃ¼r Details.
+            für Details.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -146,7 +139,6 @@
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -156,12 +148,11 @@
         </question>
         <answer>
           <para>
-            Dein gcc ist nicht richtig installiert, Ã¼berprÃ¼fe die Datei <filename>configure.log</filename>
-            fÃ¼r Details.
+            Dein gcc ist nicht richtig installiert, überprüfe die Datei <filename>configure.log</filename>
+            für Details.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -177,11 +168,10 @@
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            WÃ¤hrend 'make' beschwert sich <application>MPlayer</application> Ã¼ber fehlende X11-Bibliotheken.
+            Während 'make' beschwert sich <application>MPlayer</application> über fehlende X11-Bibliotheken.
             Das verstehe ich nicht, ich <emphasis>habe doch</emphasis> X11 installiert!?
           </para>
         </question>
@@ -190,7 +180,7 @@
             ... dir fehlen aber die X11-Entwicklerpakete. Oder diese sind nicht richtig installiert.
             Bei Red Hat werden diese <filename>XFree86-devel*</filename> genannt, bei Debian Woody
             <filename>xlibs-dev</filename> und bei Debian Sarge <filename>libx11-dev</filename>.
-            ÃœberprÃ¼fe auch, ob die Symlinks
+            Überprüfe auch, ob die Symlinks
             <filename class="directory">/usr/X11</filename> und
             <filename class="directory">/usr/include/X11</filename> existieren
             (das kann ein Problem auf Mandrake-Systemen sein).
@@ -198,56 +188,56 @@
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Erstellen unter Mac OS 10.3 fÃ¼hrt zu vielen Linker-Fehlern
+            Erstellen unter Mac OS 10.3 führt zu vielen Linker-Fehlern
           </para>
         </question>
         <answer>
           <para>
-            Der Linker-Fehler, den du erfÃ¤hrst, sieht hÃ¶chstwahrscheinlich etwa so aus:
+            Der Linker-Fehler, den du erfährst, sieht höchstwahrscheinlich etwa so aus:
             <screen>
 ld: Undefined symbols:
 _LLCStyleInfoCheckForOpenTypeTables referenced from QuartzCore expected to be defined in ApplicationServices
 _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be defined in ApplicationServices<!--
             --></screen>
             Dieses Problem ist das Ergebnis der Tatsache, dass Apple-Entwickler 10.4 benutzen, um ihre
-            Software zu compilieren und gleichzeitig die BinÃ¤rdateien via Softwareupdate an Benutzer
+            Software zu compilieren und gleichzeitig die Binärdateien via Softwareupdate an Benutzer
             von 10.3 weitergeben.
-            Die undefinierten Symbole sind prÃ¤sent unter Mac OS 10.4, jedoch nicht unter 10.3.
-            Eine LÃ¶sung kann sein, ein Downgrade zu QuickTime 7.0.1 durchzufÃ¼hren.
-            Hier ist eine bessere LÃ¶sung:
+            Die undefinierten Symbole sind präsent unter Mac OS 10.4, jedoch nicht unter 10.3.
+            Eine Lösung kann sein, ein Downgrade zu QuickTime 7.0.1 durchzuführen.
+            Hier ist eine bessere Lösung:
           </para>
           <para>
             Besorg dir eine
-            <ulink url="http://rapidshare.de/files/20281171/CompatFrameworks.tgz.html">Ã¤ltere Kopie des Frameworks</ulink>.
+            <ulink url="http://rapidshare.de/files/20281171/CompatFrameworks.tgz.html">ältere Kopie des Frameworks</ulink>.
             Dies liefert dir eine komprimierte Datei, die die Frameworks QuickTime 7.0.1 und
-            QuartzCore 10.3.9 enthÃ¤lt.
+            QuartzCore 10.3.9 enthält.
           </para>
           <para>
-            Extrahiere die Dateien irgendwohin auÃŸerhalb deines System-Ordners (installiere diese
+            Extrahiere die Dateien irgendwohin außerhalb deines System-Ordners (installiere diese
             Frameworks also nicht nach z.B.
             <filename class="directory">/System/Library/Frameworks</filename>!
-            Die Benutzung dieser Ã¤lteren Kopie ist nur dazu da, die Linker-Fehler zu umgehen!)
+            Die Benutzung dieser älteren Kopie ist nur dazu da, die Linker-Fehler zu umgehen!)
 
             <screen>gunzip &lt; CompatFrameworks.tgz | tar xvf - </screen>
 
             In der Datei config.mak solltest du
             <systemitem>-F/Pfad/in/den/du/entpackt/hast</systemitem> der Variable
-            <systemitem>OPTFLAGS</systemitem> anhÃ¤ngen.
+            <systemitem>OPTFLAGS</systemitem> anhängen.
             Wenn du <application>X-Code</application> verwendest, kannst du dieses Framework an Stelle
-            der systemeigenen auswÃ¤hlen.
+            der systemeigenen auswählen.
           </para>
           <para>
-            Die resultierende <application>MPlayer</application>-BinÃ¤rdatei wird in der Tat das auf deinem
-            System einstallierte Framework verwenden, wobei dynamische VerknÃ¼pfungen verwendet werden,
-            die zur Laufzeit aufgelÃ¶st werden.
+            Die resultierende <application>MPlayer</application>-Binärdatei wird in der Tat das auf deinem
+            System einstallierte Framework verwenden, wobei dynamische Verknüpfungen verwendet werden,
+            die zur Laufzeit aufgelöst werden.
             (Du kannst das mit <systemitem>otool -l</systemitem> verifizieren).
           </para>
         </answer>
       </qandaentry>
+
     </qandadiv>
 
     <qandadiv id="faq-general">
@@ -256,7 +246,7 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
       <qandaentry>
         <question>
           <para>
-            Gibt es fÃ¼r <application>MPlayer</application> irgendwelche Mailing-Listen?
+            Gibt es für <application>MPlayer</application> irgendwelche Mailing-Listen?
           </para>
         </question>
         <answer>
@@ -268,12 +258,11 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
             Ich habe einen fiesen Fehler gefunden, als ich versucht habe, mein Lieblingsvideo abzuspielen.
-            Wen soll ich darÃ¼ber informieren?
+            Wen soll ich darüber informieren?
           </para>
         </question>
         <answer>
@@ -284,7 +273,6 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -293,14 +281,13 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </question>
         <answer>
           <para>
-            ÃœberprÃ¼fe den <ulink url="../../codecs-status.html">Codec-Status</ulink>,
-            wenn der deinen Codec nicht enthÃ¤lt, lies die
+            Überprüfe den <ulink url="../../codecs-status.html">Codec-Status</ulink>,
+            wenn der deinen Codec nicht enthält, lies die
             <link linkend="codecs">Codec-Dokumentation</link>, vor allem die
             <link linkend="codec-importing">HOWTO Codec-Importierung</link> und kontaktiere uns.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -311,13 +298,12 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </question>
         <answer>
           <para>
-            Du benÃ¶tigst einen speziell konfigurierten Kernel, um den neuen
-            Zeitgebercode benÃ¼tzen zu kÃ¶nnen. FÃ¼r Details siehe Abschnitt
+            Du benötigst einen speziell konfigurierten Kernel, um den neuen
+            Zeitgebercode benützen zu können. Für Details siehe Abschnitt
             <link linkend="rtc">RTC</link> der Dokumentation.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -328,18 +314,17 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         <answer>
           <para>
             Du musst einen Videoausgabetreiber verwenden, der kein Overlay benutzt, um einen
-            Screenshot machen zu kÃ¶nnen. Unter X11 wird <option>-vo x11</option> reichen,
+            Screenshot machen zu können. Unter X11 wird <option>-vo x11</option> reichen,
             unter Windows funktioniert <option>-vo directx:noaccel</option>.
           </para>
           <para>
             Alternativ kannst du <application>MPlayer</application> mit dem
             <systemitem>screenshot</systemitem>-Videofilter starten
-            (<option>-vf screenshot</option>) und dann <keycap>s</keycap> drÃ¼cken, um
+            (<option>-vf screenshot</option>) und dann <keycap>s</keycap> drücken, um
             einen Screenshot zu machen.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -359,17 +344,17 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
                 <listitem><para>Videoposition in Sekunden</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>A-V: -0.167</systemitem></term>
-                <listitem><para>Audio-Video-Unterschied in Sekunden (VerzÃ¶gerung)</para></listitem>
+                <listitem><para>Audio-Video-Unterschied in Sekunden (Verzögerung)</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>ct: 0.042</systemitem></term>
                 <listitem><para>insgesamt abgearbeitete A/V-Synchronisation</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>57/57</systemitem></term>
-                <listitem><para>wiedergegebene/decodierte Frames (zÃ¤hlend vom letzten Spulen)</para></listitem>
+                <listitem><para>wiedergegebene/decodierte Frames (zählend vom letzten Spulen)</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>41%</systemitem></term>
                 <listitem>
-                  <para>CPU-Auslastung durch Videocodec (fÃ¼r Rendern in Scheiben und direktes Rendern schlieÃŸt dies video_out mit ein)</para>
+                  <para>CPU-Auslastung durch Videocodec (für Rendern in Scheiben und direktes Rendern schließt dies video_out mit ein)</para>
                 </listitem>
               </varlistentry>
               <varlistentry><term><systemitem>0%</systemitem></term>
@@ -390,7 +375,7 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
               </varlistentry>
               <varlistentry><term><systemitem>49%</systemitem></term>
                 <listitem>
-                  <para>aktuell benutzte CachegrÃ¶ÃŸe (um die 50% ist normal)</para>
+                  <para>aktuell benutzte Cachegröße (um die 50% ist normal)</para>
                 </listitem>
               </varlistentry>
               <varlistentry><term><systemitem>1.00x</systemitem></term>
@@ -401,16 +386,15 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
             </variablelist>
             Die meisten davon existieren zu Debugzwecken, benutze die Option
             <option>-quiet</option>, um sie verschwinden zu lassen.
-            Eventuell fÃ¤llt dir auf, dass die CPU-Auslastung durch video_out bei manchen
+            Eventuell fällt dir auf, dass die CPU-Auslastung durch video_out bei manchen
             Dateien null (0%) ist.
             Dies liegt daran, dass es direkt vom Codec aufgerufen wird und nicht gemessen
-            werden kann. Wenn du die video_out-Geschwindigkeit wissen mÃ¶chtest, vergleiche
+            werden kann. Wenn du die video_out-Geschwindigkeit wissen möchtest, vergleiche
             den Unterschied beim Abspielen mit <option>-vo null</option> und deinem normalen
             Videoausgabetreiber.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -421,19 +405,18 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </question>
         <answer>
           <para>
-            Lade die BinÃ¤rcodecs von unserer
+            Lade die Binärcodecs von unserer
             <ulink url="http://www.mplayerhq.hu/design7/dload.html">Codecs-Seite</ulink>
             herunter und installiere sie.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich dafÃ¼r sorgen, dass sich <application>MPlayer</application> die Optionen merkt,
-            die ich fÃ¼r eine bestimmte Datei wie zum Beispiel <filename>movie.avi</filename> verwende?
+            Wie kann ich dafür sorgen, dass sich <application>MPlayer</application> die Optionen merkt,
+            die ich für eine bestimmte Datei wie zum Beispiel <filename>movie.avi</filename> verwende?
           </para>
         </question>
         <answer>
@@ -446,17 +429,16 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Untertitel sind sehr schick, die schÃ¶nsten, die ich je gesehen haben, aber
-            sie verlangsamen die Wiedergabe! Ich weiÃŸ, es ist unwahrscheinlich...
+            Untertitel sind sehr schick, die schönsten, die ich je gesehen haben, aber
+            sie verlangsamen die Wiedergabe! Ich weiß, es ist unwahrscheinlich...
           </para>
         </question>
         <answer>
           <para>
-            Editiere die Datei <filename>config.h</filename> nach dem AusfÃ¼hren von
+            Editiere die Datei <filename>config.h</filename> nach dem Ausführen von
             <filename>./configure</filename> und ersetze
             <systemitem>#undef FAST_OSD</systemitem> durch
             <systemitem>#define FAST_OSD</systemitem>.
@@ -465,12 +447,11 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich kann nicht auf das GUI-MenÃ¼ zugreifen! Ich mache einen Rechtsklick, aber ich kann
-            auf keine MenÃ¼eintrÃ¤ge zugreifen!
+            Ich kann nicht auf das GUI-Menü zugreifen! Ich mache einen Rechtsklick, aber ich kann
+            auf keine Menüeinträge zugreifen!
           </para>
         </question>
         <answer>
@@ -486,11 +467,10 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich <application>MPlayer</application> im Hintergrund ausfÃ¼hren?
+            Wie kann ich <application>MPlayer</application> im Hintergrund ausführen?
           </para>
         </question>
         <answer>
@@ -502,43 +482,41 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
       </qandaentry>
     </qandadiv>
 
-
     <qandadiv id="faq-playback">
       <title>Probleme bei der Wiedergabe</title>
 
       <qandaentry>
         <question>
           <para>
-            Ich kann den Grund fÃ¼r ein merkwÃ¼rdiges Wiedergabeproblem nicht festnageln.
+            Ich kann den Grund für ein merkwürdiges Wiedergabeproblem nicht festnageln.
           </para>
         </question>
         <answer>
           <para>
-            Hast du eine Ã¼briggebliebene <filename>codecs.conf</filename>-Datei in
+            Hast du eine übriggebliebene <filename>codecs.conf</filename>-Datei in
             <filename>~/.mplayer/</filename>, <filename>/etc/</filename>,
-            <filename>/usr/local/etc/</filename> oder einem Ã¤hnlichen Ort?
+            <filename>/usr/local/etc/</filename> oder einem ähnlichen Ort?
             Entferne sie, eine veraltete <filename>codecs.conf</filename>-Datei kann obskure
-            Probleme verursachen und ist nur fÃ¼r Entwickler zum Zwecke der CodecunterstÃ¼tzung
-            gedacht. Sie Ã¼berschreibt die internen Codeceinstellungen von
-            <application>MPlayer</application> und wird groÃŸes Chaos anrichten, wenn in neueren
-            Programmversionen inkompatible Ã„nderungen gemacht wurden. Wenn die nicht gerade von
-            Experten genutzt wird, ist sie ein Rezept fÃ¼r Disaster, die in Form von scheinbar zufÃ¤lligen
-            und schwer lokalisierbaren AbstÃ¼rzen und Wiedergabeproblemen auftreten.
+            Probleme verursachen und ist nur für Entwickler zum Zwecke der Codecunterstützung
+            gedacht. Sie überschreibt die internen Codeceinstellungen von
+            <application>MPlayer</application> und wird großes Chaos anrichten, wenn in neueren
+            Programmversionen inkompatible Änderungen gemacht wurden. Wenn die nicht gerade von
+            Experten genutzt wird, ist sie ein Rezept für Disaster, die in Form von scheinbar zufälligen
+            und schwer lokalisierbaren Abstürzen und Wiedergabeproblemen auftreten.
             Wenn du sie noch irgendwo in deinem System hast, solltest du sie jetzt entfernen.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie schaffe ich es, dass Untertitel auf den schwarzen RÃ¤ndern um einen Film erscheinen?
+            Wie schaffe ich es, dass Untertitel auf den schwarzen Rändern um einen Film erscheinen?
           </para>
         </question>
         <answer>
           <para>
-            Benutze den Videofilter <systemitem>expand</systemitem>, um den Bereich zu vergrÃ¶ÃŸern,
+            Benutze den Videofilter <systemitem>expand</systemitem>, um den Bereich zu vergrößern,
             auf dem der Film vertikal dargestellt wird, und platziere den Film am oberen Rand,
             zum Beispiel:
             <screen>mplayer -vf expand=0:-100:0:0 -slang de dvd://1</screen>
@@ -548,7 +526,7 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
       <qandaentry>
         <question>
           <para>
-            Wie kann ich Audio-/Untertitel-Spuren einer DVD, einer OGM-, Matroska oder NUT-Datei auswÃ¤hlen?
+            Wie kann ich Audio-/Untertitel-Spuren einer DVD, einer OGM-, Matroska oder NUT-Datei auswählen?
           </para>
         </question>
         <answer>
@@ -560,7 +538,7 @@ _LLCStyleInfoGetUserRunFeatures referenced from QuartzCore expected to be define
 mplayer -alang ger -slang ger <replaceable>beispiel.mkv</replaceable>
 mplayer -aid 1 -sid 1 <replaceable>beispiel.mkv</replaceable><!--
             --></screen>
-            Um zu sehen, welche verfÃ¼gbar sind:
+            Um zu sehen, welche verfügbar sind:
             <screen>
 mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | grep sid
 mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | grep aid<!--
@@ -569,11 +547,10 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich versuche, einen zufÃ¤lligen Stream vom Internet abspielen, aber es funktioniert nicht.
+            Ich versuche, einen zufälligen Stream vom Internet abspielen, aber es funktioniert nicht.
           </para>
         </question>
         <answer>
@@ -583,7 +560,6 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -592,13 +568,12 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </question>
         <answer>
           <para>
-            Deine Datei ist hÃ¶chstwahrscheinlich kaputt oder Fake. Wenn du sie von einem Freund
+            Deine Datei ist höchstwahrscheinlich kaputt oder Fake. Wenn du sie von einem Freund
             hast, und er sagt, dass sie funktioniert, versuche, die <application>md5sum</application>-Hashes
             zu vergleichen.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -608,16 +583,15 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </question>
         <answer>
           <para>
-            Stelle sicher, dass du die Schriften ordnungsgemÃ¤ÃŸ installiert hast. Gehe nochmal die
+            Stelle sicher, dass du die Schriften ordnungsgemäß installiert hast. Gehe nochmal die
             Schritte im Teil <link linkend="fonts-osd">Schriften und OSD</link> des
             Installationsabschnitts durch. Wenn du TrueType-Schriften verwendest, stelle sicher,
             dass die <systemitem class="library">FreeType</systemitem>-Bibliothek installiert ist.
-            Andere Dinge schlieÃŸen die ÃœberprÃ¼fung deiner Untertitel in einem Texteditor oder mit
+            Andere Dinge schließen die Überprüfung deiner Untertitel in einem Texteditor oder mit
             anderen Playern ein. Versuche auch, sie in ein anderes Format zu konvertieren.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -636,25 +610,25 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
             randomisiert. Diese Randomisierung geschieht zur prelink-Zeit (einmal alle zwei Wochen).
           </para>
           <para>
-            Wenn <application>MPlayer</application> versucht, eine Windows-DLL zu laden, mÃ¶chte
+            Wenn <application>MPlayer</application> versucht, eine Windows-DLL zu laden, möchte
             er diese an einer bestimmten Adresse (0x400000) ablegen. Wenn dort schon eine wichtige
-            Systembibliothek liegt, wird <application>MPlayer</application> abstÃ¼rzen.
-            (Ein typisches Symptom wÃ¤re eine Speicherzugriffsverletzung bei dem Versuch,
+            Systembibliothek liegt, wird <application>MPlayer</application> abstürzen.
+            (Ein typisches Symptom wäre eine Speicherzugriffsverletzung bei dem Versuch,
             Windows Media 9 Dateien abzuspielen.)
           </para>
           <para>
-            Wenn du dieses Problem hast, gibt es fÃ¼r dich zwei Optionen:
+            Wenn du dieses Problem hast, gibt es für dich zwei Optionen:
             <itemizedlist>
               <listitem>
-                <para>Warte zwei Wochen. Danach kÃ¶nnte es wieder funktionieren.</para>
+                <para>Warte zwei Wochen. Danach könnte es wieder funktionieren.</para>
               </listitem>
               <listitem>
-                <para>Linke alle BinÃ¤rdateien auf deinem System mit geÃ¤nderten prelink-Optionen neu.
-                  Hier sind Schritt-fÃ¼r-Schritt-Anweisungen:
+                <para>Linke alle Binärdateien auf deinem System mit geänderten prelink-Optionen neu.
+                  Hier sind Schritt-für-Schritt-Anweisungen:
                 </para>
                 <para>
                   <orderedlist>
-                    <listitem><para>Editiere <filename>/etc/syconfig/prelink</filename> und Ã¤ndere</para>
+                    <listitem><para>Editiere <filename>/etc/syconfig/prelink</filename> und ändere</para>
                       <para>
                         <programlisting>PRELINK_OPTS=-mR</programlisting>
                       </para>
@@ -673,7 +647,7 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
                     <listitem>
                       <para>
                         <command>execstack -s <replaceable>/Pfad/zu/</replaceable>mplayer</command>
-                        (Dies schaltet exec-shield fÃ¼r die <application>MPlayer</application>-BinÃ¤rdatei
+                        (Dies schaltet exec-shield für die <application>MPlayer</application>-Binärdatei
                         ab.)
                       </para>
                     </listitem>
@@ -683,7 +657,6 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
             </itemizedlist>
           </para></answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -701,28 +674,26 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wenn ich versuche, von meinem EmpfÃ¤nger zu lesen, funktioniert das zwar, aber die
+            Wenn ich versuche, von meinem Empfänger zu lesen, funktioniert das zwar, aber die
             Farben sehen komisch aus. Mit anderen Anwendungen funktioniert es.
           </para>
         </question>
         <answer>
           <para>
-            Deine Karte gibt vermutlich manche FarbrÃ¤ume als unterstÃ¼tzt an, obwohl sie diese
-            tatsÃ¤chlich nicht unterstÃ¼tzt. Versuche es mit YUY2 anstatt der Standardeinstellung
+            Deine Karte gibt vermutlich manche Farbräume als unterstützt an, obwohl sie diese
+            tatsächlich nicht unterstützt. Versuche es mit YUY2 anstatt der Standardeinstellung
             YV12 (siehe Abschnitt <link linkend="tv-input">TV</link>).
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich bekomme sehr merkwÃ¼rdige Prozentangaben (viel zu hoch), wenn ich Dateien auf
+            Ich bekomme sehr merkwürdige Prozentangaben (viel zu hoch), wenn ich Dateien auf
             meinem Notebook abspiele.
           </para>
         </question>
@@ -732,11 +703,10 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
             nicht Kernel). Stecke die externe Stromversorgung ein,
             <emphasis role="bold">bevor</emphasis> du dein Notebook anschaltest.
             Du kannst auch probieren, ob dir <ulink url="http://www.brodo.de/cpufreq">cpufreq</ulink>
-            (eine SpeedStep-Schnittstelle fÃ¼r Linux) weiterhilft.
+            (eine SpeedStep-Schnittstelle für Linux) weiterhilft.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -755,11 +725,10 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Bei der Wiedergabe eines Films wird dieser plÃ¶tzlich rucklig, und ich
+            Bei der Wiedergabe eines Films wird dieser plötzlich rucklig, und ich
             bekomme folgende Nachricht:
             <screen>Schlecht interleavte AVI-Datei erkannt, wechsele in den -ni Modus!</screen>
           </para>
@@ -773,7 +742,6 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
       </qandaentry>
     </qandadiv>
 
-
     <qandadiv id="faq-driver">
       <title>Video-/Audiotreiberprobleme (vo/ao)</title>
 
@@ -786,42 +754,40 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </question>
         <answer>
           <para>
-            Dein Videoausgabetreiber unterstÃ¼tzt keine Hardwareskalierung, und da Skalierung
+            Dein Videoausgabetreiber unterstützt keine Hardwareskalierung, und da Skalierung
             in Software unglaublich langsam sein kann, aktiviert <application>MPlayer</application>
-            diese nicht automatisch. HÃ¶chstwahrscheinlich benutzt du den Videoausgabetreiber
+            diese nicht automatisch. Höchstwahrscheinlich benutzt du den Videoausgabetreiber
             <systemitem>x11</systemitem> anstelle von <systemitem>xv</systemitem>.
-            Versuche, <option>-vo xv</option> zur Kommandozeile hinzuzufÃ¼gen oder lies den Abschnitt
-            <link linkend="video">Video</link>, um mehr Ã¼ber alternative Videoausgabetreiber
+            Versuche, <option>-vo xv</option> zur Kommandozeile hinzuzufügen oder lies den Abschnitt
+            <link linkend="video">Video</link>, um mehr über alternative Videoausgabetreiber
             zu erfahren. Die Option <option>-zoom</option> aktiviert Softwareskalierung explizit.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
             Ich habe <application>MPlayer</application> gerade installiert. Wenn ich eine Videodatei
-            Ã¶ffnen mÃ¶chte, verursacht dies einen fatalen Fehler:
-            <screen>Fehler beim Ã–ffnen/Initialisieren des ausgewÃ¤hlten Videoausgabetreibers (-vo).</screen>
-            Wie kann ich mein Problem lÃ¶sen?
+            öffnen möchte, verursacht dies einen fatalen Fehler:
+            <screen>Fehler beim Öffnen/Initialisieren des ausgewählten Videoausgabetreibers (-vo).</screen>
+            Wie kann ich mein Problem lösen?
           </para>
         </question>
         <answer>
           <para>
-            Ã„ndere einfach dein VideoausgabegerÃ¤t. FÃ¼hre den folgenden Befehl aus, um eine Liste
-            aller verfÃ¼gbaren Videoausgabetreiber zu erhalten:
+            Ändere einfach dein Videoausgabegerät. Führe den folgenden Befehl aus, um eine Liste
+            aller verfügbaren Videoausgabetreiber zu erhalten:
             <screen>mplayer -vo help</screen>
-            Nachdem du den richtigen Videoausgabetreiber gewÃ¤hlt hast, fÃ¼ge ihn
-            deiner Konfigurationsdatei hinzu. FÃ¼ge
-            <programlisting>vo = <replaceable>gewÃ¤hlter_vo</replaceable></programlisting>
+            Nachdem du den richtigen Videoausgabetreiber gewählt hast, füge ihn
+            deiner Konfigurationsdatei hinzu. Füge
+            <programlisting>vo = <replaceable>gewählter_vo</replaceable></programlisting>
             zu <filename>~/.mplayer/config</filename> und/oder
-            <programlisting>vo_driver = <replaceable>gewÃ¤hlter_vo</replaceable></programlisting>
+            <programlisting>vo_driver = <replaceable>gewählter_vo</replaceable></programlisting>
             zu <filename>~/.mplayer/gui.conf</filename> hinzu.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -833,12 +799,11 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         <answer>
           <para>
             Lies die <link linkend="bugreports">Richtlinien zum Berichten von Fehlern</link> und
-            schicke uns einen ordnungsgemÃ¤ÃŸen Fehlerbericht.
+            schicke uns einen ordnungsgemäßen Fehlerbericht.
             Probiere auch, mit der Option <option>-fstype</option> zu experimentieren.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -856,11 +821,10 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Mein Computer spielt MS DivX AVIs mit AuflÃ¶sungen ~ 640x300 und Stereo-MP3-Ton
+            Mein Computer spielt MS DivX AVIs mit Auflösungen ~ 640x300 und Stereo-MP3-Ton
             zu langsam. Wenn ich die Option <option>-nosound</option> verwende,
             ist alles ok (aber still).
           </para>
@@ -872,7 +836,6 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -888,11 +851,10 @@ mplayer -vo null -ao null -frames 0 -v <replaceable>dateiname</replaceable> | gr
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich habe keinen Ton, wenn ich ein Video abspielen mÃ¶chte, und bekomme Fehlermeldungen wie diese:
+            Ich habe keinen Ton, wenn ich ein Video abspielen möchte, und bekomme Fehlermeldungen wie diese:
             <screen>
 AO: [oss] 44100Hz 2ch Signed 16-bit (Little-Endian)
 audio_setup: Can't open audio device /dev/dsp: Device or resource busy
@@ -904,37 +866,35 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            LÃ¤uft bei dir KDE oder GNOME mit dem aRts- oder ESD-SounddÃ¤mon? Versuche, den
-            SounddÃ¤mon zu deaktivieren oder benutze die Option
+            Läuft bei dir KDE oder GNOME mit dem aRts- oder ESD-Sounddämon? Versuche, den
+            Sounddämon zu deaktivieren oder benutze die Option
             <option>-ao arts</option> oder <option>-ao esd</option>, damit
             <application>MPlayer</application> aRts oder ESD benutzt.
-            Vielleicht lÃ¤uft bei dir auch ALSA ohne OSS-Emulation. Versuche die ALSA OSS-Kernelmodule
-            zu laden oder fÃ¼ge <option>-ao alsa</option> deiner Kommandozeile hinzu, um den
+            Vielleicht läuft bei dir auch ALSA ohne OSS-Emulation. Versuche die ALSA OSS-Kernelmodule
+            zu laden oder füge <option>-ao alsa</option> deiner Kommandozeile hinzu, um den
             ALSA-Audioausgabetreiber direkt zu verwenden.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
             Beim Start von <application>MPlayer</application> unter KDE bekomme ich nur ein
-            schwarzes Bild, und nichts geschieht. Nach ungefÃ¤hr einer Minute beginnt die Wiedergabe.
+            schwarzes Bild, und nichts geschieht. Nach ungefähr einer Minute beginnt die Wiedergabe.
           </para>
         </question>
         <answer>
           <para>
-            Der aRts-SounddÃ¤mon von KDE blockiert das AudiogerÃ¤t. Warte entweder, bis das Video startet
-            oder deaktiviere den aRts-DÃ¤mon im Kontrollzentrum. Wenn du aRts-Sound benutzen mÃ¶chtest,
+            Der aRts-Sounddämon von KDE blockiert das Audiogerät. Warte entweder, bis das Video startet
+            oder deaktiviere den aRts-Dämon im Kontrollzentrum. Wenn du aRts-Sound benutzen möchtest,
             weise die Audioausgabe durch unseren nativen aRts-Audiotreiber an
-            (<option>-ao arts</option>). Wenn dies fehlschlÃ¤gt oder nicht eincompiliert ist, probiere SDL
+            (<option>-ao arts</option>). Wenn dies fehlschlägt oder nicht eincompiliert ist, probiere SDL
             (<option>-ao sdl</option>) und stelle sicher, dass dein SDL aRts-Sound verarbeiten kann.
             Eine weitere Option ist, <application>MPlayer</application> mit artsdsp zu starten.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -945,31 +905,30 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Deine Soundkarte oder der Soundtreiber ist fehlerhaft. HÃ¶chstwahrscheinlich ist das bei
+            Deine Soundkarte oder der Soundtreiber ist fehlerhaft. Höchstwahrscheinlich ist das bei
             44100Hz behoben, und du versuchst, eine Datei wiederzugeben, die 22050Hz-Audio
-            enthÃ¤lt. Probiere den Audiofilter <systemitem>resample</systemitem>.
+            enthält. Probiere den Audiofilter <systemitem>resample</systemitem>.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
           <para>
             Wenn ich diesen Film abspiele, bekomme ich Audio/Video-Desynchronisation und/oder
-            <application>MPlayer</application> stÃ¼rzt mit folgender Nachricht ab:
+            <application>MPlayer</application> stürzt mit folgender Nachricht ab:
             <screen>DEMUXER: Zu viele (945 in 8390980 bytes) Videopakete im Puffer!</screen>
           </para>
         </question>
         <answer>
           <para>
-            Das kann mehrere GrÃ¼nde haben.
+            Das kann mehrere Gründe haben.
             <itemizedlist>
               <listitem>
                 <para>
                   Deine CPU <emphasis>und/oder</emphasis> Grafikkarte <emphasis>und/oder</emphasis>
                   Bus ist zu langsam. <application>MPlayer</application> zeigt eine Nachricht an,
-                  wenn dies der Fall ist (und der ZÃ¤hler der ausgelassenen Frames schnell hochzÃ¤hlt).
+                  wenn dies der Fall ist (und der Zähler der ausgelassenen Frames schnell hochzählt).
                 </para>
               </listitem>
               <listitem>
@@ -990,7 +949,6 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -1005,27 +963,25 @@ Starte Wiedergabe...<!--
       </qandaentry>
     </qandadiv>
 
-
     <qandadiv id="faq-dvd">
       <title>DVD-Wiedergabe</title>
       <qandaentry>
         <question>
           <para>
-            Was ist mit DVD-Navigation/-menÃ¼s?
+            Was ist mit DVD-Navigation/-menüs?
           </para>
         </question>
         <answer>
           <para>
-            <application>MPlayer</application> unterstÃ¼tzt keine DVD-MenÃ¼s, bedingt durch ernsthafte
-            architektonische BeschrÃ¤nkungen, die die Verarbeitung von stillstehenden und interaktiven Inhalten
-            verhindert. Wenn du schicke MenÃ¼s haben mÃ¶chtest, musst du einen anderen Player wie
+            <application>MPlayer</application> unterstützt keine DVD-Menüs, bedingt durch ernsthafte
+            architektonische Beschränkungen, die die Verarbeitung von stillstehenden und interaktiven Inhalten
+            verhindert. Wenn du schicke Menüs haben möchtest, musst du einen anderen Player wie
             <application>xine</application>, <application>vlc</application> oder <application>Ogle</application>
             verwenden. Willst du DVD-Navigation in <application>MPlayer</application> sehen, musst du diese
-            selbst implementieren, sei dir aber dessen bewusst, dass dies eine grÃ¶ÃŸere Aufgabe ist.
+            selbst implementieren, sei dir aber dessen bewusst, dass dies eine größere Aufgabe ist.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1036,16 +992,15 @@ Starte Wiedergabe...<!--
         <answer>
           <para>
             Das ist normal; du bist betrogen worden, dir ist eine absichtlich fehlerhafte Scheibe verkauft worden.
-            Die einzige MÃ¶glichkeite, diese DVDs anzuschauen, ist, die fehlerhaften BlÃ¶cke dieser Disc zu umgeben,
+            Die einzige Möglichkeite, diese DVDs anzuschauen, ist, die fehlerhaften Blöcke dieser Disc zu umgeben,
             indem du DVDnav anstelle von mpdvdkit2 verwendest.
-            Dies kannst du erreichen, indem du <application>MPlayer</application> mit DVDnav-UnterstÃ¼tzung compilierst und dann auf der
+            Dies kannst du erreichen, indem du MPlayer mit DVDnav-Unterstützung compilierst und dann auf der
             Kommandozeile dvd:// durch dvdnav:// ersetzst.
-            DVDnav schlieÃŸt bisher die Verwendung von mpdvdkit2 aus, stelle daher sicher, dass du dem configure-Skript
-            <option>--disable-mpdvdkit</option> Ã¼bergibst.
+            DVDnav schließt bisher die Verwendung von mpdvdkit2 aus, stelle daher sicher, dass du dem configure-Skript
+            <option>--disable-mpdvdkit</option> übergibst.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1060,7 +1015,6 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -1074,21 +1028,19 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich kann keine DVD abspielen, MPlayer hÃ¤ngt oder gibt "Encrypted VOB file!"-Fehler aus.
+            Ich kann keine DVD abspielen, MPlayer hängt oder gibt "Encrypted VOB file!"-Fehler aus.
           </para>
         </question>
         <answer>
           <para>
-            Der Code fÃ¼r die CSS-EntschlÃ¼sselung funktioniert mit manchen DVD-Laufwerken nicht, wenn der
+            Der Code für die CSS-Entschlüsselung funktioniert mit manchen DVD-Laufwerken nicht, wenn der
             Regionalcode nicht entsprechend gesetzt ist. Siehe Antwort zur vorigen Frage.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1098,17 +1050,16 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Nein. Du musst jedoch die entsprechenden Rechte fÃ¼r den DVD-GerÃ¤teeintrag
+            Nein. Du musst jedoch die entsprechenden Rechte für den DVD-Geräteeintrag
             (in <filename class="directory">/dev/</filename>) haben.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ist es mÃ¶glich, nur ausgewÃ¤hlte Kapitel abzuspielen bzw. zu encodieren?
+            Ist es möglich, nur ausgewählte Kapitel abzuspielen bzw. zu encodieren?
           </para>
         </question>
         <answer>
@@ -1118,22 +1069,20 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Meine DVD-Wiedergabe ist trÃ¤ge!
+            Meine DVD-Wiedergabe ist träge!
           </para>
         </question>
         <answer>
           <para>
             Verwende die Option <option>-cache</option> (beschrieben in der Manpage) und versuche, mit dem
             Tool <command>hdparm</command> (beschrieben im Kapitel <link linkend="drives">CD</link>), DMA
-            fÃ¼r das DVD-Laufwerk zu aktivieren.
+            für das DVD-Laufwerk zu aktivieren.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1144,13 +1093,12 @@ Starte Wiedergabe...<!--
         <answer>
           <para>
             Benutze die Option <option>-dvd-device</option>, um auf das Verzeichnis zu zeigen, das die
-            Dateien enthÃ¤lt:
+            Dateien enthält:
             <screen>mplayer dvd://1 -dvd-device <replaceable>/Pfad/zum/Verzeichnis</replaceable></screen>
           </para>
         </answer>
       </qandaentry>
     </qandadiv>
-
 
     <qandadiv id="faq-features">
       <title>Feature-Anfragen</title>
@@ -1158,7 +1106,7 @@ Starte Wiedergabe...<!--
         <question>
           <para>
             Wenn <application>MPlayer</application> gerade pausiert und ich versuche zu spulen oder eine
-            andere Taste drÃ¼cke, hÃ¶rt der Pausezustand auf. Ich wÃ¼rde gern in einem pausierten Film spulen.
+            andere Taste drücke, hört der Pausezustand auf. Ich würde gern in einem pausierten Film spulen.
           </para>
         </question>
         <answer>
@@ -1169,23 +1117,21 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich mÃ¶chte +/- 1 Frame anstatt 10 Sekunden spulen.
+            Ich möchte +/- 1 Frame anstatt 10 Sekunden spulen.
           </para>
         </question>
         <answer>
           <para>
-            Du kannst jeweils einen Frame vorwÃ¤rtsgehen durch DrÃ¼cken von <keycap>.</keycap>.
-            Wenn der Film nicht pausiert war, wird er danach pausiert (siehe Manpage fÃ¼r Details).
-            RÃ¼ckwÃ¤rts gehen zu kÃ¶nnen wird in naher Zukunft vermutlich nicht implementiert.
+            Du kannst jeweils einen Frame vorwärtsgehen durch Drücken von <keycap>.</keycap>.
+            Wenn der Film nicht pausiert war, wird er danach pausiert (siehe Manpage für Details).
+            Rückwärts gehen zu können wird in naher Zukunft vermutlich nicht implementiert.
           </para>
         </answer>
       </qandaentry>
     </qandadiv>
-
 
     <qandadiv id="faq-encoding">
       <title>Encodierung</title>
@@ -1202,7 +1148,6 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -1211,16 +1156,15 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Hast du einmal deinen Titel ausgewÃ¤hlt und sichergestellt, dass
+            Hast du einmal deinen Titel ausgewählt und sichergestellt, dass
             <application>MPlayer</application> ihn richtig abspielt, benutze die Option
             <option>-dumpstream</option>.
             Zum Beispiel wird
             <screen>mplayer dvd://5 -dumpstream -dumpfile <replaceable>dvd_dump.vob</replaceable></screen>
-            den fÃ¼nften Titel der DVD in die Datei <replaceable>dvd_dump.vob</replaceable> schreiben.
+            den fünften Titel der DVD in die Datei <replaceable>dvd_dump.vob</replaceable> schreiben.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1237,7 +1181,6 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -1246,32 +1189,31 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Neuere Versionen von <application>MEncoder</application> kÃ¶nnen MPEG-2-Dateien direkt erstellen,
-            die als Basis zur Erstellung einer VCD oder SVCD benutzt werden kÃ¶nnen. Sie kÃ¶nnen vermutlich
+            Neuere Versionen von <application>MEncoder</application> können MPEG-2-Dateien direkt erstellen,
+            die als Basis zur Erstellung einer VCD oder SVCD benutzt werden können. Sie können vermutlich
             direkt auf allen Plattformen abgespielt werden (zum Beispiel, um ein Video eines digitalen Camcorders
             mit Freunden zu teilen, die sich nicht so gut mit Computern auskennen).
             Bitte lies
             <link linkend="menc-feat-vcd-dvd">Verwendung von MEncoder zur Erstellung VCD/SVCD/DVD-kompatiblen Dateien</link>
-            fÃ¼r weitere Details.
+            für weitere Details.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich zwei Videodateien zusammenfÃ¼gen?
+            Wie kann ich zwei Videodateien zusammenfügen?
           </para>
         </question>
         <answer>
           <para>
-            MPEG-Dateien kÃ¶nnen mit GlÃ¼ck zu einer einzelnen Datei zusammengefÃ¼gt werden.
-            FÃ¼r AVI-Dateien kannst du die UnterstÃ¼tzung von <application>MEncoder</application>
-            fÃ¼r mehrere Dateien folgendermaÃŸen verwenden:
+            MPEG-Dateien können mit Glück zu einer einzelnen Datei zusammengefügt werden.
+            Für AVI-Dateien kannst du die Unterstützung von <application>MEncoder</application>
+            für mehrere Dateien folgendermaßen verwenden:
             <screen>mencoder -ovc copy -oac copy -o <replaceable>out.avi</replaceable> <replaceable>datei1.avi</replaceable> <replaceable>datei2.avi</replaceable></screen>
-            Das funktioniert jedoch nur fÃ¼r Dateien, die das gleiche Format haben und denselben Codec verwenden.
-            Du kannst auÃŸerdem
+            Das funktioniert jedoch nur für Dateien, die das gleiche Format haben und denselben Codec verwenden.
+            Du kannst außerdem
             <ulink url="http://fixounet.free.fr/avidemux/">avidemux</ulink> und
             <application>avimerge</application> (Teil von
             <ulink url="http://www.transcoding.org/">transcode</ulink>)
@@ -1279,7 +1221,6 @@ Starte Wiedergabe...<!--
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1289,36 +1230,34 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Um zu vermeiden, dass du <option>-idx</option> fÃ¼r das Spulen in AVI-Dateien mit kaputtem Index
-            oder <option>-ni</option> fÃ¼r die Wiedergabe von AVIs mit schlechtem Interleaving verwenden
+            Um zu vermeiden, dass du <option>-idx</option> für das Spulen in AVI-Dateien mit kaputtem Index
+            oder <option>-ni</option> für die Wiedergabe von AVIs mit schlechtem Interleaving verwenden
             musst, benutze den Befehl
             <screen>mencoder <replaceable>input.avi</replaceable> -idx -ovc copy -oac copy -o <replaceable>output.avi</replaceable></screen>
             um Video- und Audiostreams in eine neue AVI-Datei zu kopieren, wobei der Index neu generiert
             wird und das Interleaving korrigiert wird.
-            NatÃ¼rlich kann dies nicht mÃ¶gliche Fehler in Video- und/oder Audiostreams reparieren.
+            Natürlich kann dies nicht mögliche Fehler in Video- und/oder Audiostreams reparieren.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich das SeitenverhÃ¤ltnis einer AVI-Datei reparieren?
+            Wie kann ich das Seitenverhältnis einer AVI-Datei reparieren?
           </para>
         </question>
         <answer>
           <para>
             Du kannst so etwas dank der Option <option>-force-avi-aspect</option> von
             <application>MEncoder</application> tun, die das im
-            AVI OpenDML vprp Header gespeicherte SeitenverhÃ¤ltnis Ã¼berschreibt. Zum Beispiel:
+            AVI OpenDML vprp Header gespeicherte Seitenverhältnis überschreibt. Zum Beispiel:
             <screen>mencoder <replaceable>input.avi</replaceable> -ovc copy -oac copy -o <replaceable>output.avi</replaceable> -force-avi-aspect 4/3</screen>
           </para>
         </answer>
       </qandaentry>
 
-
-     <qandaentry>
+      <qandaentry>
         <question>
           <para>
             Wie kann ich ein Backup machen und eine VOB-Datei mit kaputtem Anfang encodieren?
@@ -1329,19 +1268,18 @@ Starte Wiedergabe...<!--
             Das Hauptproblem bei der Encodierung einer kaputten
             <footnote id='fn-corrupted-files-or-copy-protection'>
               <para>
-                Zu einem gewissen MaÃŸ kÃ¶nnen bei DVDs verwendete KopierschutzmaÃŸnahmen als korrupter Inhalt verstanden werden.
+                Zu einem gewissen Maß können bei DVDs verwendete Kopierschutzmaßnahmen als korrupter Inhalt verstanden werden.
               </para>
             </footnote>
             VOB-Datei besteht darin, dass es schwierig ist, eine Encodierung mit perfekter A/V-Synchronisation zu erhalten.
             Eine Umgehung des Problems ist, den kaputten Teil abzuschneiden und nur den sauberen Teil zu encodieren.
             Zuerst musst du herausfinden, wo der saubere Teil beginnt:
-            <screen>mplayer <replaceable>input.vob</replaceable> -sb <replaceable>nr_der_zu_Ã¼berspringenden_Bytes</replaceable></screen>
-            Dann kannst du eine neue Datei anlegen, die nur den sauberen Teil enthÃ¤lt:
-            <screen>dd if=<replaceable>input.vob</replaceable> of=<replaceable>output_geschnitten.vob</replaceable> skip=1 ibs=<replaceable>nr_der_zu_Ã¼berspringenden_Bytes</replaceable></screen>
+            <screen>mplayer <replaceable>input.vob</replaceable> -sb <replaceable>nr_der_zu_überspringenden_Bytes</replaceable></screen>
+            Dann kannst du eine neue Datei anlegen, die nur den sauberen Teil enthält:
+            <screen>dd if=<replaceable>input.vob</replaceable> of=<replaceable>output_geschnitten.vob</replaceable> skip=1 ibs=<replaceable>nr_der_zu_überspringenden_Bytes</replaceable></screen>
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1356,11 +1294,10 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich nur ausgewÃ¤hlte Kapitel einer DVD encodieren?
+            Wie kann ich nur ausgewählte Kapitel einer DVD encodieren?
           </para>
         </question>
         <answer>
@@ -1370,25 +1307,23 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Ich versuche, mit Dateien der GrÃ¶ÃŸe 2GB+ auf einem VFAT-Dateisystem zu arbeiten. Klappt das?
+            Ich versuche, mit Dateien der Größe 2GB+ auf einem VFAT-Dateisystem zu arbeiten. Klappt das?
           </para>
         </question>
         <answer>
           <para>
-            Nein, VFAT unterstÃ¼tzt keine Dateien grÃ¶ÃŸer als 2GB.
+            Nein, VFAT unterstützt keine Dateien größer als 2GB.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Was bedeuten die Zahlen der Statuszeile wÃ¤hrend der Encodierung?
+            Was bedeuten die Zahlen der Statuszeile während der Encodierung?
           </para>
         </question>
         <answer>
@@ -1409,21 +1344,20 @@ Starte Wiedergabe...<!--
                 <listitem><para>Encodiergeschwindigkeit</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>Trem: 576min</systemitem></term>
-                <listitem><para>geschÃ¤tzte verbleibende Encodierzeit</para></listitem>
+                <listitem><para>geschätzte verbleibende Encodierzeit</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>2856mb</systemitem></term>
-                <listitem><para>geschÃ¤tzte GrÃ¶ÃŸe der endgÃ¼ltigen Encodierung</para></listitem>
+                <listitem><para>geschätzte Größe der endgültigen Encodierung</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>A-V:0.065</systemitem></term>
-                <listitem><para>momentane VerzÃ¶gerung zwischen Audio- und Videostreams</para></listitem>
+                <listitem><para>momentane Verzögerung zwischen Audio- und Videostreams</para></listitem>
               </varlistentry>
               <varlistentry><term><systemitem>[2126:192]</systemitem></term>
-                <listitem><para>durchschnittliche Videobitrate (in kb/s) und durchschnittliche Audiobitrate (in kb/s)</para></listitem>
+                <listitem><para>durchschnittliche Videobitrate (in Mb/s) und durchschnittliche Audiobitrate (in Mb/s)</para></listitem>
                 </varlistentry>
               </variablelist>
             </para></answer>
         </qandaentry>
-
 
         <qandaentry>
           <question>
@@ -1433,12 +1367,11 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Da die Bitrate, mit der du den Ton encodiert hast, zu groÃŸ ist, dass der Film auf eine CD zu passt.
-            ÃœberprÃ¼fe, ob du libmp3lame ordentlich installiert hast.
+            Da die Bitrate, mit der du den Ton encodiert hast, zu groß ist, dass der Film auf eine CD zu passt.
+            Überprüfe, ob du libmp3lame ordentlich installiert hast.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1454,7 +1387,6 @@ Starte Wiedergabe...<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -1463,12 +1395,11 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Ãœbergib einfach <option>-sub &lt;dateiname&gt;</option> (oder <option>-sid</option>, respektive)
+            Übergib einfach <option>-sub &lt;dateiname&gt;</option> (oder <option>-sid</option>, respektive)
             an <application>MEncoder</application>.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1478,7 +1409,7 @@ Starte Wiedergabe...<!--
         </question>
         <answer>
           <para>
-            Dies ist nicht direkt mÃ¶glich, du kannst aber folgendes probieren (beachte das
+            Dies ist nicht direkt möglich, du kannst aber folgendes probieren (beachte das
             <emphasis role="bold">&amp;</emphasis> am Ende des
             <command>mplayer</command>-Befehls):
             <screen>
@@ -1493,7 +1424,6 @@ rm encode<!--
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
@@ -1504,37 +1434,36 @@ rm encode<!--
         <answer>
           <para>
             <systemitem class="library">libavcodec</systemitem>, die native MPEG-4-Encodierungsbibliothek,
-            die normalerweise mit <application>MEncoder</application> verfÃ¼gbar ist,
+            die normalerweise mit <application>MEncoder</application> verfügbar ist,
             pflegte den FourCC bei der Encodierung von MPEG-4-Video auf 'DIVX' zu setzen
-            (der FourCC ist ein AVI-Tag, der die Software angibt, die fÃ¼r die Encodierung benutzt wurde, und bestimmt, welche Software zur Decodierung des Videos verwendet werden soll).
+            (der FourCC ist ein AVI-Tag, der die Software angibt, die für die Encodierung benutzt wurde, und bestimmt, welche Software zur Decodierung des Videos verwendet werden soll).
             Dies hat viele Menschen dazu veranlasst zu denken, dass
             <systemitem class="library">libavcodec</systemitem> eine DivX-Encodierungsbibliothek ist,
-            wÃ¤hrend es sich um eine MPEG-4-Encodierungsbibliothek handelt, die den MPEG-4-Standard
+            während es sich um eine MPEG-4-Encodierungsbibliothek handelt, die den MPEG-4-Standard
             wesentlich besser implementiert, als das DivX tut.
             Daher ist der neue Standard-FourCC von <systemitem class="library">libavcodec</systemitem>
             'FMP4', du kannst dieses Verhalten jedoch mit der <application>MEncoder</application>-Option
-            <option>-ffourcc</option> Ã¼berschreiben.
-            Du kannst den FourCC existierender Dateien auf dieselbe Weise Ã¤ndern:
+            <option>-ffourcc</option> überschreiben.
+            Du kannst den FourCC existierender Dateien auf dieselbe Weise ändern:
             <screen>mencoder <replaceable>input.avi</replaceable> -o <replaceable>output.avi</replaceable> -ffourcc XVID</screen>
-            Beachte, dass dies den FourCC auf XVID anstelle von DIVX Ã¤ndert.
+            Beachte, dass dies den FourCC auf XVID anstelle von DIVX ändert.
             Dies wird empfohlen, da der FourCC DIVX DivX4 bedeutet, welcher ein sehr einfacher MPEG-4-Codec
-            ist, wÃ¤hrend DX50 und XVID fÃ¼r volles MPEG-4 (ASP) stehen.
-            Wenn du den FourCC auf DIVX Ã¤nderst, kann es daher dazu kommen, dass manch schlechte Software
+            ist, während DX50 und XVID für volles MPEG-4 (ASP) stehen.
+            Wenn du den FourCC auf DIVX änderst, kann es daher dazu kommen, dass manch schlechte Software
             oder Hardware-Player bei manchen fortgeschrittenen Features, die
-            <systemitem class="library">libavcodec</systemitem> unterstÃ¼tzt, DivX aber nicht,
+            <systemitem class="library">libavcodec</systemitem> unterstützt, DivX aber nicht,
             ins Stocken geraten; andererseits liegt
-            <systemitem class="library">Xvid</systemitem> im Sinne der FunktionalitÃ¤t nÃ¤her an
-            <systemitem class="library">libavcodec</systemitem> und wird von allen anstÃ¤ndigen
-            Playern unterstÃ¼tzt.
+            <systemitem class="library">XviD</systemitem> im Sinne der Funktionalität näher an
+            <systemitem class="library">libavcodec</systemitem> und wird von allen anständigen
+            Playern unterstützt.
           </para>
         </answer>
       </qandaentry>
 
-
       <qandaentry>
         <question>
           <para>
-            Wie kann ich eine Datei encodieren, die nur Ton enthÃ¤lt?
+            Wie kann ich eine Datei encodieren, die nur Ton enthält?
           </para>
         </question>
         <answer>
@@ -1544,7 +1473,6 @@ rm encode<!--
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1556,11 +1484,10 @@ rm encode<!--
           <para>
             Benutze <filename>avisubdump.c</filename> vom Unterverzeichnis
             <filename class="directory">TOOLS</filename> oder lies
-            <ulink url="http://xlife.zuavra.net/curse/0012/">diese Dokument Ã¼ber Extraktion/Demultiplexing von Untertiteln in OpenDML AVI-Dateien</ulink>.
+            <ulink url="http://xlife.zuavra.net/curse/0012/">diese Dokument über Extraktion/Demultiplexing von Untertiteln in OpenDML AVI-Dateien</ulink>.
           </para>
         </answer>
       </qandaentry>
-
 
       <qandaentry>
         <question>
@@ -1570,13 +1497,12 @@ rm encode<!--
         </question>
         <answer>
           <para>
-            Schau mal ins Unterverzeichnis <filename class="directory">TOOLS</filename> fÃ¼r
+            Schau mal ins Unterverzeichnis <filename class="directory">TOOLS</filename> für
             eine Sammlung verschiedener Skripts und Hacks.
-            <filename>TOOLS/README</filename> enthÃ¤lt Dokumentation.
+            <filename>TOOLS/README</filename> enthält Dokumentation.
           </para>
         </answer>
       </qandaentry>
-
 
     </qandadiv>
   </qandaset>

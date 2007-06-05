@@ -360,36 +360,7 @@ sdpplin_t *sdpplin_parse(char *data) {
 
 void sdpplin_free(sdpplin_t *description) {
 
-  int i;
-
-  if (!description)
-    return;
-
-  for (i = 0; i < description->stream_count; i++) {
-    if (description->stream[i]) {
-      if (description->stream[i]->stream_name)
-        free(description->stream[i]->stream_name);
-      if (description->stream[i]->mime_type)
-        free(description->stream[i]->mime_type);
-      if (description->stream[i]->mlti_data)
-        free(description->stream[i]->mlti_data);
-      if (description->stream[i]->asm_rule_book)
-        free(description->stream[i]->asm_rule_book);
-      free(description->stream[i]);
-    }
-  }
-
-  if(description->stream_count)
-    free(description->stream);
-  if (description->title)
-    free(description->title);
-  if (description->author)
-    free(description->author);
-  if (description->copyright)
-    free(description->copyright);
-  if (description->abstract)
-    free(description->abstract);
-
+  /* TODO: free strings */
   free(description);
 }
 

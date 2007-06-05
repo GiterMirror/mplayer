@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #ifndef __STREAM_H
-#include "stream/stream.h"
+#include "stream.h"
 #endif
 #ifndef __DEMUXER_H
 #include "demuxer.h"

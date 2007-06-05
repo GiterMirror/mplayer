@@ -151,7 +151,7 @@ static uint32_t draw_image(mp_image_t *mpi) {
 	}
 
 	/* copy the jpeg image to the buffer which we acquired */
-	fast_memcpy(p->buf + p->zrq.size*p->frame, mpi->planes[0], size);
+	memcpy(p->buf + p->zrq.size*p->frame, mpi->planes[0], size);
 			
 	return VO_TRUE;
 }

@@ -16,11 +16,11 @@
 #include "help_mp.h"
 
 #include "codec-cfg.h"
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
-#include "libmpdemux/muxer.h"
+#include "muxer.h"
 
 #include "img_format.h"
 #include "mp_image.h"
@@ -52,8 +52,6 @@ static int lavc_param_mb_qmin = 2;
 static int lavc_param_mb_qmax = 31;
 static float lavc_param_lmin = 2;
 static float lavc_param_lmax = 31;
-static float lavc_param_mb_lmin = 2;
-static float lavc_param_mb_lmax = 31;
 static int lavc_param_vqdiff = 3;
 static float lavc_param_vqcompress = 0.5;
 static float lavc_param_vqblur = 0.5;
@@ -150,7 +148,6 @@ static int lavc_param_video_global_header= 0;
 static int lavc_param_mv0_threshold = 256;
 static int lavc_param_refs = 1;
 static int lavc_param_b_sensitivity = 40;
-static int lavc_param_level = FF_LEVEL_UNKNOWN;
 
 char *lavc_param_acodec = "mp2";
 int lavc_param_atag = 0;
@@ -178,8 +175,6 @@ m_option_t lavcopts_conf[]={
 	{"mbqmax", &lavc_param_mb_qmax, CONF_TYPE_INT, CONF_RANGE, 1, 31, NULL},
 	{"lmin", &lavc_param_lmin, CONF_TYPE_FLOAT, CONF_RANGE, 0.01, 255.0, NULL},
 	{"lmax", &lavc_param_lmax, CONF_TYPE_FLOAT, CONF_RANGE, 0.01, 255.0, NULL},
-	{"mblmin", &lavc_param_mb_lmin, CONF_TYPE_FLOAT, CONF_RANGE, 0.01, 255.0, NULL},
-	{"mblmax", &lavc_param_mb_lmax, CONF_TYPE_FLOAT, CONF_RANGE, 0.01, 255.0, NULL},
 	{"vqdiff", &lavc_param_vqdiff, CONF_TYPE_INT, CONF_RANGE, 1, 31, NULL},
 	{"vqcomp", &lavc_param_vqcompress, CONF_TYPE_FLOAT, CONF_RANGE, 0.0, 1.0, NULL},
 	{"vqblur", &lavc_param_vqblur, CONF_TYPE_FLOAT, CONF_RANGE, 0.0, 1.0, NULL},
@@ -295,7 +290,6 @@ m_option_t lavcopts_conf[]={
 	{"mv0_threshold", &lavc_param_mv0_threshold, CONF_TYPE_INT, CONF_RANGE, 0, INT_MAX, NULL},
 	{"refs", &lavc_param_refs, CONF_TYPE_INT, CONF_RANGE, 1, 16, NULL},
         {"b_sensitivity", &lavc_param_b_sensitivity, CONF_TYPE_INT, CONF_RANGE, 1, INT_MAX, NULL},
-	{"level", &lavc_param_level, CONF_TYPE_INT, CONF_RANGE, INT_MIN, INT_MAX, NULL},
 	{NULL, NULL, 0, 0, 0, 0, NULL}
 };
 #endif
@@ -347,8 +341,6 @@ static int config(struct vf_instance_s* vf,
     lavc_venc_context->mb_qmax= lavc_param_mb_qmax;
     lavc_venc_context->lmin= (int)(FF_QP2LAMBDA * lavc_param_lmin + 0.5);
     lavc_venc_context->lmax= (int)(FF_QP2LAMBDA * lavc_param_lmax + 0.5);
-    lavc_venc_context->mb_lmin= (int)(FF_QP2LAMBDA * lavc_param_mb_lmin + 0.5);
-    lavc_venc_context->mb_lmax= (int)(FF_QP2LAMBDA * lavc_param_mb_lmax + 0.5);
     lavc_venc_context->max_qdiff= lavc_param_vqdiff;
     lavc_venc_context->qcompress= lavc_param_vqcompress;
     lavc_venc_context->qblur= lavc_param_vqblur;
@@ -564,9 +556,7 @@ static int config(struct vf_instance_s* vf,
     lavc_venc_context->mv0_threshold = lavc_param_mv0_threshold;
     lavc_venc_context->refs = lavc_param_refs;
     lavc_venc_context->b_sensitivity = lavc_param_b_sensitivity;
-    lavc_venc_context->level = lavc_param_level;
 
-    mux_v->imgfmt = lavc_param_format;
     switch(lavc_param_format)
     {
 	case IMGFMT_YV12:
@@ -585,7 +575,7 @@ static int config(struct vf_instance_s* vf,
 	    lavc_venc_context->pix_fmt = PIX_FMT_YUV410P;
 	    break;
 	case IMGFMT_BGR32:
-	    lavc_venc_context->pix_fmt = PIX_FMT_RGB32;
+	    lavc_venc_context->pix_fmt = PIX_FMT_RGBA32;
 	    break;
 	default:
     	    mp_msg(MSGT_MENCODER,MSGL_ERR,"%s is not a supported format\n", vo_format_name(lavc_param_format));
@@ -990,10 +980,6 @@ static int vf_open(vf_instance_t *vf, char* args){
 	mux_v->bih->biCompression = mmioFOURCC('F', 'F', 'V', '1');
     else if (!strcasecmp(lavc_param_vcodec, "snow"))
 	mux_v->bih->biCompression = mmioFOURCC('S', 'N', 'O', 'W');
-    else if (!strcasecmp(lavc_param_vcodec, "flv"))
-	mux_v->bih->biCompression = mmioFOURCC('F', 'L', 'V', '1');
-    else if (!strcasecmp(lavc_param_vcodec, "dvvideo"))
-	mux_v->bih->biCompression = mmioFOURCC('d', 'v', 's', 'd');
     else
 	mux_v->bih->biCompression = mmioFOURCC(lavc_param_vcodec[0],
 		lavc_param_vcodec[1], lavc_param_vcodec[2], lavc_param_vcodec[3]); /* FIXME!!! */

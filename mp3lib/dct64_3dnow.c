@@ -15,7 +15,7 @@
 static unsigned long long int attribute_used __attribute__((aligned(8))) x_plus_minus_3dnow = 0x8000000000000000ULL;
 static float attribute_used plus_1f = 1.0;
 
-void dct64_MMX_3dnow(short *a,short *b,real *c)
+void dct64_MMX_3dnow(real *a,real *b,real *c)
 {
   char tmp[256];
     __asm __volatile(
@@ -617,8 +617,6 @@ void dct64_MMX_3dnow(short *a,short *b,real *c)
 "	punpckldq %%mm1, %%mm0\n\t"
 "	movq  %%mm0, 116(%%edx)\n\t"
 
-// this code is broken, there is nothing modifying the z flag above.
-#if 0
 "	jnz .L01\n\t"
 
 /* Phase 7*/
@@ -740,7 +738,6 @@ void dct64_MMX_3dnow(short *a,short *b,real *c)
 
 "	jmp	.L_bye\n\t"
 ".L01:\n\t"
-#endif
 /* Phase 9*/
 
 "	movq	(%%ecx), %%mm0\n\t"
@@ -924,5 +921,5 @@ void dct64_MMX_3dnow(short *a,short *b,real *c)
 "	femms\n\t"
 	:
 	:"m"(a),"m"(b),"m"(c),"m"(tmp[0])
-	:"memory","%eax","%ebx","%ecx","%edx","%esi","%edi");
+	:"memory","%ebx","%esi","%edi");
 }

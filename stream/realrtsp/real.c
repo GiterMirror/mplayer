@@ -31,7 +31,7 @@
 #include <string.h>
 
 #include "../config.h"
-#include "libavutil/common.h"
+#include "../bswap.h"
 #include "real.h"
 #include "asmrp.h"
 #include "sdpplin.h"
@@ -41,23 +41,28 @@
 #else
 #include "libavutil/md5.h"
 #endif
-#include "libavutil/intreadwrite.h"
-#include "../http.h"
-#include "mp_msg.h"
 
 /*
 #define LOG
 */
 
-#define XOR_TABLE_SIZE 37
-
-static const unsigned char xor_table[XOR_TABLE_SIZE] = {
+static const unsigned char xor_table[] = {
     0x05, 0x18, 0x74, 0xd0, 0x0d, 0x09, 0x02, 0x53,
     0xc0, 0x01, 0x05, 0x05, 0x67, 0x03, 0x19, 0x70,
     0x08, 0x27, 0x66, 0x10, 0x10, 0x72, 0x08, 0x09,
     0x63, 0x11, 0x03, 0x71, 0x08, 0x08, 0x70, 0x02,
-    0x10, 0x57, 0x05, 0x18, 0x54 };
+    0x10, 0x57, 0x05, 0x18, 0x54, 0x00, 0x00, 0x00 };
 
+
+#define BE_32C(x,y) (*((uint32_t*)(x))=be2me_32(y))
+
+#define BE_16(x)  be2me_16(*(uint16_t*)(x))
+
+#define BE_32(x)  be2me_32(*(uint32_t*)(x))
+
+#ifndef MAX
+#define MAX(x,y) ((x>y) ? x : y)
+#endif
 
 #define BUF_SIZE 4096
 
@@ -84,11 +89,31 @@ static void hexdump (const char *buf, int length) {
 #endif
 
 
+static void calc_response_string (char *result, char *challenge) {
+ 
+  char zres[16];
+  int  i;
+      
+  av_md5_sum(zres, challenge, 64);
+ 
+  /* convert zres to ascii string */
+  for (i=0; i<16; i++ ) {
+    char a, b;
+    
+    a = (zres[i] >> 4) & 15;
+    b = zres[i] & 15;
+
+    result[i*2]   = ((a<10) ? (a+48) : (a+87)) & 255;
+    result[i*2+1] = ((b<10) ? (b+48) : (b+87)) & 255;
+  }
+}
+
 static void real_calc_response_and_checksum (char *response, char *chksum, char *challenge) {
 
-  int   ch_len;
+  int   ch_len, table_len, resp_len;
   int   i;
-  unsigned char zres[16], buf[128];
+  char *ptr;
+  char  buf[128];
 
   /* initialize return values */
   memset(response, 0, 64);
@@ -96,8 +121,11 @@ static void real_calc_response_and_checksum (char *response, char *chksum, char 
 
   /* initialize buffer */
   memset(buf, 0, 128);
-  AV_WB32(buf, 0xa1e9149d);
-  AV_WB32(buf+4, 0x0e6b3b59);
+  ptr=buf;
+  BE_32C(ptr, 0xa1e9149d);
+  ptr+=4;
+  BE_32C(ptr, 0x0e6b3b59);
+  ptr+=4;
 
   /* some (length) checks */
   if (challenge != NULL)
@@ -112,24 +140,25 @@ static void real_calc_response_and_checksum (char *response, char *chksum, char 
     if ( ch_len > 56 ) ch_len=56;
     
     /* copy challenge to buf */
-    memcpy(buf+8, challenge, ch_len);
+    memcpy(ptr, challenge, ch_len);
   }
   
-    /* xor challenge bytewise with xor_table */
-    for (i=0; i<XOR_TABLE_SIZE; i++)
-      buf[8+i] ^= xor_table[i];
+    table_len = strlen(xor_table);
 
-  av_md5_sum(zres, buf, 64);
- 
-  /* convert zres to ascii string */
-  for (i=0; i<16; i++ )
-    sprintf(response+i*2, "%02x", zres[i]);
+    if (table_len > 56) table_len=56;
+
+    /* xor challenge bytewise with xor_table */
+    for (i=0; i<table_len; i++)
+      ptr[i] = ptr[i] ^ xor_table[i];
+
+  calc_response_string (response, buf);
 
   /* add tail */
-  strcpy (&response[32], "01d0a8e3");
+  resp_len = strlen (response);
+  strcpy (&response[resp_len], "01d0a8e3");
 
   /* calculate checksum */
-  for (i=0; i<8; i++)
+  for (i=0; i<resp_len/4; i++)
     chksum[i] = response[i*4];
 }
 
@@ -161,7 +190,7 @@ static int select_mlti_data(const char *mlti_chunk, int mlti_size, int selection
   mlti_chunk+=4;
 
   /* next 16 bits are the number of rules */
-  numrules=AV_RB16(mlti_chunk);
+  numrules=BE_16(mlti_chunk);
   if (selection >= numrules) return 0;
 
   /* now <numrules> indices of codecs follows */
@@ -169,17 +198,16 @@ static int select_mlti_data(const char *mlti_chunk, int mlti_size, int selection
   mlti_chunk+=(selection+1)*2;
 
   /* get our index */
-  codec=AV_RB16(mlti_chunk);
+  codec=BE_16(mlti_chunk);
 
   /* skip to number of codecs */
   mlti_chunk+=(numrules-selection)*2;
 
   /* get number of codecs */
-  numrules=AV_RB16(mlti_chunk);
+  numrules=BE_16(mlti_chunk);
 
   if (codec >= numrules) {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: codec index >= number of codecs. %i %i\n",
-      codec, numrules);
+    printf("codec index >= number of codecs. %i %i\n", codec, numrules);
     return 0;
   }
 
@@ -187,11 +215,11 @@ static int select_mlti_data(const char *mlti_chunk, int mlti_size, int selection
  
   /* now seek to selected codec */
   for (i=0; i<codec; i++) {
-    size=AV_RB32(mlti_chunk);
+    size=BE_32(mlti_chunk);
     mlti_chunk+=size+4;
   }
   
-  size=AV_RB32(mlti_chunk);
+  size=BE_32(mlti_chunk);
 
 #ifdef LOG
   hexdump(mlti_chunk+4, size);
@@ -277,10 +305,10 @@ static rmff_header_t *real_parse_sdp(char *data, char **stream_rules, uint32_t b
 	len,
 	buf);
 
-    duration=FFMAX(duration,desc->stream[i]->duration);
+    duration=MAX(duration,desc->stream[i]->duration);
     max_bit_rate+=desc->stream[i]->max_bit_rate;
     avg_bit_rate+=desc->stream[i]->avg_bit_rate;
-    max_packet_size=FFMAX(max_packet_size, desc->stream[i]->max_packet_size);
+    max_packet_size=MAX(max_packet_size, desc->stream[i]->max_packet_size);
     if (avg_packet_size)
       avg_packet_size=(avg_packet_size + desc->stream[i]->avg_packet_size) / 2;
     else
@@ -305,12 +333,11 @@ static rmff_header_t *real_parse_sdp(char *data, char **stream_rules, uint32_t b
 
   rmff_fix_header(header);
   buf = xbuffer_free(buf);
-  sdpplin_free(desc);
 
   return header;
 }
 
-int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer, int rdt_rawdata) {
+int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer) {
 
   int n=1;
   uint8_t header[8];
@@ -326,28 +353,18 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer, int rdt_rawdata) {
   if (n<8) return 0;
   if (header[0] != 0x24)
   {
-    mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: rdt chunk not recognized: got 0x%02x\n",
-      header[0]);
+    printf("rdt chunk not recognized: got 0x%02x\n", header[0]);
     return 0;
   }
-  /* header[1] is channel, normally 0, ignored */
-  size=(header[2]<<8)+header[3];
+  size=(header[1]<<16)+(header[2]<<8)+(header[3]);
   flags1=header[4];
-  if ((flags1!=0x40)&&(flags1!=0x42)&&(flags1!=0x41))
+  if ((flags1!=0x40)&&(flags1!=0x42))
   {
 #ifdef LOG
     printf("got flags1: 0x%02x\n",flags1);
 #endif
-    if(header[6] == 0x06) { // eof packet
-      rtsp_read_data(rtsp_session, header, 7); // Skip the rest of the eof packet
-      /* Some files have short auxiliary streams, we must ignore eof packets
-       * for these streams to avoid premature eof.
-       * Now the code declares eof only if the stream with id == 0 gets eof
-       * (old code was: eof on the first eof packet received).
-       */
-      if(flags1 & 0x7c) // ignore eof for streams with id != 0
-        return 0;
-      mp_msg(MSGT_STREAM, MSGL_INFO, "realrtsp: Stream EOF detected\n");
+    if(header[6] == 0x06) {
+      printf("Stream EOF detected\n");
       return -1;
     }
     header[0]=header[5];
@@ -369,7 +386,7 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer, int rdt_rawdata) {
   unknown1=(header[5]<<16)+(header[6]<<8)+(header[7]);
   n=rtsp_read_data(rtsp_session, header, 6);
   if (n<6) return 0;
-  ts=AV_RB32(header);
+  ts=BE_32(header);
   
 #ifdef LOG
   printf("ts: %u, size: %u, flags: 0x%02x, unknown values: 0x%06x 0x%02x 0x%02x\n", 
@@ -379,7 +396,7 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer, int rdt_rawdata) {
   
   ph.object_version=0;
   ph.length=size;
-  ph.stream_number=(flags1>>1)&0x1f;
+  ph.stream_number=(flags1>>1)&1;
   ph.timestamp=ts;
   ph.reserved=0;
   if ((flags2&1) == 0 && (prev_ts != ts || prev_stream_number != ph.stream_number))
@@ -391,10 +408,6 @@ int real_get_rdt_chunk(rtsp_t *rtsp_session, char **buffer, int rdt_rawdata) {
   else
     ph.flags=0;
   *buffer = xbuffer_ensure_size(*buffer, 12+size);
-  if(rdt_rawdata) {
-    n=rtsp_read_data(rtsp_session, *buffer, size-12);
-    return (n <= 0) ? 0 : n;
-  }
   rmff_dump_pheader(&ph, *buffer);
   size-=12;
   n=rtsp_read_data(rtsp_session, (*buffer)+12, size);
@@ -423,8 +436,7 @@ static int convert_timestamp(char *str, int *sec, int *msec) {
 
 //! maximum size of the rtsp description, must be < INT_MAX
 #define MAX_DESC_BUF (20 * 1024 * 1024)
-rmff_header_t *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidth,
-  char *username, char *password) {
+rmff_header_t  *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidth) {
 
   char *description=NULL;
   char *session_id=NULL;
@@ -438,8 +450,6 @@ rmff_header_t *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidt
   unsigned int size;
   int status;
   uint32_t maxbandwidth = bandwidth;
-  char* authfield = NULL;
-  int i;
   
   /* get challenge */
   challenge1=strdup(rtsp_search_answers(rtsp_session,"RealChallenge1"));
@@ -452,7 +462,6 @@ rmff_header_t *real_setup_and_get_header(rtsp_t *rtsp_session, uint32_t bandwidt
       bandwidth = 10485800;
   
   /* request stream description */
-rtsp_send_describe:
   rtsp_schedule_field(rtsp_session, "Accept: application/sdp");
   sprintf(buf, "Bandwidth: %u", bandwidth);
   rtsp_schedule_field(rtsp_session, buf);
@@ -462,56 +471,13 @@ rtsp_send_describe:
   rtsp_schedule_field(rtsp_session, "SupportsMaximumASMBandwidth: 1");
   rtsp_schedule_field(rtsp_session, "Language: en-US");
   rtsp_schedule_field(rtsp_session, "Require: com.real.retain-entity-for-setup");
-  if(authfield)
-    rtsp_schedule_field(rtsp_session, authfield);
   status=rtsp_request_describe(rtsp_session,NULL);
-
-  if (status == 401) {
-    int authlen, b64_authlen;
-    char *authreq;
-    char* authstr = NULL;
-
-    if (authfield) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: authorization failed, check your credentials\n");
-      goto autherr;
-    }
-    if (!(authreq = rtsp_search_answers(rtsp_session,"WWW-Authenticate"))) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: 401 but no auth request, aborting\n");
-      goto autherr;
-    }
-    if (!username) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: auth required but no username supplied\n");
-      goto autherr;
-    }
-    if (!strstr(authreq, "Basic")) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: authenticator not supported (%s)\n", authreq);
-      goto autherr;
-    }
-    authlen = strlen(username) + (password ? strlen(password) : 0) + 2;
-    authstr = malloc(authlen);
-    sprintf(authstr, "%s:%s", username, password ? password : "");
-    authfield = malloc(authlen*2+22);
-    strcpy(authfield, "Authorization: Basic ");
-    b64_authlen = base64_encode(authstr, authlen, authfield+21, authlen*2);
-    free(authstr);
-    if (b64_authlen < 0) {
-      mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: base64 output overflow, this should never happen\n");
-      goto autherr;
-    }
-    authfield[b64_authlen+21] = 0;
-    goto rtsp_send_describe;
-  }
-autherr:
-
-  if (authfield)
-     free(authfield);
 
   if ( status<200 || status>299 )
   {
     char *alert=rtsp_search_answers(rtsp_session,"Alert");
     if (alert) {
-      mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: got message from server:\n%s\n",
-        alert);
+      printf("real: got message from server:\n%s\n", alert);
     }
     rtsp_send_ok(rtsp_session);
     buf = xbuffer_free(buf);
@@ -521,20 +487,20 @@ autherr:
   /* receive description */
   size=0;
   if (!rtsp_search_answers(rtsp_session,"Content-length"))
-    mp_msg(MSGT_STREAM, MSGL_WARN, "real: got no Content-length!\n");
+    printf("real: got no Content-length!\n");
   else
     size=atoi(rtsp_search_answers(rtsp_session,"Content-length"));
 
   // as size is unsigned this also catches the case (size < 0)
   if (size > MAX_DESC_BUF) {
-    mp_msg(MSGT_STREAM, MSGL_ERR, "realrtsp: Content-length for description too big (> %uMB)!\n",
+    printf("real: Content-length for description too big (> %uMB)!\n",
             MAX_DESC_BUF/(1024*1024) );
     xbuffer_free(buf);
     return NULL;
   }
 
   if (!rtsp_search_answers(rtsp_session,"ETag"))
-    mp_msg(MSGT_STREAM, MSGL_WARN, "realrtsp: got no ETag!\n");
+    printf("real: got no ETag!\n");
   else
     session_id=strdup(rtsp_search_answers(rtsp_session,"ETag"));
     
@@ -579,15 +545,14 @@ autherr:
   sprintf(buf, "%s/streamid=0", mrl);
   rtsp_request_setup(rtsp_session,buf,NULL);
 
-  /* Do setup for all the other streams we subscribed to */
-  for (i = 1; i < h->prop->num_streams; i++) {
+  if (h->prop->num_streams > 1) {
     rtsp_schedule_field(rtsp_session, "Transport: x-pn-tng/tcp;mode=play,rtp/avp/tcp;unicast;mode=play");
     buf = xbuffer_ensure_size(buf, strlen(session_id) + 32);
     sprintf(buf, "If-Match: %s", session_id);
     rtsp_schedule_field(rtsp_session, buf);
 
     buf = xbuffer_ensure_size(buf, strlen(mrl) + 32);
-    sprintf(buf, "%s/streamid=%d", mrl, i);
+    sprintf(buf, "%s/streamid=1", mrl);
     rtsp_request_setup(rtsp_session,buf,NULL);
   }
   /* set stream parameter (bandwidth) with our subscribe string */
@@ -632,8 +597,6 @@ init_real_rtsp_session (void)
 
   real_rtsp_session = malloc (sizeof (struct real_rtsp_session_t));
   real_rtsp_session->recv = xbuffer_init (BUF_SIZE);
-  real_rtsp_session->rdteof = 0;
-  real_rtsp_session->rdt_rawdata = 0;
 
   return real_rtsp_session;
 }

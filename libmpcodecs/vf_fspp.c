@@ -421,15 +421,15 @@ static void filter(struct vf_priv_s *p, uint8_t *dst, uint8_t *src,
     if (!src || !dst) return; // HACK avoid crash for Y8 colourspace
     for(y=0; y<height; y++){
         int index= 8 + 8*stride + y*stride;
-        fast_memcpy(p->src + index, src + y*src_stride, width);//this line can be avoided by using DR & user fr.buffers
+        memcpy(p->src + index, src + y*src_stride, width);//this line can be avoided by using DR & user fr.buffers
         for(x=0; x<8; x++){ 
             p->src[index         - x - 1]= p->src[index +         x    ];
             p->src[index + width + x    ]= p->src[index + width - x - 1];
         }
     }
     for(y=0; y<8; y++){
-        fast_memcpy(p->src + (      7-y)*stride, p->src + (      y+8)*stride, stride);
-        fast_memcpy(p->src + (height+8+y)*stride, p->src + (height-y+7)*stride, stride);
+        memcpy(p->src + (      7-y)*stride, p->src + (      y+8)*stride, stride);
+        memcpy(p->src + (height+8+y)*stride, p->src + (height-y+7)*stride, stride);
     }
     //FIXME (try edge emu)
 
@@ -463,7 +463,7 @@ static void filter(struct vf_priv_s *p, uint8_t *dst, uint8_t *src,
 	es=width+8-x0; //  8, ...      
 	if (es>8)
 	    row_fdct_s(block+8*8, p->src + y*stride+8+x0 +2-(y&1), stride, (es-4)>>2);
-	column_fidct_s((int16_t*)(&p->threshold_mtx[0]), block, block3, es&(~1));
+	column_fidct_s((int16_t*)(&p->threshold_mtx[0]), block, block3, es-0);
 	row_idct_s(block3+0*8, p->temp + (y&15)*stride+x0+2-(y&1), stride, es>>2);
 	{const int y1=y-8+step;//l5-7  l4-6
 	    if (!(y1&7) && y1) {
@@ -531,8 +531,8 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
     vf->priv->mpeg2= mpi->qscale_type;
     if(mpi->pict_type != 3 && mpi->qscale && !vf->priv->qp){
 	if(!vf->priv->non_b_qp)
-	    vf->priv->non_b_qp= malloc(mpi->qstride * ((mpi->h + 15) >> 4));
-	fast_memcpy(vf->priv->non_b_qp, mpi->qscale, mpi->qstride * ((mpi->h + 15) >> 4));
+	    vf->priv->non_b_qp= malloc(mpi->qstride * mpi->h);
+	memcpy(vf->priv->non_b_qp, mpi->qscale, mpi->qstride * mpi->h);
     }
     if(vf->priv->log2_count || !(mpi->flags&MP_IMGFLAG_DIRECT)){
 	char *qp_tab= vf->priv->non_b_qp;

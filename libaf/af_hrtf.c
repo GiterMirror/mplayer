@@ -5,6 +5,7 @@
 //#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <inttypes.h>
 
 #include <math.h>
@@ -361,8 +362,7 @@ static void uninit(struct af_instance_s *af)
 	free(af->setup);
     }
     if(af->data)
-	free(af->data->audio);
-    free(af->data);
+	free(af->data);
 }
 
 /* Filter data through filter
@@ -588,7 +588,7 @@ static int allocate(af_hrtf_t *s)
 }
 
 /* Allocate memory and set function pointers */
-static int af_open(af_instance_t* af)
+static int open(af_instance_t* af)
 {
     int i;
     af_hrtf_t *s;
@@ -662,5 +662,5 @@ af_info_t af_info_hrtf = {
     "ylai",
     "",
     AF_FLAGS_REENTRANT,
-    af_open
+    open
 };

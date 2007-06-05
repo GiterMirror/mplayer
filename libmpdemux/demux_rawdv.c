@@ -15,7 +15,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 
@@ -146,13 +146,10 @@ static demuxer_t* demux_open_rawdv(demuxer_t* demuxer)
    dv_decoder=dv_decoder_new(TRUE,TRUE,FALSE);
    dv_decoder->quality=DV_QUALITY_BEST;
 
-   if (dv_parse_header(dv_decoder, dv_frame) == -1)
-	   return NULL;
+   dv_parse_header(dv_decoder, dv_frame);
 
    // create a new video stream header
    sh_video = new_sh_video(demuxer, 0);
-   if (!sh_video)
-	   return NULL;
 
    // make sure the demuxer knows about the new video stream header
    // (even though new_sh_video() ought to take care of it)

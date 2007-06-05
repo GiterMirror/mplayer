@@ -11,18 +11,18 @@
 #include "aviheader.h"
 #include "ms_hdr.h"
 
-#include "stream/stream.h"
 #include "muxer.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "stheader.h"
 
-muxer_t *muxer_new_muxer(int type,stream_t *stream){
+muxer_t *muxer_new_muxer(int type,FILE *f){
     muxer_t* muxer=calloc(1,sizeof(muxer_t));
     if(!muxer)
         return NULL;
-    muxer->stream = stream;
+    muxer->file = f;
     switch (type) {
       case MUXER_TYPE_MPEG:
 	if(! muxer_init_muxer_mpeg(muxer))
@@ -36,7 +36,7 @@ muxer_t *muxer_new_muxer(int type,stream_t *stream){
         if(! muxer_init_muxer_rawaudio(muxer))
 	  goto fail;
         break;
-#ifdef USE_LIBAVFORMAT
+#if defined(USE_LIBAVFORMAT) || defined(USE_LIBAVFORMAT_SO)
       case MUXER_TYPE_LAVF:
         if(! muxer_init_muxer_lavf(muxer))
 	  goto fail;

@@ -1,6 +1,6 @@
 /**
  * Demuxer for Musepack v7 bitstream
- * by Reimar Doeffinger <Reimar.Doeffinger@stud.uni-karlsruhe.de>
+ * by Reimar Döffinger <Reimar.Doeffinger@stud.uni-karlsruhe.de>
  * This code may be be relicensed under the terms of the GNU LGPL when it
  * becomes part of the FFmpeg project (ffmpeg.org)
  */
@@ -11,9 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "mp_msg.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
-#include "stream/stream.h"
+#include "bswap.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 

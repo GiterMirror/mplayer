@@ -61,7 +61,6 @@ static void read_cmd(menu_t* menu,int cmd) {
     if(mpriv->cur_line >= mpriv->num_lines)
       mpriv->cur_line = mpriv->num_lines - 1;
     break;
-  case MENU_CMD_LEFT:
   case MENU_CMD_CANCEL:
     menu->show = 0;
     menu->cl = 1;
@@ -119,7 +118,7 @@ static void draw(menu_t* menu,mp_image_t* mpi) {
     
 #define BUF_SIZE 1024
 
-static int open_txt(menu_t* menu, char* args) {
+static int open(menu_t* menu, char* args) {
   FILE* fd;
   char buf[BUF_SIZE];
   char *l;
@@ -193,5 +192,5 @@ const menu_info_t menu_info_txt = {
     &cfg_dflt,
     cfg_fields
   },
-  open_txt,
+  open,
 };

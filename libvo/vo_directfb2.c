@@ -47,7 +47,6 @@
 #include "mp_msg.h"
 #include "aspect.h"
 #include "subopt-helper.h"
-#include "mp_fifo.h"
 
 #ifndef min
 #define min(x,y) (((x)<(y))?(x):(y))
@@ -139,7 +138,7 @@ static int field_parity = -1;
 *	   implementation     *
 ******************************/
 
-void unlock(void) {
+void unlock() {
 if (frame && framelocked) frame->Unlock(frame);
 if (primary && primarylocked) primary->Unlock(primary);
 }
@@ -893,6 +892,8 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
 return 0;
 }
 
+extern void mplayer_put_key(int code);
+
 #include "osdep/keycodes.h"
 
 static void check_events(void)
@@ -1233,7 +1234,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
 	srcp = src[0];
 	
 	for (i=0;i<h;i++) {
-            fast_memcpy(dst,srcp,p);
+            memcpy(dst,srcp,p);
 	    dst += pitch;
 	    srcp += stride[0];
         }
@@ -1245,7 +1246,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
     	    p = p/2;
 
             for (i=0;i<h/2;i++) {
-                fast_memcpy(dst,srcp,p);
+                memcpy(dst,srcp,p);
 		dst += pitch/2;
 	        srcp += stride[2];
     	    }
@@ -1254,7 +1255,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
 	    srcp = src[1];
 	
     	    for (i=0;i<h/2;i++) {
-                fast_memcpy(dst,srcp,p);
+                memcpy(dst,srcp,p);
 		dst += pitch/2;
 	        srcp += stride[1];
     	    }
@@ -1266,7 +1267,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
 	    p = p/2;
 
     	    for (i=0;i<h/2;i++) {
-                fast_memcpy(dst,srcp,p);
+                memcpy(dst,srcp,p);
 		dst += pitch/2;
 	        srcp += stride[1];
     	    }
@@ -1275,7 +1276,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
 	    srcp = src[2];
 	
     	    for (i=0;i<h/2;i++) {
-                fast_memcpy(dst,srcp,p);
+                memcpy(dst,srcp,p);
 		dst += pitch/2;
 	        srcp += stride[2];
     	    }
@@ -1327,7 +1328,7 @@ static uint32_t put_image(mp_image_t *mpi){
 	src = mpi->planes[0]+mpi->y*mpi->stride[0]+mpi->x;
 	
 	for (i=0;i<mpi->h;i++) {
-            fast_memcpy(dst+i*pitch,src+i*mpi->stride[0],p);
+            memcpy(dst+i*pitch,src+i*mpi->stride[0],p);
         }
 
 	
@@ -1338,14 +1339,14 @@ static uint32_t put_image(mp_image_t *mpi){
 	    src = mpi->planes[2]+mpi->y*mpi->stride[2]+mpi->x/2;
 
             for (i=0;i<mpi->h/2;i++) {
-	        fast_memcpy(dst+i*pitch/2,src+i*mpi->stride[2],p);
+	        memcpy(dst+i*pitch/2,src+i*mpi->stride[2],p);
     	    }
 	
     	    dst += pitch*height/4;
 	    src = mpi->planes[1]+mpi->y*mpi->stride[1]+mpi->x/2;
 	
     	    for (i=0;i<mpi->h/2;i++) {
-        	fast_memcpy(dst+i*pitch/2,src+i*mpi->stride[1],p);
+        	memcpy(dst+i*pitch/2,src+i*mpi->stride[1],p);
     	    }
 
 	} else {
@@ -1355,14 +1356,14 @@ static uint32_t put_image(mp_image_t *mpi){
 	    src = mpi->planes[1]+mpi->y*mpi->stride[1]+mpi->x/2;
 
     	    for (i=0;i<mpi->h/2;i++) {
-        	fast_memcpy(dst+i*pitch/2,src+i*mpi->stride[1],p);
+        	memcpy(dst+i*pitch/2,src+i*mpi->stride[1],p);
     	    }
 	
     	    dst += pitch*height/4;
 	    src = mpi->planes[2]+mpi->y*mpi->stride[2]+mpi->x/2;
 	
     	    for (i=0;i<mpi->h/2;i++) {
-        	fast_memcpy(dst+i*pitch/2,src+i*mpi->stride[2],p);
+        	memcpy(dst+i*pitch/2,src+i*mpi->stride[2],p);
     	    }
 	
 	}

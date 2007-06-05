@@ -6,7 +6,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
@@ -26,11 +25,6 @@
 #include "menu_list.h"
 #include "input/input.h"
 #include "osdep/keycodes.h"
-
-#define MENU_KEEP_PATH "/tmp/mp_current_path"
-
-int menu_keepdir = 0;
-char *menu_chroot = NULL;
 
 struct list_entry_s {
   struct list_entry p;
@@ -185,7 +179,6 @@ static int open_dir(menu_t* menu,char* args) {
   struct dirent *dp;
   struct stat st;
   int n;
-  int path_fp;
   char* p = NULL;
   list_entry_t* e;
   DIR* dirp;
@@ -208,14 +201,6 @@ static int open_dir(menu_t* menu,char* args) {
     return 0;
   }
 
-  if (menu_keepdir) {
-    path_fp = open (MENU_KEEP_PATH, O_CREAT | O_WRONLY | O_TRUNC, 0666);
-    if (path_fp >= 0) {
-      write (path_fp, mpriv->dir, strlen (mpriv->dir));
-      close (path_fp);
-    }
-  }
-
   namelist = (char **) malloc(sizeof(char *));
   extensions = get_extensions(menu);
 
@@ -223,12 +208,6 @@ static int open_dir(menu_t* menu,char* args) {
   while ((dp = readdir(dirp)) != NULL) {
     if(dp->d_name[0] == '.' && strcmp(dp->d_name,"..") != 0)
       continue;
-    if (menu_chroot && !strcmp (dp->d_name,"..")) {
-      int len = strlen (menu_chroot);
-      if ((strlen (mpriv->dir) == len || strlen (mpriv->dir) == len + 1)
-          && !strncmp (mpriv->dir, menu_chroot, len))
-        continue;
-    }
     mylstat(args,dp->d_name,&st);
     if (file_filter && extensions && !S_ISDIR(st.st_mode)) {
       if((ext = strrchr(dp->d_name,'.')) == NULL)
@@ -320,10 +299,6 @@ static void read_cmd(menu_t* menu,int cmd) {
 	  if(l <= 1) break;
 	  mpriv->dir[l-1] = '\0';
 	  slash = strrchr(mpriv->dir,'/');
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-	  if (!slash)
-	    slash = strrchr(mpriv->dir,'\\');
-#endif
 	  if(!slash) break;
 	  slash[1] = '\0';
 	  p = strdup(mpriv->dir);
@@ -391,7 +366,7 @@ static void clos(menu_t* menu) {
 }
 
 static int open_fs(menu_t* menu, char* args) {
-  char *path = mpriv->path, *freepath = NULL;
+  char *path = mpriv->path;
   int r = 0;
   char wd[PATH_MAX+1];
   args = NULL; // Warning kill
@@ -401,29 +376,6 @@ static int open_fs(menu_t* menu, char* args) {
   menu->read_key = read_key;
   menu->close = clos;
 
-  if (menu_keepdir) {
-    if (!path || path[0] == '\0') {
-      struct stat st;
-      int path_fp;
-      
-      path_fp = open (MENU_KEEP_PATH, O_RDONLY);
-      if (path_fp >= 0) {
-        if (!fstat (path_fp, &st) && (st.st_size > 0)) {
-          path = malloc(st.st_size+1);
-          if ((read(path_fp, path, st.st_size) == st.st_size) && path[0] != '\0'){
-            freepath = path;
-            path[st.st_size] = '\0';
-          }
-          else {
-            free(path);
-            path = NULL;
-          }
-        }
-        close (path_fp);
-      }
-    }
-  }
-  
   getcwd(wd,PATH_MAX);
   if(!path || path[0] == '\0') {
     int l = strlen(wd) + 2;
@@ -442,9 +394,6 @@ static int open_fs(menu_t* menu, char* args) {
   } else
     r = open_dir(menu,path);
 
-  if (freepath)
-    free(freepath);
-  
   return r;
 }
   

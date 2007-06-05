@@ -6,6 +6,9 @@ static int uninit(priv_t *priv);
 static int control(priv_t *priv, int cmd, void *arg);
 static int start(priv_t *priv);
 static double grab_video_frame(priv_t *priv, char *buffer, int len);
+#ifdef HAVE_TV_BSDBT848
+static double grabimmediate_video_frame(priv_t *priv, char *buffer, int len);
+#endif
 static int get_video_framesize(priv_t *priv);
 static double grab_audio_frame(priv_t *priv, char *buffer, int len);
 static int get_audio_framesize(priv_t *priv);
@@ -17,6 +20,9 @@ static tvi_functions_t functions =
     control,
     start,
     grab_video_frame,
+#ifdef HAVE_TV_BSDBT848
+    grabimmediate_video_frame,
+#endif
     get_video_framesize,
     grab_audio_frame,
     get_audio_framesize
@@ -35,6 +41,7 @@ static tvi_handle_t *new_handle(void)
 	return(NULL);
     }
     memset(h->priv, 0, sizeof(priv_t));
+    h->info = &info;
     h->functions = &functions;
     h->seq = 0;
     h->chanlist = -1;
@@ -50,49 +57,5 @@ static void free_handle(tvi_handle_t *h)
 	if (h->priv)
 	    free(h->priv);
 	free(h);
-    }
-}
-
-/**
- Fills video frame in given buffer with blue color for yv12,i420,uyvy,yuy2.
- Other formats will be filled with 0xC0 
-*/
-static inline void fill_blank_frame(char* buffer,int len,int fmt){
-    int i;
-
-    switch(fmt){
-    case IMGFMT_YV12:
-        memset(buffer, 0xFF,5*len/6);
-        memset(buffer+5*len/6, 0xFF,len/6);
-        break;
-    case IMGFMT_I420:
-        memset(buffer, 0xFF,4*len/6);
-        memset(buffer+4*len/6, 0xFF,len/6);
-        memset(buffer+5*len/6, 0xFF,len/6);
-        break;
-    case IMGFMT_UYVY:
-        for(i=0;i<len;i+=4){
-            buffer[i]=0xFF;
-            buffer[i+1]=0;
-            buffer[i+2]=0;
-            buffer[i+3]=0;
-	}
-        break;
-    case IMGFMT_YUY2:
-        for(i=0;i<len;i+=4){
-            buffer[i]=0;
-            buffer[i+1]=0xFF;
-            buffer[i+2]=0;
-            buffer[i+3]=0;
-	}
-        break;
-    case IMGFMT_MJPEG:
-        /*
-	This is compressed format. I don't know yet how to fill such frame with blue color.
-	Keeping frame unchanged.
-	*/
-        break;
-    default:
-        memset(buffer,0xC0,len);
     }
 }

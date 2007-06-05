@@ -12,9 +12,9 @@
 #include <libdv/dv.h>
 #include <libdv/dv_types.h>
 
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
 #include "vd_internal.h"
 
@@ -36,7 +36,7 @@ static int control(sh_video_t *sh,int cmd,void* arg,...){
 
 static dv_decoder_t* global_rawdv_decoder=NULL;
 
-dv_decoder_t* init_global_rawdv_decoder(void)
+dv_decoder_t* init_global_rawdv_decoder()
 {
  if(!global_rawdv_decoder){
    global_rawdv_decoder=dv_decoder_new(TRUE,TRUE,FALSE);

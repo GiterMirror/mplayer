@@ -51,7 +51,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_RADIO_STEP_CHANNEL, "radio_step_channel", 1,  { { MP_CMD_ARG_INT ,{0}}, {-1,{0}} }},
   { MP_CMD_RADIO_SET_CHANNEL, "radio_set_channel", 1, { { MP_CMD_ARG_STRING, {0}}, {-1,{0}}  }},
   { MP_CMD_RADIO_SET_FREQ, "radio_set_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
-  { MP_CMD_RADIO_STEP_FREQ, "radio_step_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
 #endif
   { MP_CMD_SEEK, "seek", 1, { {MP_CMD_ARG_FLOAT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_EDL_MARK, "edl_mark", 0, { {-1,{0}} } },
@@ -62,6 +61,7 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_QUIT, "quit", 0, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_PAUSE, "pause", 0, { {-1,{0}} } },
   { MP_CMD_FRAME_STEP, "frame_step", 0, { {-1,{0}} } },
+  { MP_CMD_GRAB_FRAMES, "grab_frames",0, { {-1,{0}} }  },
   { MP_CMD_PLAY_TREE_STEP, "pt_step",1, { { MP_CMD_ARG_INT ,{0}}, { MP_CMD_ARG_INT ,{0}}, {-1,{0}} } },
   { MP_CMD_PLAY_TREE_UP_STEP, "pt_up_step",1,  { { MP_CMD_ARG_INT,{0} }, { MP_CMD_ARG_INT ,{0}}, {-1,{0}} } },
   { MP_CMD_PLAY_ALT_SRC_STEP, "alt_src_step",1, { { MP_CMD_ARG_INT,{0} }, {-1,{0}} } },
@@ -112,7 +112,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_TV_SET_CHANNEL, "tv_set_channel", 1, { { MP_CMD_ARG_STRING, {0}}, {-1,{0}}  }},
   { MP_CMD_TV_LAST_CHANNEL, "tv_last_channel", 0, { {-1,{0}} } },
   { MP_CMD_TV_SET_FREQ, "tv_set_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
-  { MP_CMD_TV_STEP_FREQ, "tv_step_freq", 1, { {MP_CMD_ARG_FLOAT,{0}}, {-1,{0}} } },
   { MP_CMD_TV_SET_NORM, "tv_set_norm", 1, { {MP_CMD_ARG_STRING,{0}}, {-1,{0}} } },
   { MP_CMD_TV_SET_BRIGHTNESS, "tv_set_brightness", 1,  { { MP_CMD_ARG_INT ,{0}}, { MP_CMD_ARG_INT,{1} }, {-1,{0}} }},
   { MP_CMD_TV_SET_CONTRAST, "tv_set_contrast", 1,  { { MP_CMD_ARG_INT ,{0}}, { MP_CMD_ARG_INT,{1} }, {-1,{0}} }},
@@ -165,7 +164,6 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_KEYDOWN_EVENTS, "key_down_event", 1, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_SET_PROPERTY, "set_property", 2, { {MP_CMD_ARG_STRING, {0}},  {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
   { MP_CMD_GET_PROPERTY, "get_property", 1, { {MP_CMD_ARG_STRING, {0}},  {-1,{0}} } },
-  { MP_CMD_STEP_PROPERTY, "step_property", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_FLOAT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   
   { MP_CMD_SEEK_CHAPTER, "seek_chapter", 1, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_SET_MOUSE_POS, "set_mouse_pos", 2, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
@@ -178,7 +176,6 @@ static mp_cmd_t mp_cmds[] = {
 
 static mp_key_name_t key_names[] = {
   { ' ', "SPACE" },
-  { '#', "SHARP" },
   { KEY_ENTER, "ENTER" },
   { KEY_TAB, "TAB" },
   { KEY_CTRL, "CTRL" },
@@ -338,8 +335,10 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { '}', 0 }, "speed_mult 2.0" },
   { { KEY_BACKSPACE, 0 }, "speed_set 1.0" },
   { { 'q', 0 }, "quit" },
+  { { 'Q', 0 }, "quit" },
   { { KEY_ESC, 0 }, "quit" },
   { { 'p', 0 }, "pause" },
+  { { 'P', 0 }, "pause" },
   { { ' ', 0 }, "pause" },
   { { '.', 0 }, "frame_step" },
   { { KEY_HOME, 0 }, "pt_up_step 1" },
@@ -350,6 +349,7 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { KEY_INS, 0 }, "alt_src_step 1" },
   { { KEY_DEL, 0 }, "alt_src_step -1" },
   { { 'o', 0 }, "osd" },
+  { { 'O', 0 }, "osd" },
   { { 'I', 0 }, "osd_show_property_text \"${filename}\"" },
   { { 'z', 0 }, "sub_delay -0.1" },
   { { 'x', 0 }, "sub_delay +0.1" },
@@ -360,6 +360,7 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { '0', 0 }, "volume 1" },
   { { '*', 0 }, "volume 1" },
   { { 'm', 0 }, "mute" },
+  { { 'M', 0 }, "mute" },
   { { '1', 0 }, "contrast -1" },
   { { '2', 0 }, "contrast 1" },
   { { '3', 0 }, "brightness -1" },
@@ -369,16 +370,14 @@ static mp_cmd_bind_t def_cmd_binds[] = {
   { { '7', 0 }, "saturation -1" },
   { { '8', 0 }, "saturation 1" },
   { { 'd', 0 }, "frame_drop" },
-  { { 'D', 0 }, "step_property deinterlace" },
   { { 'r', 0 }, "sub_pos -1" },
   { { 't', 0 }, "sub_pos +1" },
   { { 'a', 0 }, "sub_alignment" },
   { { 'v', 0 }, "sub_visibility" },
-  { { 'j', 0 }, "sub_select" },
+  { { 'b', 0 }, "sub_select" },
+  { { 'j', 0 }, "vobsub_lang" },
   { { 'F', 0 }, "forced_subs_only" },
   { { '#', 0 }, "switch_audio" },
-  { { '_', 0 }, "step_property switch_video" },
-  { { KEY_TAB, 0 }, "step_property switch_program" },
   { { 'i', 0 }, "edl_mark" },
 #ifdef USE_TV
   { { 'h', 0 }, "tv_step_channel 1" },
@@ -883,8 +882,8 @@ static char*
 mp_input_find_bind_for_key(mp_cmd_bind_t* binds, int n,int* keys) {
   int j;
 
-  if (n <= 0) return NULL;
   for(j = 0; binds[j].cmd != NULL; j++) {
+    if(n > 0) {
       int found = 1,s;
       for(s = 0; s < n && binds[j].input[s] != 0; s++) {
 	if(binds[j].input[s] != keys[s]) {
@@ -894,6 +893,12 @@ mp_input_find_bind_for_key(mp_cmd_bind_t* binds, int n,int* keys) {
       }
       if(found && binds[j].input[s] == 0 && s == n)
 	break;
+      else
+	continue;
+    } else if(n == 1){
+      if(binds[j].input[0] == keys[0] && binds[j].input[1] == 0)
+	break;
+    }
   }
   return binds[j].cmd;
 }
@@ -918,7 +923,6 @@ mp_input_get_cmd_from_keys(int n,int* keys, int paused) {
     mp_msg(MSGT_INPUT,MSGL_WARN,"                         \n");
     return NULL;
   }
-  if (strcmp(cmd, "ignore") == 0) return NULL;
   ret =  mp_input_parse_cmd(cmd);
   if(!ret) {
     mp_msg(MSGT_INPUT,MSGL_ERR,MSGTR_INPUT_INPUT_ErrInvalidCommandForKey,mp_input_get_key_name(key_down[0]));
@@ -934,7 +938,7 @@ mp_input_get_cmd_from_keys(int n,int* keys, int paused) {
 
 int
 mp_input_read_key_code(int time) {
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
   fd_set fds;
   struct timeval tv,*time_val;
 #endif
@@ -943,12 +947,11 @@ mp_input_read_key_code(int time) {
 
   if(num_key_fd == 0)
   {
-    if (time)
-      usec_sleep(time * 1000);
+    usec_sleep(time * 1000);
     return MP_INPUT_NOTHING;
   }
 
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
   FD_ZERO(&fds);
 #endif
   // Remove fd marked as dead and build the fd_set
@@ -962,13 +965,13 @@ mp_input_read_key_code(int time) {
       continue;
     if(key_fds[i].fd > max_fd)
       max_fd = key_fds[i].fd;
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
     FD_SET(key_fds[i].fd,&fds);
 #endif
     n++;
   }
 
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
 // if we have fd's without MP_FD_NO_SELECT flag, call select():
 if(n>0){
 
@@ -1001,7 +1004,7 @@ if(n>0){
       last_loop %= (num_key_fd+1);
       continue;
     }
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
     // No input from this fd
     if(! (key_fds[i].flags & MP_FD_NO_SELECT) && ! FD_ISSET(key_fds[i].fd,&fds) && key_fds[i].fd != 0)
       continue;
@@ -1025,7 +1028,7 @@ if(n>0){
       key_fds[i].flags |= MP_FD_DEAD;
     }
   }
-  if (time && !did_sleep)
+  if (!did_sleep)
     usec_sleep(time * 1000);
   return MP_INPUT_NOTHING;
 }
@@ -1124,7 +1127,7 @@ mp_input_read_keys(int time,int paused) {
 
 static mp_cmd_t*
 mp_input_read_cmds(int time) {
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
   fd_set fds;
   struct timeval tv,*time_val;
 #endif
@@ -1135,7 +1138,7 @@ mp_input_read_cmds(int time) {
   if(num_cmd_fd == 0)
     return NULL;
 
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
   FD_ZERO(&fds);
 #endif
   for(i = 0; (unsigned int)i < num_cmd_fd ; i++) {
@@ -1149,7 +1152,7 @@ mp_input_read_cmds(int time) {
       got_cmd = 1;
     if(cmd_fds[i].fd > max_fd)
       max_fd = cmd_fds[i].fd;
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
     FD_SET(cmd_fds[i].fd,&fds);
 #endif
     n++;
@@ -1158,7 +1161,7 @@ mp_input_read_cmds(int time) {
   if(num_cmd_fd == 0)
     return NULL;
 
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
   if(time >= 0) {
     tv.tv_sec=time/1000; 
     tv.tv_usec = (time%1000)*1000;
@@ -1189,7 +1192,7 @@ mp_input_read_cmds(int time) {
       last_loop %= (num_cmd_fd+1);
       continue;
     }
-#ifdef HAVE_POSIX_SELECT
+#ifndef HAVE_NO_POSIX_SELECT
     if( ! (cmd_fds[i].flags & MP_FD_NO_SELECT) && ! FD_ISSET(cmd_fds[i].fd,&fds) && ! (cmd_fds[i].flags & MP_FD_GOT_CMD) )
       continue;
 #endif

@@ -61,6 +61,7 @@ static char help_text[]=
 #define MSGTR_NoHomeDir "Kan inte lokalisera $HOME-katalog.\n"
 #define MSGTR_GetpathProblem "get_path(\"config\") problem\n"
 #define MSGTR_CreatingCfgFile "Skapar konfigfil: %s\n"
+#define MSGTR_CopyCodecsConf "(Kopiera/länka etc/codecs.conf från MPlayer's källkod till ~/.mplayer/codecs.conf)\n"
 #define MSGTR_BuiltinCodecsConf "Använder standardinbyggd codecs.conf.\n"
 #define MSGTR_CantLoadFont "Kan inte ladda font: %s\n"
 #define MSGTR_CantLoadSub "Kan inte ladda vald textning: %s\n"
@@ -416,6 +417,13 @@ static char help_text[]=
 #define MSGTR_CodecDefinitionIncorrect "Codec är inte definerad korrekt."
 #define MSGTR_OutdatedCodecsConf "Denna codecs.conf är för gammal och inkompatibel med denna MPlayer version!" // release is more like 'släpp', sounds wrong, using version instead
 
+// divx4_vbr.c:
+#define MSGTR_OutOfMemory "slut på minne"
+
+#define MSGTR_OverridingTooLowBitrate "Specifierad bitrate är för låg för detta chips.\n" /* FIXME chip? chips or kort? */ \
+"Minimal möjlig bitrate för detta chips är %.0f Kbps. Skriver över\n"\
+"användarspecificerade värden.\n"
+
 // fifo.c
 #define MSGTR_CannotMakePipe "Kan inte skapa en PIPE!\n" // FIXME make? 
 
@@ -480,6 +488,8 @@ static char help_text[]=
 #define MSGTR_CantSeekRawAVI "Kan inte söka i råa AVI-strömmar. (Index krävs, försök med '-idx'-switchen.)\n"
 #define MSGTR_CantSeekFile "Kan inte söka i denna fil.\n"
 
+#define MSGTR_EncryptedVOB "Krypterad VOB-fil! Read DOCS/HTML/en/dvd.html.\n"
+
 #define MSGTR_MOVcomprhdr "MOV: filhuvudkomprimeringssupport kräver ZLIB!\n"
 #define MSGTR_MOVvariableFourCC "MOV: VARNING: Variabel FOURCC påvisad!?\n"
 #define MSGTR_MOVtooManyTrk "MOV: VARNING: allt förmånga spår"
@@ -493,6 +503,7 @@ static char help_text[]=
 #define MSGTR_OpeningAudioDemuxerFailed "Misslyckades att öppna audiodemuxern: %s\n"
 #define MSGTR_OpeningSubtitlesDemuxerFailed "Misslyckades att öppna textningsdemuxern: %s\n"
 #define MSGTR_TVInputNotSeekable "TV-in är inte sökbar! (Sökning kommer troligen bli för att ändra kanal ;)\n"
+#define MSGTR_DemuxerInfoAlreadyPresent "Demuxerinfo %s redan inställd!\n"
 #define MSGTR_ClipInfo "Clip-info:\n"
 
 #define MSGTR_LeaveTelecineMode "\ndemux_mpg: '30fps NTSC'-innehåll upptäckt, ändrar framerate.\n" // FIXME framerate?
@@ -534,6 +545,7 @@ static char help_text[]=
 
 // LIRC:
 #define MSGTR_SettingUpLIRC "Aktiverar LIRC-stöd...\n"
+#define MSGTR_LIRCdisabled "Du kommer inte att kunna använda din fjärrkontroll.\n"
 #define MSGTR_LIRCopenfailed "Misslyckades med att aktivera LIRC-stöd.\n"
 #define MSGTR_LIRCcfgerr "Misslyckades med att läsa LIRC-konfigurationsfil %s.\n"
 
@@ -601,7 +613,7 @@ static char help_text[]=
 #define MSGTR_NEMDB "Tyvärr, inte tillräckligt minne för ritbuffert."
 #define MSGTR_NEMFMR "Tyvärr, inte tillräckligt minne för menyrendering."
 #define MSGTR_IDFGCVD "Tyvärr, jag hittade inte en GUI-kompatibel video-ut-drivrutin."
-#define MSGTR_NEEDLAVC "Tyvärr, du kan inte spela icke-MPEG-filer med ditt DXR3/H+-enhet utan omkodning.\nVar god aktivera lavc i 'DXR3/H+'-konfigurationsboxen."
+#define MSGTR_NEEDLAVCFAME "Tyvärr, du kan inte spela icke-MPEG-filer med ditt DXR3/H+-enhet utan omkodning.\nVar god aktivera lavc eller fame i 'DXR3/H+'-konfigurationsboxen."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] fel i skinkonfigureringsfil på rad %d: %s"
@@ -749,6 +761,7 @@ static char help_text[]=
 #define MSGTR_PREFERENCES_Message "Var god komihåg att du måste starta om uppspelning för att vissa ändringar ska ta effekt!"
 #define MSGTR_PREFERENCES_DXR3_VENC "Videoencoder:"
 #define MSGTR_PREFERENCES_DXR3_LAVC "ANvänd LAVC (FFmpeg)"
+#define MSGTR_PREFERENCES_DXR3_FAME "Använd FAME"
 #define MSGTR_PREFERENCES_FontEncoding1 "Unicode"
 #define MSGTR_PREFERENCES_FontEncoding2 "Västeuropeiska språk (ISO-8859-1)"
 #define MSGTR_PREFERENCES_FontEncoding3 "Västeuropeiska språk med Euro (ISO-8859-15)"

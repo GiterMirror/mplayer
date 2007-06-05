@@ -14,10 +14,9 @@
 #include "gl_common.h"
 #include "aspect.h"
 #ifdef HAVE_NEW_GUI
-#include "gui/interface.h"
+#include "Gui/interface.h"
 #endif
 #include "libass/ass.h"
-#include "libass/ass_mp.h"
 
 static vo_info_t info = 
 {
@@ -32,9 +31,6 @@ LIBVO_EXTERN(gl)
 #ifdef GL_WIN32
 static int gl_vinfo = 0;
 static HGLRC gl_context = 0;
-#define update_xinerama_info w32_update_xinerama_info
-#define vo_init vo_w32_init
-#define vo_window vo_w32_window
 #else
 static XVisualInfo *gl_vinfo = NULL;
 static GLXContext gl_context = 0;
@@ -108,7 +104,6 @@ static int texture_width;
 static int texture_height;
 static int mpi_flipped;
 static int vo_flipped;
-static int ass_border_x, ass_border_y;
 
 static unsigned int slice_height = 1;
 
@@ -133,8 +128,6 @@ static void resize(int x,int y){
     scale_x = (GLdouble) new_w / (GLdouble) x;
     scale_y = (GLdouble) new_h / (GLdouble) y;
     glScaled(scale_x, scale_y, 1);
-    ass_border_x = (vo_screenwidth - new_w) / 2;
-    ass_border_y = (vo_screenheight - new_h) / 2;
   }
   glOrtho(0, image_width, image_height, 0, -1,1);
 
@@ -253,20 +246,14 @@ static void clearEOSD(void) {
  * \param img image list to create OSD from.
  *            A value of NULL has the same effect as clearEOSD()
  */
-static void genEOSD(mp_eosd_images_t *imgs) {
+static void genEOSD(ass_image_t *img) {
   int sx, sy;
   int tinytexcur = 0;
   int smalltexcur = 0;
   GLuint *curtex;
   GLint scale_type = (scaled_osd) ? GL_LINEAR : GL_NEAREST;
-  ass_image_t *img = imgs->imgs;
   ass_image_t *i;
-
-  if (imgs->changed == 0) // there are elements, but they are unchanged
-      return;
-  if (img && imgs->changed == 1) // there are elements, but they just moved
-      goto skip_upload;
-
+  int cnt;
   clearEOSD();
   if (!img)
     return;
@@ -320,7 +307,6 @@ static void genEOSD(mp_eosd_images_t *imgs) {
                 x, y, i->w, i->h, 0);
   }
   eosdDispList = glGenLists(1);
-skip_upload:
   glNewList(eosdDispList, GL_COMPILE);
   tinytexcur = smalltexcur = 0;
   for (i = img, curtex = eosdtex; i; i = i->next) {
@@ -450,9 +436,23 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
   int_pause = 0;
   vo_flipped = !!(flags & VOFLAG_FLIPPING);
 
+  panscan_init();
+  aspect_save_orig(width,height);
+  aspect_save_prescale(d_width,d_height);
+  update_xinerama_info();
+
+  aspect(&d_width,&d_height,A_NOZOOM);
+  vo_dx = (int)(vo_screenwidth - d_width) / 2;
+  vo_dy = (int)(vo_screenheight - d_height) / 2;
+  geometry(&vo_dx, &vo_dy, &d_width, &d_height,
+           vo_screenwidth, vo_screenheight);
+  vo_dx += xinerama_x;
+  vo_dy += xinerama_y;
 #ifdef HAVE_NEW_GUI
   if (use_gui) {
     // GUI creates and manages window for us
+    vo_dwidth = d_width;
+    vo_dheight= d_height;
     guiGetEvent(guiSetShVideo, 0);
 #ifndef GL_WIN32
     goto glconfig;
@@ -585,7 +585,7 @@ static void create_osd_texture(int x0, int y0, int w, int h,
   char *tmp = malloc(stride * h);
   // convert alpha from weird MPlayer scale.
   // in-place is not possible since it is reused for future OSDs
-  for (i = h * stride - 1; i >= 0; i--)
+  for (i = h * stride - 1; i > 0; i--)
     tmp[i] = srca[i] - 1;
   glUploadTex(gl_target, GL_ALPHA, GL_UNSIGNED_BYTE, tmp, stride,
               0, 0, w, h, 0);
@@ -791,7 +791,7 @@ query_format(uint32_t format)
                VFCAP_FLIP |
                VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN | VFCAP_ACCEPT_STRIDE;
     if (use_osd)
-      caps |= VFCAP_OSD | VFCAP_EOSD | (scaled_osd ? 0 : VFCAP_EOSD_UNSCALED);
+      caps |= VFCAP_OSD | VFCAP_EOSD;
     if ((format == IMGFMT_RGB24) || (format == IMGFMT_RGBA))
         return caps;
     if (use_yuv && format == IMGFMT_YV12)
@@ -864,8 +864,8 @@ static int preinit(const char *arg)
               "\n-vo gl command line help:\n"
               "Example: mplayer -vo gl:slice-height=4\n"
               "\nOptions:\n"
-              "  nomanyfmts\n"
-              "    Disable extended color formats for OpenGL 1.2 and later\n"
+              "  manyfmts\n"
+              "    Enable extended color formats for OpenGL 1.2 and later\n"
               "  slice-height=<0-...>\n"
               "    Slice size for texture transfer, 0 for whole image\n"
               "  noosd\n"
@@ -889,11 +889,9 @@ static int preinit(const char *arg)
               "    3: use fragment program with gamma correction.\n"
               "    4: use fragment program with gamma correction via lookup.\n"
               "    5: use ATI-specific method (for older cards).\n"
-              "    6: use lookup via 3D texture.\n"
               "  lscale=<n>\n"
               "    0: use standard bilinear scaling for luma.\n"
               "    1: use improved bicubic scaling for luma.\n"
-              "    2: use cubic in X, linear in Y direction scaling for luma.\n"
               "  cscale=<n>\n"
               "    as lscale but for chroma (2x slower with little visible effect).\n"
               "  customprog=<filename>\n"
@@ -938,8 +936,6 @@ static int control(uint32_t request, void *data, ...)
   case VOCTRL_DRAW_IMAGE:
     return draw_image(data);
   case VOCTRL_DRAW_EOSD:
-    if (!data)
-      return VO_FALSE;
     genEOSD(data);
     return VO_TRUE;
   case VOCTRL_GET_EOSD_RES:
@@ -948,9 +944,11 @@ static int control(uint32_t request, void *data, ...)
       r->mt = r->mb = r->ml = r->mr = 0;
       if (scaled_osd) {r->w = image_width; r->h = image_height;}
       else if (vo_fs) {
+        int aw, ah;
+        aspect(&aw, &ah, A_ZOOM);
         r->w = vo_screenwidth; r->h = vo_screenheight;
-        r->ml = r->mr = ass_border_x > 0 ? ass_border_x : 0;
-        r->mt = r->mb = ass_border_y > 0 ? ass_border_y : 0;
+        r->ml = r->mr = (vo_screenwidth - aw) / 2;
+        r->mt = r->mb = (vo_screenheight - ah) / 2;
       } else {
         r->w = vo_dwidth; r->h = vo_dheight;
       }
@@ -1052,9 +1050,6 @@ static int control(uint32_t request, void *data, ...)
       return VO_TRUE;
     }
     break;
-  case VOCTRL_UPDATE_SCREENINFO:
-    update_xinerama_info();
-    return VO_TRUE;
   }
   return VO_NOTIMPL;
 }

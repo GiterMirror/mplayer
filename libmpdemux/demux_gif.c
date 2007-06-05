@@ -12,20 +12,13 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 
 #include <gif_lib.h>
-#include "libvo/fastmemcpy.h"
-typedef struct {
-  int current_pts;
-  unsigned char *palette;
-  GifFileType *gif;
-  int w, h;
-  int useref;
-  uint8_t *refimg;
-} gif_priv_t;
+static int current_pts = 0;
+static unsigned char *pallete = NULL;
 
 #define GIF_SIGNATURE (('G' << 16) | ('I' << 8) | 'F')
 
@@ -43,37 +36,14 @@ static int gif_check_file(demuxer_t *demuxer)
   return 0;
 }
 
-static void memcpy_transp_pic(uint8_t *dst, uint8_t *src, int w, int h,
-                int dstride, int sstride, int transp, uint8_t trans_col) {
-  if (transp) {
-    dstride -= w;
-    sstride -= w;
-    while (h-- > 0) {
-      int wleft = w;
-      while (wleft-- > 0) {
-        if (*src != trans_col)
-          *dst = *src;
-        dst++; src++;
-      }
-      dst += dstride;
-      src += sstride;
-    }
-  } else
-    memcpy_pic(dst, src, w, h, dstride, sstride);
-}
-
 static int demux_gif_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
 {
-  gif_priv_t *priv = demuxer->priv;
-  GifFileType *gif = priv->gif;
+  GifFileType *gif = (GifFileType *)demuxer->priv;
   GifRecordType type = UNDEFINED_RECORD_TYPE;
   int len = 0;
   demux_packet_t *dp = NULL;
   ColorMapObject *effective_map = NULL;
-  uint8_t *buf = NULL;
-  int refmode = 0;
-  int transparency = 0;
-  uint8_t transparent_col;
+  char *buf = NULL;
 
   while (type != IMAGE_DESC_RECORD_TYPE) {
     if (DGifGetRecordType(gif, &type) == GIF_ERROR) {
@@ -98,20 +68,8 @@ static int demux_gif_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
       if (code == 0xF9) {
         int frametime = 0;
         if (p[0] == 4) // is the length correct?
-        {
-          transparency = p[1] & 1;
-          refmode = (p[1] >> 2) & 3;
-          // HACK: specification says
-          // > 0 - No disposal specified. The decoder is not required to take any action.
-          // but browsers treat it the same way as
-          // > 1 - Do not dispose. The graphic is to be left in place.
-          // Some broken files rely on this, e.g.
-          // http://samples.mplayerhq.hu/GIF/broken-gif/CLAIRE.GIF
-          if (refmode == 0) refmode = 1;
-          frametime = (p[3] << 8) | p[2]; // set the time, centiseconds
-          transparent_col = p[4];  
-        }
-        priv->current_pts += frametime;
+          frametime = (p[1] << 8) | p[2]; // set the time, centiseconds
+        current_pts += frametime;
       } else if ((code == 0xFE) && (verbose)) { // comment extension
 	// print iff verbose
 	printf("GIF comment: ");
@@ -142,12 +100,10 @@ static int demux_gif_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
   }
 
   len = gif->Image.Width * gif->Image.Height;
-  dp = new_demux_packet(priv->w * priv->h);
-  buf = calloc(gif->Image.Width, gif->Image.Height);
-  if (priv->useref)
-    fast_memcpy(dp->buffer, priv->refimg, priv->w * priv->h);
-  else
-    memset(dp->buffer, gif->SBackGroundColor, priv->w * priv->h);
+  dp = new_demux_packet(len);
+  buf = malloc(len);
+  memset(buf, 0, len);
+  memset(dp->buffer, 0, len);
   
   if (DGifGetLine(gif, buf, len) == GIF_ERROR) {
     PrintGifError();
@@ -159,59 +115,30 @@ static int demux_gif_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
 
   {
     int y;
-    int cnt = FFMIN(effective_map->ColorCount, 256);
-    int l = av_clip(gif->Image.Left, 0, priv->w);
-    int t = av_clip(gif->Image.Top, 0, priv->h);
-    int w = av_clip(gif->Image.Width, 0, priv->w - l);
-    int h = av_clip(gif->Image.Height, 0, priv->h - t);
-    unsigned char *dest = dp->buffer + priv->w * t + l;
 
-    // copy the palette
-    for (y = 0; y < cnt; y++) {
-      priv->palette[(y * 4) + 0] = effective_map->Colors[y].Blue;
-      priv->palette[(y * 4) + 1] = effective_map->Colors[y].Green;
-      priv->palette[(y * 4) + 2] = effective_map->Colors[y].Red;
-      priv->palette[(y * 4) + 3] = 0;
+    // copy the pallete
+    for (y = 0; y < 256; y++) {
+	pallete[(y * 4) + 0] = effective_map->Colors[y].Blue;
+	pallete[(y * 4) + 1] = effective_map->Colors[y].Green;
+	pallete[(y * 4) + 2] = effective_map->Colors[y].Red;
+	pallete[(y * 4) + 3] = 0;
     }
 
-    if (gif->Image.Interlace) {
-      uint8_t *s = buf;
-      int ih = (h - 0 + 7) >> 3;
-      memcpy_transp_pic(dest, s, w, ih,
-                        priv->w << 3, gif->Image.Width,
-                        transparency, transparent_col);
-      s += ih * w;
-      ih = (h - 4 + 7) >> 3;
-      memcpy_transp_pic(dest + (priv->w << 2), s, w, ih,
-                        priv->w << 3, gif->Image.Width,
-                        transparency, transparent_col);
-      s += ih * w;
-      ih = (h - 2 + 3) >> 2;
-      memcpy_transp_pic(dest + (priv->w << 1), s, w, ih,
-                        priv->w << 2, gif->Image.Width,
-                        transparency, transparent_col);
-      s += ih * w;
-      ih = (h - 1 + 1) >> 1;
-      memcpy_transp_pic(dest + priv->w, s, w, ih,
-                        priv->w << 1, gif->Image.Width,
-                        transparency, transparent_col);
-    } else
-      memcpy_transp_pic(dest, buf, w, h, priv->w, gif->Image.Width,
-                        transparency, transparent_col);
+    for (y = 0; y < gif->Image.Height; y++) {
+      unsigned char *drow = dp->buffer;
+      unsigned char *gbuf = buf + (y * gif->Image.Width);
 
-    if (refmode == 1) fast_memcpy(priv->refimg, dp->buffer, priv->w * priv->h);
-    if (refmode == 2 && priv->useref) {
-      dest = priv->refimg + priv->w * t + l;
-      memset(buf, gif->SBackGroundColor, len);
-      memcpy_pic(dest, buf, w, h, priv->w, gif->Image.Width);
+      drow += gif->Image.Width * (y + gif->Image.Top);
+      drow += gif->Image.Left;
+
+      memcpy(drow, gbuf, gif->Image.Width);
     }
-    if (!(refmode & 2)) priv->useref = refmode & 1;
   }
 
   free(buf);
 
   demuxer->video->dpos++;
-  dp->pts = ((float)priv->current_pts) / 100;
+  dp->pts = ((float)current_pts) / 100;
   dp->pos = stream_tell(demuxer->stream);
   ds_add_packet(demuxer->video, dp);
 
@@ -220,11 +147,10 @@ static int demux_gif_fill_buffer(demuxer_t *demuxer, demux_stream_t *ds)
 
 static demuxer_t* demux_open_gif(demuxer_t* demuxer)
 {
-  gif_priv_t *priv = calloc(1, sizeof(gif_priv_t));
   sh_video_t *sh_video = NULL;
   GifFileType *gif = NULL;
 
-  priv->current_pts = 0;
+  current_pts = 0;
   demuxer->seekable = 0; // FIXME
 
   // go back to the beginning
@@ -258,6 +184,9 @@ static demuxer_t* demux_open_gif(demuxer_t* demuxer)
   // video_read_properties() will choke
   sh_video->ds = demuxer->video;
 
+  sh_video->disp_w = gif->SWidth;
+  sh_video->disp_h = gif->SHeight;
+
   sh_video->format = mmioFOURCC(8, 'R', 'G', 'B');
   
   sh_video->fps = 5.0f;
@@ -265,27 +194,27 @@ static demuxer_t* demux_open_gif(demuxer_t* demuxer)
   
   sh_video->bih = malloc(sizeof(BITMAPINFOHEADER) + (256 * 4));
   sh_video->bih->biCompression = sh_video->format;
-  sh_video->bih->biWidth = priv->w = (uint16_t)gif->SWidth;
-  sh_video->bih->biHeight = priv->h = (uint16_t)gif->SHeight;
   sh_video->bih->biBitCount = 8;
   sh_video->bih->biPlanes = 2;
-  priv->palette = (unsigned char *)(sh_video->bih + 1);
-  priv->refimg = malloc(priv->w * priv->h);
+  pallete = (unsigned char *)(sh_video->bih + 1);
   
-  priv->gif = gif;
-  demuxer->priv = priv;
+  demuxer->priv = gif;
 
   return demuxer;
 }
 
 static void demux_close_gif(demuxer_t* demuxer)
 {
-  gif_priv_t *priv = demuxer->priv;
-  if (!priv) return;
-  if (priv->gif && DGifCloseFile(priv->gif) == GIF_ERROR)
+  GifFileType *gif = (GifFileType *)demuxer->priv;
+
+  if(!gif)
+    return;
+
+  if (DGifCloseFile(gif) == GIF_ERROR)
     PrintGifError();
-  free(priv->refimg);
-  free(priv);
+  
+  demuxer->stream->fd = 0;
+  demuxer->priv = NULL;
 }
 
 

@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+void* CoTaskMemAlloc(unsigned long cb);
+void CoTaskMemFree(void* cb);
+
 #ifndef GUID_TYPE
 #define GUID_TYPE
 typedef struct
@@ -74,17 +77,8 @@ struct IClassFactory
     struct IClassFactory_vt* vt;
 };
 
-#ifdef WIN32_LOADER 
 long CoCreateInstance(GUID* rclsid, struct IUnknown* pUnkOuter,
- 		      long dwClsContext, const GUID* riid, void** ppv);
-void* CoTaskMemAlloc(unsigned long cb);
-void CoTaskMemFree(void* cb);
-#else
-long STDCALL CoCreateInstance(GUID* rclsid, struct IUnknown* pUnkOuter,
 		      long dwClsContext, const GUID* riid, void** ppv);
-void* STDCALL  CoTaskMemAlloc(unsigned long);
-void  STDCALL  CoTaskMemFree(void*);
-#endif
 
 #ifdef __cplusplus
 };

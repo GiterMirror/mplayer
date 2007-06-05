@@ -20,170 +20,33 @@
 
 #include "config.h"
 
-#include <inttypes.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
 #include <assert.h>
 
-#include "mputils.h"
-#include "ass.h"
+#include "mp_msg.h"
 #include "ass_fontconfig.h"
-#include "ass_font.h"
 #include "ass_bitmap.h"
 #include "ass_cache.h"
 
 
-typedef struct hashmap_item_s {
-	void* key;
-	void* value;
-	struct hashmap_item_s* next;
-} hashmap_item_t;
-typedef hashmap_item_t* hashmap_item_p;
+typedef struct face_cache_item_s {
+	face_desc_t desc;
+	char* path;
+	int index;
+	FT_Face face;
+} face_cache_item_t;
 
-struct hashmap_s {
-	int nbuckets;
-	size_t key_size, value_size;
-	hashmap_item_p* root;
-	hashmap_item_dtor_t item_dtor; // a destructor for hashmap key/value pairs
-	hashmap_key_compare_t key_compare;
-	hashmap_hash_t hash;
-	// stats
-	int hit_count;
-	int miss_count;
-	int count;
-};
+#define MAX_FACE_CACHE_SIZE 100
 
-#define FNV1_32A_INIT (unsigned)0x811c9dc5
+static face_cache_item_t* face_cache;
+static int face_cache_size;
 
-static inline unsigned fnv_32a_buf(void* buf, size_t len, unsigned hval)
-{
-	unsigned char *bp = buf;
-	unsigned char *be = bp + len;
-	while (bp < be) {
-		hval ^= (unsigned)*bp++;
-		hval += (hval<<1) + (hval<<4) + (hval<<7) + (hval<<8) + (hval<<24);
-	}
-	return hval;
-}
-static inline unsigned fnv_32a_str(char* str, unsigned hval)
-{
-	unsigned char* s = (unsigned char*)str;
-	while (*s) {
-		hval ^= (unsigned)*s++;
-		hval += (hval<<1) + (hval<<4) + (hval<<7) + (hval<<8) + (hval<<24);
-	}
-	return hval;
-}
+extern int no_more_font_messages;
 
-static unsigned hashmap_hash(void* buf, size_t len)
-{
-	return fnv_32a_buf(buf, len, FNV1_32A_INIT);
-}
-
-static int hashmap_key_compare(void* a, void* b, size_t size)
-{
-	return (memcmp(a, b, size) == 0);
-}
-
-static void hashmap_item_dtor(void* key, size_t key_size, void* value, size_t value_size)
-{
-	free(key);
-	free(value);
-}
-
-hashmap_t* hashmap_init(size_t key_size, size_t value_size, int nbuckets,
-			hashmap_item_dtor_t item_dtor, hashmap_key_compare_t key_compare,
-			hashmap_hash_t hash)
-{
-	hashmap_t* map = calloc(1, sizeof(hashmap_t));
-	map->nbuckets = nbuckets;
-	map->key_size = key_size;
-	map->value_size = value_size;
-	map->root = calloc(nbuckets, sizeof(hashmap_item_p));
-	map->item_dtor = item_dtor ? item_dtor : hashmap_item_dtor;
-	map->key_compare = key_compare ? key_compare : hashmap_key_compare;
-	map->hash = hash ? hash : hashmap_hash;
-	return map;
-}
-
-void hashmap_done(hashmap_t* map)
-{
-	int i;
-	// print stats
-	if (map->count > 0 || map->hit_count + map->miss_count > 0)
-		mp_msg(MSGT_ASS, MSGL_V, "cache statistics: \n  total accesses: %d\n  hits: %d\n  misses: %d\n  object count: %d\n",
-		       map->hit_count + map->miss_count, map->hit_count, map->miss_count, map->count);
-	
-	for (i = 0; i < map->nbuckets; ++i) {
-		hashmap_item_t* item = map->root[i];
-		while (item) {
-			hashmap_item_t* next = item->next;
-			map->item_dtor(item->key, map->key_size, item->value, map->value_size);
-			free(item);
-			item = next;
-		}
-	}
-	free(map->root);
-	free(map);
-}
-
-// does nothing if key already exists
-void* hashmap_insert(hashmap_t* map, void* key, void* value)
-{
-	unsigned hash = map->hash(key, map->key_size);
-	hashmap_item_t** next = map->root + (hash % map->nbuckets);
-	while (*next) {
-		if (map->key_compare(key, (*next)->key, map->key_size))
-			return (*next)->value;
-		next = &((*next)->next);
-		assert(next);
-	}
-	(*next) = malloc(sizeof(hashmap_item_t));
-	(*next)->key = malloc(map->key_size);
-	(*next)->value = malloc(map->value_size);
-	memcpy((*next)->key, key, map->key_size);
-	memcpy((*next)->value, value, map->value_size);
-	(*next)->next = 0;
-
-	map->count ++;
-	return (*next)->value;
-}
-
-void* hashmap_find(hashmap_t* map, void* key)
-{
-	unsigned hash = map->hash(key, map->key_size);
-	hashmap_item_t* item = map->root[hash % map->nbuckets];
-	while (item) {
-		if (map->key_compare(key, item->key, map->key_size)) {
-			map->hit_count++;
-			return item->value;
-		}
-		item = item->next;
-	}
-	map->miss_count++;
-	return 0;
-}
-
-//---------------------------------
-// font cache
-
-hashmap_t* font_cache;
-
-static unsigned font_desc_hash(void* buf, size_t len)
-{
-	ass_font_desc_t* desc = buf;
-	unsigned hval;
-	hval = fnv_32a_str(desc->family, FNV1_32A_INIT);
-	hval = fnv_32a_buf(&desc->bold, sizeof(desc->bold), hval);
-	hval = fnv_32a_buf(&desc->italic, sizeof(desc->italic), hval);
-	return hval;
-}
-
-static int font_compare(void* key1, void* key2, size_t key_size) {
-	ass_font_desc_t* a = key1;
-	ass_font_desc_t* b = key2;
+static int font_compare(face_desc_t* a, face_desc_t* b) {
 	if (strcmp(a->family, b->family) != 0)
 		return 0;
 	if (a->bold != b->bold)
@@ -193,105 +56,137 @@ static int font_compare(void* key1, void* key2, size_t key_size) {
 	return 1;
 }
 
-static void font_hash_dtor(void* key, size_t key_size, void* value, size_t value_size)
-{
-	ass_font_free(value);
-	free(key);
-}
-
-ass_font_t* ass_font_cache_find(ass_font_desc_t* desc)
-{
-	return hashmap_find(font_cache, desc);
-}
-
 /**
- * \brief Add a face struct to cache.
- * \param font font struct
-*/
-void* ass_font_cache_add(ass_font_t* font)
-{
-	return hashmap_insert(font_cache, &(font->desc), font);
-}
-
-void ass_font_cache_init(void)
-{
-	font_cache = hashmap_init(sizeof(ass_font_desc_t),
-				  sizeof(ass_font_t),
-				  1000,
-				  font_hash_dtor, font_compare, font_desc_hash);
-}
-
-void ass_font_cache_done(void)
-{
-	hashmap_done(font_cache);
-}
-
-//---------------------------------
-// bitmap cache
-
-hashmap_t* bitmap_cache;
-
-static void bitmap_hash_dtor(void* key, size_t key_size, void* value, size_t value_size)
-{
-	bitmap_hash_val_t* v = value;
-	if (v->bm) ass_free_bitmap(v->bm);
-	if (v->bm_o) ass_free_bitmap(v->bm_o);
-	if (v->bm_s) ass_free_bitmap(v->bm_s);
-	free(key);
-	free(value);
-}
-
-void* cache_add_bitmap(bitmap_hash_key_t* key, bitmap_hash_val_t* val)
-{
-	return hashmap_insert(bitmap_cache, key, val);
-}
-
-/**
- * \brief Get a bitmap from bitmap cache.
- * \param key hash key
- * \return requested hash val or 0 if not found
+ * \brief Get a face object, either from cache or created through FreeType+FontConfig.
+ * \param library FreeType library object
+ * \param fontconfig_priv fontconfig private data
+ * \param desc required face description
+ * \param face out: the face object
 */ 
-bitmap_hash_val_t* cache_find_bitmap(bitmap_hash_key_t* key)
+int ass_new_face(FT_Library library, void* fontconfig_priv, face_desc_t* desc, /*out*/ FT_Face* face)
 {
-	return hashmap_find(bitmap_cache, key);
+	FT_Error error;
+	int i;
+	char* path;
+	int index;
+	face_cache_item_t* item;
+	
+	for (i=0; i<face_cache_size; ++i)
+		if (font_compare(desc, &(face_cache[i].desc))) {
+			*face = face_cache[i].face;
+			return 0;
+		}
+
+	if (face_cache_size == MAX_FACE_CACHE_SIZE) {
+		mp_msg(MSGT_GLOBAL, MSGL_FATAL, "Too many fonts\n");
+		return 1;
+	}
+
+	path = fontconfig_select(fontconfig_priv, desc->family, desc->bold, desc->italic, &index);
+	
+	error = FT_New_Face(library, path, index, face);
+	if (error) {
+		if (!no_more_font_messages)
+			mp_msg(MSGT_GLOBAL, MSGL_WARN, "Error opening font: %s, %d\n", path, index);
+		no_more_font_messages = 1;
+		return 1;
+	}
+	
+	item = face_cache + face_cache_size;
+	item->path = strdup(path);
+	item->index = index;
+	item->face = *face;
+	memcpy(&(item->desc), desc, sizeof(face_desc_t));
+	face_cache_size++;
+	return 0;
 }
 
-void ass_bitmap_cache_init(void)
+void ass_face_cache_init(void)
 {
-	bitmap_cache = hashmap_init(sizeof(bitmap_hash_key_t),
-				   sizeof(bitmap_hash_val_t),
-				   0xFFFF + 13,
-				   bitmap_hash_dtor, NULL, NULL);
+	face_cache = calloc(MAX_FACE_CACHE_SIZE, sizeof(face_cache_item_t));
+	face_cache_size = 0;
 }
 
-void ass_bitmap_cache_done(void)
+void ass_face_cache_done(void)
 {
-	hashmap_done(bitmap_cache);
-}
-
-void ass_bitmap_cache_reset(void)
-{
-	ass_bitmap_cache_done();
-	ass_bitmap_cache_init();
+	int i;
+	for (i = 0; i < face_cache_size; ++i) {
+		face_cache_item_t* item = face_cache + i;
+		if (item->face) FT_Done_Face(item->face);
+		if (item->path) free(item->path);
+		// FIXME: free desc ?
+	}
+	free(face_cache);
+	face_cache_size = 0;
 }
 
 //---------------------------------
 // glyph cache
 
-hashmap_t* glyph_cache;
+#define GLYPH_HASH_SIZE (0xFFFF + 13)
 
-static void glyph_hash_dtor(void* key, size_t key_size, void* value, size_t value_size)
-{
-	glyph_hash_val_t* v = value;
-	if (v->glyph) FT_Done_Glyph(v->glyph);
-	if (v->outline_glyph) FT_Done_Glyph(v->outline_glyph);
-	free(key);
-	free(value);
+typedef struct glyph_hash_item_s {
+	glyph_hash_key_t key;
+	glyph_hash_val_t val;
+	struct glyph_hash_item_s* next;
+} glyph_hash_item_t;
+
+typedef glyph_hash_item_t* glyph_hash_item_p;
+
+static glyph_hash_item_p* glyph_hash_root;
+static int glyph_hash_size;
+
+static int glyph_compare(glyph_hash_key_t* a, glyph_hash_key_t* b) {
+	if (memcmp(a, b, sizeof(glyph_hash_key_t)) == 0)
+		return 1;
+	else
+		return 0;
 }
 
-void* cache_add_glyph(glyph_hash_key_t* key, glyph_hash_val_t* val)
+static unsigned glyph_hash(glyph_hash_key_t* key) {
+	unsigned val = 0;
+	unsigned i;
+	for (i = 0; i < sizeof(key->face); ++i)
+		val += *(unsigned char *)(&(key->face) + i);
+	val <<= 21;
+	
+	if (key->bitmap)   val &= 0x80000000;
+	if (key->be) val &= 0x40000000;
+	val += key->index;
+	val += key->size << 8;
+	val += key->outline << 3;
+	val += key->advance.x << 10;
+	val += key->advance.y << 16;
+	val += key->bold << 1;
+	val += key->italic << 20;
+	return val;
+}
+
+/**
+ * \brief Add a glyph to glyph cache.
+ * \param key hash key
+ * \param val hash val: 2 bitmap glyphs + some additional info
+*/ 
+void cache_add_glyph(glyph_hash_key_t* key, glyph_hash_val_t* val)
 {
-	return hashmap_insert(glyph_cache, key, val);
+	unsigned hash = glyph_hash(key);
+	glyph_hash_item_t** next = glyph_hash_root + (hash % GLYPH_HASH_SIZE);
+	while (*next) {
+		if (glyph_compare(key, &((*next)->key)))
+			return;
+		next = &((*next)->next);
+		assert(next);
+	}
+	(*next) = malloc(sizeof(glyph_hash_item_t));
+//	(*next)->desc = glyph_key_copy(key, &((*next)->key));
+	memcpy(&((*next)->key), key, sizeof(glyph_hash_key_t));
+	memcpy(&((*next)->val), val, sizeof(glyph_hash_val_t));
+	(*next)->next = 0;
+
+	glyph_hash_size ++;
+/*	if (glyph_hash_size  && (glyph_hash_size % 25 == 0)) {
+		printf("\nGlyph cache: %d entries, %d bytes\n", glyph_hash_size, glyph_hash_size * sizeof(glyph_hash_item_t));
+	} */
 }
 
 /**
@@ -301,20 +196,39 @@ void* cache_add_glyph(glyph_hash_key_t* key, glyph_hash_val_t* val)
 */ 
 glyph_hash_val_t* cache_find_glyph(glyph_hash_key_t* key)
 {
-	return hashmap_find(glyph_cache, key);
+	unsigned hash = glyph_hash(key);
+	glyph_hash_item_t* item = glyph_hash_root[hash % GLYPH_HASH_SIZE];
+	while (item) {
+		if (glyph_compare(key, &(item->key))) {
+			return &(item->val);
+		}
+		item = item->next;
+	}
+	return 0;
 }
 
 void ass_glyph_cache_init(void)
 {
-	glyph_cache = hashmap_init(sizeof(glyph_hash_key_t),
-				   sizeof(glyph_hash_val_t),
-				   0xFFFF + 13,
-				   glyph_hash_dtor, NULL, NULL);
+	glyph_hash_root = calloc(GLYPH_HASH_SIZE, sizeof(glyph_hash_item_p));
+	glyph_hash_size = 0;
 }
 
 void ass_glyph_cache_done(void)
 {
-	hashmap_done(glyph_cache);
+	int i;
+	for (i = 0; i < GLYPH_HASH_SIZE; ++i) {
+		glyph_hash_item_t* item = glyph_hash_root[i];
+		while (item) {
+			glyph_hash_item_t* next = item->next;
+			if (item->val.bm) ass_free_bitmap(item->val.bm);
+			if (item->val.bm_o) ass_free_bitmap(item->val.bm_o);
+			if (item->val.bm_s) ass_free_bitmap(item->val.bm_s);
+			free(item);
+			item = next;
+		}
+	}
+	free(glyph_hash_root);
+	glyph_hash_size = 0;
 }
 
 void ass_glyph_cache_reset(void)
@@ -322,3 +236,4 @@ void ass_glyph_cache_reset(void)
 	ass_glyph_cache_done();
 	ass_glyph_cache_init();
 }
+

@@ -19,7 +19,6 @@ Documentation:
 
  * write -lavdopts documentation
 
- * continue ipod/embedded device encoding guide
 
 
 Small improvements:
@@ -38,10 +37,7 @@ Small improvements:
 
  * real mute support, not just setting volume to 0
 
- * add help suboption to -lavcopts vcodec=/acodec=, -lavfopts format=,
-   -subcp, and anything else that needs it.
 
- * ability to set mplayer default/startup volume
 
 Cleanup:
 
@@ -60,23 +56,21 @@ Filters:
 
  * eq filter should support RGB in addition to YUV
 
- * pitch audio filter
- 
- * move filters into ffmpeg
 
- * autocrop filter
-
- * insert af volnorm during playback
-
- * allow frame insertion & removal in video filters (with timestamps)
-
- * xinerama video filter that splits movie to 2 screens (like zr)
-
- * mixing of multiple videos (picture in picture, ...)
 
 Enhancements:
 
- * support for VirtualDub and Winamp plugins (apply af_wadspa patch!)
+ * adapt colored output from MPlayerXP
+
+ * merge VIDIX from MPlayerXP/sourceforge
+
+ * port ASF muxing from MPlayerXP
+
+ * write nut muxer/demuxer
+
+ * SSA style & colors handling
+
+ * support for VirtualDub and Winamp plugins
 
  * implement xawtv config file parser (for channels, etc)
 
@@ -90,12 +84,15 @@ Enhancements:
 
  * implement Plextor compatible SCSI VCD reading
 
+ * -stop option for MPlayer similar to -endpos for MEncoder
+
+ * color subtitles
+
  * DirectX video acceleration -vo for Windows (similar to XvmC)
 
  * hardware MPEG encoding support (Ati cards)
 
- * make -ass-use-margins work on widescreen video only! (not 4/3 video)
-   (automagically put subtitles in black bars)
+ * automatically display subtitles in black bands
 
  * nsc playlist support
 
@@ -108,25 +105,17 @@ Enhancements:
 
  * allow multiple -dump* options at the same time - bug #70
 
- * scale osd when video window changes size
 
- * get -ass working in mencoder
-
- * left/right channel playback (-af pan=1:1 or -stereo) (in gui too)
-
- * ability to turn loop on/off while playing
-
- * rotate/position osd
-
- * reconnect option for streaming
-
- * support all image formats in mf:// (tiff)
 
 Difficult stuff:
 
- * RE all closed source codecs (QDMC, WMA9, RV30, RV40, sipr, ...)
+ * RE all closed source codecs (QDMC, WMV9, RV30, RV40, sipr, ...)
 
- * support for Bink codec
+ * support for Bink/Smacker codecs
+
+ * allow frame insertion & removal in video filters (with timestamps)
+
+ * mixing of multiple videos (picture in picture, ...)
 
  * write something like mptv to replace xawtv
 
@@ -138,6 +127,8 @@ Difficult stuff:
 
  * MEncoder output support for OGM, MKV, NUT
 
+ * xinerama video filter that splits movie to 2 screens (like zr)
+
  * top notch DVD navigation like a hardware player
 
  * write mpdump application to handle all -dump* options
@@ -148,7 +139,7 @@ Difficult stuff:
 
  * support for pausing/resuming of encoding in MEncoder
 
- * finish TV support under Windows
+ * TV support under Windows
 
  * DRM support (divx.com, WMV, WMA, iTunes)
 
@@ -160,8 +151,3 @@ Difficult stuff:
  * reverse playback
 
  * more directshow filter/muxer support
-
- * encode and display video at the same time
-
- * write mpimage for displaying pictures
-

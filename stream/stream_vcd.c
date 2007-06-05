@@ -1,10 +1,6 @@
 
 #include "config.h"
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 #include "mp_msg.h"
 #include "stream.h"
 #include "help_mp.h"
@@ -14,25 +10,19 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#ifndef WIN32
 #include <sys/ioctl.h>
-#endif
 #include <errno.h>
 
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 #include <sys/cdrio.h>
 #include "vcd_read_fbsd.h" 
 #elif defined(__NetBSD__) || defined (__OpenBSD__)
 #include "vcd_read_nbsd.h"
 #elif defined(SYS_DARWIN)
 #include "vcd_read_darwin.h" 
-#elif defined(WIN32)
-#include "vcd_read_win32.h"
 #else
 #include "vcd_read.h"
 #endif
-
-#include "libmpdemux/demuxer.h"
 
 extern char *cdrom_device;
 
@@ -79,21 +69,13 @@ static void close_s(stream_t *stream) {
 
 static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
   struct stream_priv_s* p = (struct stream_priv_s*)opts;
-  int ret,ret2,f,sect,tmp;
+  int ret,ret2,f;
   mp_vcd_priv_t* vcd;
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+#ifdef __FreeBSD__
   int bsize = VCD_SECTOR_SIZE;
 #endif
-#ifdef WIN32
-  HANDLE hd;
-  char device[] = "\\\\.\\?:";
-#endif
 
-  if(mode != STREAM_READ
-#ifdef WIN32
-      || GetVersion() > 0x80000000 // Win9x
-#endif
-      ) {
+  if(mode != STREAM_READ) {
     m_struct_free(&stream_opts,opts);
     return STREAM_UNSUPORTED;
   }
@@ -105,15 +87,7 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
       p->device = strdup(DEFAULT_CDROM_DEVICE);
   }
 
-#ifdef WIN32
-  device[4] = p->device[0];
-  /* open() can't be used for devices so do it the complicated way */
-  hd = CreateFile(device, GENERIC_READ, FILE_SHARE_READ, NULL,
-	  OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-  f = _open_osfhandle((long)hd, _O_RDONLY);
-#else
   f=open(p->device,O_RDONLY);
-#endif
   if(f<0){ 
     mp_msg(MSGT_OPEN,MSGL_ERR,MSGTR_CdDevNotfound,p->device);
     m_struct_free(&stream_opts,opts);
@@ -143,21 +117,9 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
     m_struct_free(&stream_opts,opts);
     return STREAM_ERROR;
   }
-  /* search forward up to at most 3 seconds to skip leading margin */
-  sect = ret / VCD_SECTOR_DATA;
-  for (tmp = sect; tmp < sect + 3 * 75; tmp++) {
-    char mem[VCD_SECTOR_DATA];
-    //since MPEG packs are block-aligned we stop discarding sectors if they are non-null
-    if (vcd_read(vcd, mem) != VCD_SECTOR_DATA || mem[2] || mem[3])
-      break;
-  }
-  mp_msg(MSGT_OPEN, MSGL_DBG2, "%d leading sectors skipped\n", tmp - sect);
-  vcd_set_msf(vcd, tmp);
-  ret = tmp * VCD_SECTOR_DATA;
-
   mp_msg(MSGT_OPEN,MSGL_V,"VCD start byte position: 0x%X  end: 0x%X\n",ret,ret2);
 
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+#ifdef __FreeBSD__
   if (ioctl (f, CDRIOCSETBLOCKSIZE, &bsize) == -1) {
     mp_msg(MSGT_OPEN,MSGL_WARN,"Error in CDRIOCSETBLOCKSIZE");
   }
@@ -173,7 +135,6 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
   stream->fill_buffer = fill_buffer;
   stream->seek = seek;
   stream->close = close_s;
-  *file_format = DEMUXER_TYPE_MPEG_PS;
 
   m_struct_free(&stream_opts,opts);
   return STREAM_OK;

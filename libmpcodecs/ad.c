@@ -8,9 +8,9 @@
 
 #include "config.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 #include "ad.h"
 
 /* Missed vorbis, mad, dshow */

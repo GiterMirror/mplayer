@@ -9,12 +9,11 @@
 #include "mp_msg.h"
 
 #include "codec-cfg.h"
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "muxer.h"
 
 #include "img_format.h"
 #include "mp_image.h"

@@ -16,7 +16,7 @@
 static struct vf_priv_s {
     int crop_w,crop_h;
     int crop_x,crop_y;
-} const vf_priv_dflt = {
+} vf_priv_dflt = {
   -1,-1,
   -1,-1
 };

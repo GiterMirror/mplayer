@@ -8,8 +8,8 @@
 //  The QuickTime File Format PDF from Apple:
 //  http://developer.apple.com/techpubs/quicktime/qtdevdocs/PDF/QTFileFormat.pdf
 //  (Complete list of documentation at http://developer.apple.com/quicktime/)
-//  MP4-Lib sources from http://mpeg4ip.sf.net/ might be useful for .mp4
-//  as well as .mov specific stuff.
+//  MP4-Lib sources from http://mpeg4ip.sf.net/ might be usefull fot .mp4
+//  aswell as .mov specific stuff.
 //  All sort of Stuff about MPEG4:
 //  http://www.cmlab.csie.ntu.edu.tw/~pkhsiao/thesis.html
 //  I really recommend N4270-1.doc and N4270-2.doc which are exact specs
@@ -21,9 +21,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <inttypes.h>
 
 #include "config.h"
+#include "mp_msg.h"
+#include "help_mp.h"
+
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
+
+#include "bswap.h"
+
+#include "qtpalette.h"
+#include "parse_mp4.h" // .MP4 specific stuff
 
 #ifdef MACOSX
 #include <QuickTime/QuickTime.h>
@@ -32,19 +42,6 @@
 #else
 #include "loader/qtx/qtxsdk/components.h"
 #endif
-
-#include "mp_msg.h"
-#include "help_mp.h"
-
-#include "stream/stream.h"
-#include "demuxer.h"
-#include "stheader.h"
-
-#include "libvo/sub.h"
-extern subtitle *vo_sub;
-
-#include "qtpalette.h"
-#include "parse_mp4.h" // .MP4 specific stuff
 
 #ifdef HAVE_ZLIB
 #include <zlib.h>
@@ -293,7 +290,6 @@ void mov_build_index(mov_track_t* trak,int timescale){
 }
 
 #define MOV_MAX_TRACKS 256
-#define MOV_MAX_SUBLEN 1024
 
 typedef struct {
     off_t moov_start;
@@ -304,9 +300,6 @@ typedef struct {
     mov_track_t* tracks[MOV_MAX_TRACKS];
     int timescale; // movie timescale
     int duration;  // movie duration (in movie timescale units)
-    subtitle subs;
-    char subtext[MOV_MAX_SUBLEN + 1];
-    int current_sub;
 } mov_priv_t;
 
 #define MOV_FOURCC(a,b,c,d) ((a<<24)|(b<<16)|(c<<8)|(d))
@@ -319,7 +312,6 @@ static int mov_check_file(demuxer_t* demuxer){
     mp_msg(MSGT_DEMUX,MSGL_V,"Checking for MOV\n");
     
     memset(priv,0,sizeof(mov_priv_t));
-    priv->current_sub = -1;
     
     while(1){
 	int i;
@@ -562,20 +554,6 @@ unsigned int store_ughvlc(unsigned char *s, unsigned int v){
   return n;
 }
 
-static void init_vobsub(sh_sub_t *sh, mov_track_t *trak) {
-  int i;
-  uint8_t *pal = trak->stdata;
-  sh->type = 'v';
-  if (trak->stdata_len < 106)
-    return;
-  sh->has_palette = 1;
-  pal += 42;
-  for (i = 0; i < 16; i++) {
-    sh->palette[i] = BE_32(pal);
-    pal += 4;
-  }
-}
-
 static int lschunks_intrak(demuxer_t* demuxer, int level, unsigned int id,
                            off_t pos, off_t len, mov_track_t* trak);
 
@@ -659,7 +637,6 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 		int version, adjust;
 		int is_vorbis = 0;
 		sh_audio_t* sh=new_sh_audio(demuxer,priv->track_db);
-		mp_msg(MSGT_DEMUX, MSGL_INFO, MSGTR_AudioID, "mov", priv->track_db);
 		sh->format=trak->fourcc;
 
 		// crude audio delay from editlist0 hack ::atm
@@ -741,7 +718,7 @@ static void lschunks(demuxer_t* demuxer,int level,off_t endpos,mov_track_t* trak
 		    trak->durmap[0].num, trak->timescale/trak->durmap[0].dur,
 		    char2short(trak->stdata,24)/trak->durmap[0].dur);*/
 		sh->samplerate=char2short(trak->stdata,24);
-		if((sh->samplerate < 7000) && trak->durmap && trak->durmap[0].dur > 1) {
+		if((sh->samplerate < 7000) && trak->durmap) {
 		  switch(char2short(trak->stdata,24)/trak->durmap[0].dur) {
 		    // TODO: add more cases.
 		    case 31:
@@ -978,12 +955,12 @@ quit_vorbis_block:
 		break;
 	    }
 	    case MOV_TRAK_VIDEO: {
-		int depth, i, entry;
+		int i, entry;
 		int flag, start, count_flag, end, palette_count, gray;
 		int hdr_ptr = 76;  // the byte just after depth
 		unsigned char *palette_map;
 		sh_video_t* sh=new_sh_video(demuxer,priv->track_db);
-		mp_msg(MSGT_DEMUX, MSGL_INFO, MSGTR_VideoID, "mov", priv->track_db);
+		int depth;
 		sh->format=trak->fourcc;
 
 		// crude video delay from editlist0 hack ::atm
@@ -1308,16 +1285,6 @@ quit_vorbis_block:
 		break;
 	    }
 	    case MOV_TRAK_GENERIC:
-		if (trak->fourcc == mmioFOURCC('m','p','4','s') ||
-		    trak->fourcc == mmioFOURCC('t','x','3','g') ||
-		    trak->fourcc == mmioFOURCC('t','e','x','t')) {
-			sh_sub_t *sh = new_sh_sub(demuxer, priv->track_db);
-			mp_msg(MSGT_DEMUX, MSGL_INFO, MSGTR_SubtitleID, "mov", priv->track_db);
-			if (trak->fourcc == mmioFOURCC('m','p','4','s'))
-				init_vobsub(sh, trak);
-			else
-				sh->type = 't';
-		} else
 		mp_msg(MSGT_DEMUX, MSGL_V, "Generic track - not completely understood! (id: %d)\n",
 		    trak->id);
 		/* XXX: Also this contains the FLASH data */
@@ -1938,7 +1905,7 @@ static demuxer_t* mov_read_header(demuxer_t* demuxer){
 	if(sh){
 	    demuxer->audio->sh=sh; sh->ds=demuxer->audio;
 	} else {
-	    mp_msg(MSGT_DEMUX, MSGL_ERR, "MOV: selected audio stream (%d) does not exist\n",demuxer->audio->id);
+	    mp_msg(MSGT_DEMUX, MSGL_ERR, "MOV: selected audio stream (%d) does not exists\n",demuxer->audio->id);
 	    demuxer->audio->id=-2;
 	}
     }
@@ -1947,17 +1914,8 @@ static demuxer_t* mov_read_header(demuxer_t* demuxer){
 	if(sh){
 	    demuxer->video->sh=sh; sh->ds=demuxer->video;
 	} else {
-	    mp_msg(MSGT_DEMUX, MSGL_ERR, "MOV: selected video stream (%d) does not exist\n",demuxer->video->id);
+	    mp_msg(MSGT_DEMUX, MSGL_ERR, "MOV: selected video stream (%d) does not exists\n",demuxer->video->id);
 	    demuxer->video->id=-2;
-	}
-    }
-    if(demuxer->sub->id>=0){
-	sh_sub_t* sh=demuxer->s_streams[demuxer->sub->id];
-	if(sh){
-	    demuxer->sub->sh=sh;
-	} else {
-	    mp_msg(MSGT_DEMUX, MSGL_ERR, "MOV: selected subtitle stream (%d) does not exist\n",demuxer->sub->id);
-	    demuxer->sub->id=-2;
 	}
     }
 
@@ -2156,37 +2114,6 @@ if(trak->pos==0 && trak->stream_header_len>0){
     ds_read_packet(ds,demuxer->stream,x,pts,pos,0);
     
     ++trak->pos;
-
-    trak = NULL;
-    if (demuxer->sub->id >= 0 && demuxer->sub->id < priv->track_db)
-      trak = priv->tracks[demuxer->sub->id];
-    if (trak) {
-      int samplenr = 0;
-      while (samplenr < trak->samples_size) {
-        double subpts = (double)trak->samples[samplenr].pts / (double)trak->timescale;
-        if (subpts >= pts) break;
-        samplenr++;
-      }
-      samplenr--;
-      if (samplenr < 0)
-        vo_sub = NULL;
-      else if (samplenr != priv->current_sub) {
-        sh_sub_t *sh = demuxer->sub->sh;
-        off_t pos = trak->samples[samplenr].pos;
-        int len = trak->samples[samplenr].size;
-        double subpts = (double)trak->samples[samplenr].pts / (double)trak->timescale;
-        stream_seek(demuxer->stream, pos);
-        if (sh->type != 'v') {
-          stream_skip(demuxer->stream, 2); // size
-          len -= 2;
-          if (len < 0) len = 0;
-          if (len > MOV_MAX_SUBLEN) len = MOV_MAX_SUBLEN;
-          sub_utf8 = 1;
-        }
-        ds_read_packet(demuxer->sub, demuxer->stream, len, subpts, pos, 0);
-        priv->current_sub = samplenr;
-      }
-    }
 
     return 1;
     

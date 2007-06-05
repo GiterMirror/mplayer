@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include "config.h"
 
+#ifdef HAVE_SYS_MMAN_H
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -262,3 +263,5 @@ af_info_t af_info_export = {
     AF_FLAGS_REENTRANT,
     af_open
 };
+
+#endif /*HAVE_SYS_MMAN_H*/

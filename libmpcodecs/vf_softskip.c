@@ -9,6 +9,8 @@
 #include "mp_image.h"
 #include "vf.h"
 
+#include "libvo/fastmemcpy.h"
+
 struct vf_priv_s {
 	int skipflag;
 };
@@ -22,7 +24,6 @@ static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts)
 
 	dmpi = vf_get_image(vf->next, mpi->imgfmt,
 		MP_IMGTYPE_EXPORT, 0, mpi->width, mpi->height);
-	vf_clone_mpi_attributes(dmpi, mpi);
 
 	dmpi->planes[0] = mpi->planes[0];
 	dmpi->stride[0] = mpi->stride[0];

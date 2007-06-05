@@ -355,13 +355,10 @@ static subtitle *sub_read_line_subviewer(stream_t *st,subtitle *current) {
 	current->start = a1*360000+a2*6000+a3*100+a4/10;
 	current->end   = b1*360000+b2*6000+b3*100+b4/10;
 	for (i=0; i<SUB_MAX_TEXT;) {
-	    int blank = 1;
 	    if (!stream_read_line (st, line, LINE_LEN)) break;
 	    len=0;
-	    for (p=line; *p!='\n' && *p!='\r' && *p; p++,len++)
-		if (*p != ' ' && *p != '\t')
-		    blank = 0;
-	    if (len && !blank) {
+	    for (p=line; *p!='\n' && *p!='\r' && *p; p++,len++);
+	    if (len) {
                 int j=0,skip=0;
 		char *curptr=current->text[i]=malloc (len+1);
 		if (!current->text[i]) return ERR;
@@ -747,7 +744,7 @@ static subtitle *sub_read_line_aqt(stream_t *st,subtitle *current) {
 	}
     current->lines=i+1;
 
-    if (!strlen(current->text[0]) && !strlen(current->text[1])) {
+    if ((current->text[0]=="") && (current->text[1]=="")) {
 #ifdef USE_SORTSUB
 	previous_sub_end = 0;
 #else
@@ -803,7 +800,7 @@ static subtitle *sub_read_line_subrip09(stream_t *st,subtitle *current) {
 	}
     current->lines=i+1;
 
-    if (!strlen(current->text[0]) && (i==0)) {
+    if ((current->text[0]=="") && (i==0)) {
 #ifdef USE_SORTSUB
 	previous_sub_end = 0;
 #else
@@ -2255,97 +2252,6 @@ void sub_free( sub_data * subd )
     }
     if (subd->filename) free( subd->filename );
     free( subd );
-}
-
-#define MAX_SUBLINE 512
-/**
- * \brief parse text and append it to subtitle in sub
- * \param sub subtitle struct to add text to
- * \param txt text to parse
- * \param len length of text in txt
- * \param endpts pts at which this subtitle text should be removed again
- *
- * <> and {} are interpreted as comment delimiters, "\n", "\N", '\n', '\r'
- * and '\0' are interpreted as newlines, duplicate, leading and trailing
- * newlines are ignored.
- */
-void sub_add_text(subtitle *sub, const char *txt, int len, double endpts) {
-  int comment = 0;
-  int double_newline = 1; // ignore newlines at the beginning
-  int i, pos;
-  char *buf;
-  if (sub->lines >= SUB_MAX_TEXT) return;
-  pos = 0;
-  buf = malloc(MAX_SUBLINE + 1);
-  sub->text[sub->lines] = buf;
-  sub->endpts[sub->lines] = endpts;
-  for (i = 0; i < len && pos < MAX_SUBLINE; i++) {
-    char c = txt[i];
-    if (c == '<') comment |= 1;
-    if (c == '{') comment |= 2;
-    if (comment) {
-      if (c == '}') comment &= ~2;
-      if (c == '>') comment &= ~1;
-      continue;
-    }
-    if (pos == MAX_SUBLINE - 1) {
-      i--;
-      c = 0;
-    }
-    if (c == '\\' && i + 1 < len) {
-      c = txt[++i];
-      if (c == 'n' || c == 'N') c = 0;
-    }
-    if (c == '\n' || c == '\r') c = 0;
-    if (c) {
-      double_newline = 0;
-      buf[pos++] = c;
-    } else if (!double_newline) {
-      if (sub->lines >= SUB_MAX_TEXT - 1) {
-        mp_msg(MSGT_VO, MSGL_WARN, "Too many subtitle lines\n");
-        break;
-      }
-      double_newline = 1;
-      buf[pos] = 0;
-      sub->lines++;
-      pos = 0;
-      buf = malloc(MAX_SUBLINE + 1);      
-      sub->text[sub->lines] = buf;
-      sub->endpts[sub->lines] = endpts;
-    }
-  }
-  buf[pos] = 0;
-  if (sub->lines < SUB_MAX_TEXT &&
-      strlen(sub->text[sub->lines]))
-    sub->lines++;
-}
-
-#define MP_NOPTS_VALUE (-1LL<<63)
-/**
- * \brief remove outdated subtitle lines.
- * \param sub subtitle struct to modify
- * \param pts current pts. All lines with endpts <= this will be removed.
- *            Use MP_NOPTS_VALUE to remove all lines
- * \return 1 if sub was modified, 0 otherwise.
- */
-int sub_clear_text(subtitle *sub, double pts) {
-  int i = 0;
-  int changed = 0;
-  while (i < sub->lines) {
-    double endpts = sub->endpts[i];
-    if (pts == MP_NOPTS_VALUE || (endpts != MP_NOPTS_VALUE && pts >= endpts)) {
-      int j;
-      free(sub->text[i]);
-      for (j = i + 1; j < sub->lines; j++) {
-        sub->text[j - 1] = sub->text[j];
-        sub->endpts[j - 1] = sub->endpts[j];
-      }
-      sub->lines--;
-      changed = 1;
-    } else
-      i++;
-  }
-  return changed;
 }
 
 #ifdef DUMPSUBS

@@ -19,7 +19,7 @@
  * 2003-01-02:
  *  Added patch from Jens Axboe that makes vo_dxr3 return to previous TV norm
  *   after quiting.
- *  Added patch from Thomas Jarosch that fixed a lot of textual ouput
+ *  Added patch from Thomas Jarosch that fixed alot of textual ouput
  *   errors.
  *
  * 2002-12-24: (Hohoho)
@@ -143,7 +143,7 @@
 #include "spuenc.h"
 #include "sub.h"
 #ifdef HAVE_NEW_GUI
-#include "gui/interface.h"
+#include "Gui/interface.h"
 #endif
 #ifdef HAVE_X11
 #include "x11_common.h"
@@ -727,7 +727,7 @@ static void draw_osd(void)
 		    if ( !cleared )
 		     {
 		      spued->count=spubuf->count;
-		      fast_memcpy( spued->data,spubuf->data,DATASIZE );
+		      memcpy( spued->data,spubuf->data,DATASIZE );
 		      cleared=1;
 		     }
 		   }

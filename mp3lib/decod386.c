@@ -85,6 +85,27 @@
 
 static int synth_1to1(real *bandPtr,int channel,unsigned char *out,int *pnt);
 
+static int synth_1to1_mono(real *bandPtr,unsigned char *samples,int *pnt)
+{
+  short samples_tmp[64];
+  short *tmp1 = samples_tmp;
+  int i,ret;
+  int pnt1 = 0;
+
+  ret = synth_1to1(bandPtr,0,(unsigned char *) samples_tmp,&pnt1);
+  samples += *pnt;
+
+  for(i=0;i<32;i++) {
+    *( (short *) samples) = *tmp1;
+    samples += 2;
+    tmp1 += 2;
+  }
+  *pnt += 64;
+
+  return ret;
+}
+
+
 static int synth_1to1_mono2stereo(real *bandPtr,unsigned char *samples,int *pnt)
 {
   int i,ret;
@@ -103,7 +124,13 @@ static int synth_1to1_mono2stereo(real *bandPtr,unsigned char *samples,int *pnt)
 static synth_func_t synth_func;
 
 #if defined(CAN_COMPILE_X86_ASM) && defined(HAVE_MMX)
-extern int synth_1to1_MMX( real *bandPtr,int channel,short * samples);
+int synth_1to1_MMX( real *bandPtr,int channel,short * samples)
+{
+    static short buffs[2][2][0x110];
+    static int bo = 1;
+    synth_1to1_MMX_s(bandPtr, channel, samples, (short *) buffs, &bo); 
+    return 0;
+} 
 #endif
 
 #ifdef HAVE_ALTIVEC

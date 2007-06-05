@@ -13,18 +13,13 @@
 
 #include "config.h"
 #include "mp_msg.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #include "../libvo/fastmemcpy.h"
 
 #include "libmpdemux/nuppelvideo.h" 
 #include "RTjpegN.h"
-#ifdef USE_LIBAVUTIL_SO
-#include <ffmpeg/lzo.h>
-#else
-#include "libavutil/lzo.h"
-#endif
+#include "minilzo.h"
 
 #define KEEP_BUFFER
 
@@ -38,6 +33,7 @@ void decode_nuv( unsigned char *encoded, int encoded_size,
 #ifdef KEEP_BUFFER
 	static unsigned char *previous_buffer = 0; /* to support Last-frame-copy */
 #endif
+	static int is_lzo_inited = 0;
 
 //	printf("frametype: %c, comtype: %c, encoded_size: %d, width: %d, height: %d\n",
 //	    encodedh->frametype, encodedh->comptype, encoded_size, width, height);
@@ -58,30 +54,41 @@ void decode_nuv( unsigned char *encoded, int encoded_size,
 	    }
 	    case 'V':
 	    {
-		int in_len = encodedh->packetlength;
 #ifdef KEEP_BUFFER		
 		if (!previous_buffer) 
-			previous_buffer = ( unsigned char * ) malloc ( out_len + LZO_OUTPUT_PADDING );
+			previous_buffer = ( unsigned char * ) malloc ( out_len );
 #endif
+
+		if (((encodedh->comptype == '2') ||
+		    (encodedh->comptype == '3')) && !is_lzo_inited)
+		{
+		    /* frame using lzo, init lzo first if not inited */
+		    if ( lzo_init() != LZO_E_OK ) 
+		    {
+			mp_msg(MSGT_DECVIDEO, MSGL_ERR, "LZO init failed\n");
+			return;
+		    }
+		    is_lzo_inited = 1;
+		}
 
 		switch(encodedh->comptype)
 		{
 		    case '0': /* raw YUV420 */
-			fast_memcpy(decoded, encoded + 12, out_len);
+			memcpy(decoded, encoded + 12, out_len);
 			break;
 		    case '1': /* RTJpeg */
 			RTjpeg_decompressYUV420 ( ( __s8 * ) encoded + 12, decoded );
 			break;
 		    case '2': /* RTJpeg with LZO */
 			if (!buffer) 
-			    buffer = ( unsigned char * ) malloc ( out_len + LZO_OUTPUT_PADDING );
+			    buffer = ( unsigned char * ) malloc ( out_len );
 			if (!buffer)
 			{
 			    mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Nuppelvideo: error decompressing\n");
 			    break;
 			}
-			r = lzo1x_decode ( buffer, &out_len, encoded + 12, &in_len );
-			if ( r ) 
+			r = lzo1x_decompress_safe ( encoded + 12, encodedh->packetlength, buffer, &out_len, NULL );
+			if ( r != LZO_E_OK ) 
 			{
 			    mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Nuppelvideo: error decompressing\n");
 			    break;
@@ -89,8 +96,8 @@ void decode_nuv( unsigned char *encoded, int encoded_size,
 			RTjpeg_decompressYUV420 ( ( __s8 * ) buffer, decoded );
 			break;
 		    case '3': /* raw YUV420 with LZO */
-			r = lzo1x_decode ( decoded, &out_len, encoded + 12, &in_len );
-			if ( r ) 
+			r = lzo1x_decompress_safe ( encoded + 12, encodedh->packetlength, decoded, &out_len, NULL );
+			if ( r != LZO_E_OK ) 
 			{
 			    mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Nuppelvideo: error decompressing\n");
 			    break;
@@ -102,13 +109,13 @@ void decode_nuv( unsigned char *encoded, int encoded_size,
 			break;
 		    case 'L': /* copy last frame */
 #ifdef KEEP_BUFFER
-			fast_memcpy ( decoded, previous_buffer, width*height*3/2);
+			memcpy ( decoded, previous_buffer, width*height*3/2);
 #endif
 			break;
 		}
 
 #ifdef KEEP_BUFFER
-		fast_memcpy(previous_buffer, decoded, width*height*3/2);
+		memcpy(previous_buffer, decoded, width*height*3/2);
 #endif
 		break;
 	    }

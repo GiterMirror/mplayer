@@ -30,7 +30,6 @@
 #include "aspect.h"
 #include "mp_msg.h"
 #include "m_option.h"
-#include "mp_fifo.h"
 
 #include "input/input.h"
 #include "input/mouse.h"
@@ -99,6 +98,7 @@ static CGRect bounds;
 static GDHandle deviceHdl;
 
 static CGDataProviderRef dataProviderRef;
+static CGImageAlphaInfo alphaInfo;
 static CGImageRef image;
 
 static Rect imgRect; // size of the original image (unscaled)
@@ -128,6 +128,7 @@ enum
 
 #include "osdep/keycodes.h"
 
+extern void mplayer_put_key(int code);
 extern void vo_draw_text(int dxs,int dys,void (*draw_alpha)(int x0,int y0, int w,int h, unsigned char* src, unsigned char *srca, int stride));
 
 //PROTOTYPE/////////////////////////////////////////////////////////////////
@@ -896,9 +897,6 @@ static void draw_osd(void)
 
 static void flip_page(void)
 {
-	int curTime;
-	static int lastTime;
-
 	if(theWindow == NULL)
 		return;
 		
@@ -982,8 +980,8 @@ static void flip_page(void)
 
 	//update activity every 30 seconds to prevent
 	//screensaver from starting up.
-	curTime  = TickCount()/60;
-	lastTime = 0;
+	int curTime = TickCount()/60;
+	static int lastTime = 0;
 		
 	if( ((curTime/ - lastTime) >= 5) || (lastTime == 0) )
 	{
@@ -1021,7 +1019,7 @@ static int draw_frame(uint8_t *src[])
 	switch (image_format)
 	{
 		case IMGFMT_RGB32:
-			fast_memcpy(image_data,src[0],image_size);
+			memcpy(image_data,src[0],image_size);
 			return 0;
 			
 		case IMGFMT_UYVY:

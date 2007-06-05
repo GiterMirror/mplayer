@@ -9,8 +9,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <inttypes.h>
 #include <limits.h>
+
+#include "af.h"
+#include "bswap.h"
+#include "libvo/fastmemcpy.h"
 
 // Integer to float conversion through lrintf()
 #ifdef HAVE_LRINTF
@@ -19,11 +24,6 @@ long int lrintf(float);
 #else
 #define lrintf(x) ((int)(x))
 #endif
-
-#include "af.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
-#include "libvo/fastmemcpy.h"
 
 /* Functions used by play to convert the input audio to the correct
    format */
@@ -162,9 +162,8 @@ static int control(struct af_instance_s* af, int cmd, void* arg)
 // Deallocate memory 
 static void uninit(struct af_instance_s* af)
 {
-  if (af->data)
-      free(af->data->audio);
-  free(af->data);
+  if(af->data)
+    free(af->data);
   af->setup = 0;  
 }
 
@@ -287,7 +286,7 @@ static af_data_t* play(struct af_instance_s* af, af_data_t* data)
       if(c->bps != l->bps)
 	change_bps(c->audio,l->audio,len,c->bps,l->bps);
       else
-	fast_memcpy(l->audio,c->audio,len*c->bps);
+	memcpy(l->audio,c->audio,len*c->bps);
       break;
     }
   }
@@ -305,7 +304,7 @@ static af_data_t* play(struct af_instance_s* af, af_data_t* data)
 }
 
 // Allocate memory and set function pointers
-static int af_open(af_instance_t* af){
+static int open(af_instance_t* af){
   af->control=control;
   af->uninit=uninit;
   af->play=play;
@@ -324,7 +323,7 @@ af_info_t af_info_format = {
   "Anders",
   "",
   AF_FLAGS_REENTRANT,
-  af_open
+  open
 };
 
 static inline uint32_t load24bit(void* data, int pos) {

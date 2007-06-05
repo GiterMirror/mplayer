@@ -14,15 +14,15 @@
 #include "osdep/timer.h"
 #include "osdep/shmem.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/parse_es.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "parse_es.h"
 
 #include "codec-cfg.h"
 
 #include "libvo/video_out.h"
 
-#include "libmpdemux/stheader.h"
+#include "stheader.h"
 #include "vd.h"
 #include "vf.h"
 
@@ -38,8 +38,6 @@ extern double video_time_usage;
 extern double vout_time_usage;
 
 #include "cpudetect.h"
-
-int field_dominance=-1;
 
 int divx_quality=0;
 
@@ -187,7 +185,6 @@ int init_video(sh_video_t *sh_video,char* codecname,char* vfm,int status){
 
     while(1){
 	int i;
-	int orig_w, orig_h;
 	// restore original fourcc:
 	if(sh_video->bih) sh_video->bih->biCompression=orig_fourcc;
 	if(!(sh_video->codec=find_video_codec(sh_video->format,
@@ -241,33 +238,22 @@ int init_video(sh_video_t *sh_video,char* codecname,char* vfm,int status){
 		sh_video->codec->name, sh_video->codec->drv);
 	    continue;
 	}
-	orig_w = sh_video->bih ? sh_video->bih->biWidth : sh_video->disp_w;
-	orig_h = sh_video->bih ? sh_video->bih->biHeight : sh_video->disp_h;
-	sh_video->disp_w = orig_w;
-	sh_video->disp_h = orig_h;
 	// it's available, let's try to init!
 	if(sh_video->codec->flags & CODECS_FLAG_ALIGN16){
 	    // align width/height to n*16
+	    // FIXME: save orig w/h, and restore if codec init failed!
+	    if(sh_video->bih){
+		sh_video->disp_w=sh_video->bih->biWidth=(sh_video->bih->biWidth+15)&(~15);
+		sh_video->disp_h=sh_video->bih->biHeight=(sh_video->bih->biHeight+15)&(~15);
+	    } else {
 		sh_video->disp_w=(sh_video->disp_w+15)&(~15);
 		sh_video->disp_h=(sh_video->disp_h+15)&(~15);
-	}
-	if (sh_video->bih) {
-		sh_video->bih->biWidth = sh_video->disp_w;
-		sh_video->bih->biHeight = sh_video->disp_h;
+	    }
 	}
 	// init()
 	mp_msg(MSGT_DECVIDEO,MSGL_INFO,MSGTR_OpeningVideoDecoder,mpvdec->info->short_name,mpvdec->info->name);
-	// clear vf init error, it is no longer relevant
-	if (sh_video->vf_inited < 0)
-		sh_video->vf_inited = 0;
 	if(!mpvdec->init(sh_video)){
 	    mp_msg(MSGT_DECVIDEO,MSGL_INFO,MSGTR_VDecoderInitFailed);
-	    sh_video->disp_w=orig_w;
-	    sh_video->disp_h=orig_h;
-	    if (sh_video->bih) {
-		sh_video->bih->biWidth = sh_video->disp_w;
-		sh_video->bih->biHeight = sh_video->disp_h;
-	    }
 	    continue; // try next...
 	}
 	// Yeah! We got it!
@@ -329,101 +315,84 @@ return 1; // success
 
 extern int vo_directrendering;
 
-void *decode_video(sh_video_t *sh_video, unsigned char *start, int in_size,
-		   int drop_frame, double pts)
-{
-    mp_image_t *mpi = NULL;
-    unsigned int t = GetTimer();
-    unsigned int t2;
-    double tt;
+int decode_video(sh_video_t *sh_video,unsigned char *start,int in_size,int drop_frame, double pts){
+vf_instance_t* vf;
+mp_image_t *mpi=NULL;
+unsigned int t=GetTimer();
+unsigned int t2;
+double tt;
+int ret;
 
-    if (correct_pts && pts != MP_NOPTS_VALUE) {
-	int delay = get_current_video_decoder_lag(sh_video);
-	if (delay >= 0) {
-	    if (delay > sh_video->num_buffered_pts)
+ if (correct_pts) {
+     int delay = get_current_video_decoder_lag(sh_video);
+     if (delay >= 0) {
+	 if (delay > sh_video->num_buffered_pts)
 #if 0
-		// this is disabled because vd_ffmpeg reports the same lag
-		// after seek even when there are no buffered frames,
-		// leading to incorrect error messages
-		mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Not enough buffered pts\n");
+	     // this is disabled because vd_ffmpeg reports the same lag
+	     // after seek even when there are no buffered frames,
+	     // leading to incorrect error messages
+	     mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Not enough buffered pts\n");
 #else
-	    ;
+	 ;
 #endif
-	    else
-		sh_video->num_buffered_pts = delay;
-	}
-	if (sh_video->num_buffered_pts ==
-			sizeof(sh_video->buffered_pts)/sizeof(double))
-	    mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Too many buffered pts\n");
-	else {
-	    int i, j;
-	    for (i = 0; i < sh_video->num_buffered_pts; i++)
-		if (sh_video->buffered_pts[i] < pts)
-		    break;
-	    for (j = sh_video->num_buffered_pts; j > i; j--)
-		sh_video->buffered_pts[j] = sh_video->buffered_pts[j-1];
-	    sh_video->buffered_pts[i] = pts;
-	    sh_video->num_buffered_pts++;
-	}
-    }
+	 else
+	     sh_video->num_buffered_pts = delay;
+     }
+     if (sh_video->num_buffered_pts ==
+	                     sizeof(sh_video->buffered_pts)/sizeof(double))
+	 mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Too many buffered pts\n");
+     else {
+	 int i, j;
+	 for (i = 0; i < sh_video->num_buffered_pts; i++)
+	     if (sh_video->buffered_pts[i] < pts)
+		 break;
+	 for (j = sh_video->num_buffered_pts; j > i; j--)
+	     sh_video->buffered_pts[j] = sh_video->buffered_pts[j-1];
+	 sh_video->buffered_pts[i] = pts;
+	 sh_video->num_buffered_pts++;
+     }
+ }
 
-    mpi = mpvdec->decode(sh_video, start, in_size, drop_frame);
+//if(!(sh_video->ds->flags&1) || sh_video->ds->pack_no<5)
+mpi=mpvdec->decode(sh_video, start, in_size, drop_frame);
 
-    //------------------------ frame decoded. --------------------
+//------------------------ frame decoded. --------------------
 
 #ifdef HAVE_MMX
-    // some codecs are broken, and doesn't restore MMX state :(
-    // it happens usually with broken/damaged files.
-    if (gCpuCaps.has3DNow) {
+	// some codecs are broken, and doesn't restore MMX state :(
+	// it happens usually with broken/damaged files.
+if(gCpuCaps.has3DNow){
 	__asm __volatile ("femms\n\t":::"memory");
-    }
-    else if (gCpuCaps.hasMMX) {
+}
+else if(gCpuCaps.hasMMX){
 	__asm __volatile ("emms\n\t":::"memory");
-    }
+}
 #endif
 
-    t2 = GetTimer(); t = t2-t;
-    tt = t*0.000001f;
-    video_time_usage += tt;
+t2=GetTimer();t=t2-t;
+tt = t*0.000001f;
+video_time_usage+=tt;
 
-    if (!mpi || drop_frame)
-	return NULL;    // error / skipped frame
+if(!mpi || drop_frame) return 0; // error / skipped frame
 
-    if (field_dominance == 0)
-	mpi->fields |= MP_IMGFIELD_TOP_FIRST;
-    else if (field_dominance == 1)
-	mpi->fields &= ~MP_IMGFIELD_TOP_FIRST;
+ if (correct_pts) {
+     sh_video->num_buffered_pts--;
+     pts = sh_video->buffered_pts[sh_video->num_buffered_pts];
+ }
 
-    if (correct_pts) {
-	if (sh_video->num_buffered_pts) {
-	    sh_video->num_buffered_pts--;
-	    sh_video->pts = sh_video->buffered_pts[sh_video->num_buffered_pts];
-	}
-	else {
-	    mp_msg(MSGT_CPLAYER, MSGL_ERR, "No pts value from demuxer to "
-		   "use for frame!\n");
-	    sh_video->pts = MP_NOPTS_VALUE;
-	}
-    }
-    return mpi;
+//vo_draw_image(video_out,mpi);
+vf=sh_video->vfilter;
+ret = vf->put_image(vf,mpi, pts); // apply video filters and call the leaf vo/ve
+if(ret>0) {
+    vf->control(vf,VFCTRL_DRAW_OSD,NULL);
+#ifdef USE_ASS
+    vf->control(vf,VFCTRL_DRAW_EOSD,NULL);
+#endif
 }
 
-int filter_video(sh_video_t *sh_video, void *frame, double pts)
-{
-    mp_image_t *mpi = frame;
-    unsigned int t2 = GetTimer();
-    vf_instance_t *vf = sh_video->vfilter;
-    // apply video filters and call the leaf vo/ve
-    int ret = vf->put_image(vf, mpi, pts);
-    if (ret > 0) {
-	vf->control(vf, VFCTRL_DRAW_OSD, NULL);
-#ifdef USE_ASS
-	vf->control(vf, VFCTRL_DRAW_EOSD, NULL);
-#endif
-    }
+    t2=GetTimer()-t2;
+    tt=t2*0.000001f;
+    vout_time_usage+=tt;
 
-    t2 = GetTimer()-t2;
-    vout_time_usage += t2*0.000001;
-
-    return ret;
+return ret;
 }

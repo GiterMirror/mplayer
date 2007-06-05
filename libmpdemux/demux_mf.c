@@ -10,7 +10,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 
-#include "stream/stream.h"
+#include "stream.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "mf.h"
@@ -67,7 +67,6 @@ static demuxer_t* demux_open_mf(demuxer_t* demuxer){
   mf_t         *mf = NULL;
   
   if(!demuxer->stream->url) return NULL;
-  if(strncmp(demuxer->stream->url, "mf://", 5)) return NULL;
 
 
   mf=open_mf(demuxer->stream->url + 5);
@@ -105,8 +104,6 @@ static demuxer_t* demux_open_mf(demuxer_t* demuxer){
      if ( !strcasecmp( mf_type,"png" )) sh_video->format = mmioFOURCC('M', 'P', 'N', 'G' );
   else
      if ( !strcasecmp( mf_type,"tga" )) sh_video->format = mmioFOURCC('M', 'T', 'G', 'A' );
-  else
-     if ( !strcasecmp( mf_type,"bmp" )) sh_video->format = mmioFOURCC('b', 'm', 'p', ' ' );
    else
      if (!strcasecmp( mf_type,"sgi" )) sh_video->format = mmioFOURCC('S', 'G', 'I', '1');
   else { mp_msg(MSGT_DEMUX, MSGL_INFO, "[demux_mf] unknown input file type.\n" ); free( mf ); return NULL; }

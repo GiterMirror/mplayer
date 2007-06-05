@@ -1,22 +1,54 @@
+
+LIBNAME = libvorbisidec.a
+
 include ../config.mak
 
-LIBNAME_COMMON = libvorbisidec.a
+SRCS	= bitwise.c \
+          block.c \
+          codebook.c \
+          floor0.c \
+          floor1.c \
+          framing.c \
+          info.c \
+          mapping0.c \
+          mdct.c \
+          registry.c \
+          res012.c \
+          sharedbook.c \
+          synthesis.c \
+          window.c \
 
-SRCS_COMMON = bitwise.c \
-              block.c \
-              codebook.c \
-              floor0.c \
-              floor1.c \
-              framing.c \
-              info.c \
-              mapping0.c \
-              mdct.c \
-              registry.c \
-              res012.c \
-              sharedbook.c \
-              synthesis.c \
-              window.c \
+OBJS	= $(SRCS:.c=.o)
+INCLUDE = -I. -I..
+CFLAGS  = $(OPTFLAGS) $(INCLUDE) $(TREMOR_FLAGS)
 
-CFLAGS-$(TREMOR_LOW)  += -D_LOW_ACCURACY_
+.SUFFIXES: .c .o
 
-include ../mpcommon.mak
+# .PHONY: all clean
+
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(LIBNAME):	$(OBJS)
+	$(AR) r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
+
+all:	$(LIBNAME)
+
+clean:
+	rm -f *.o *.a *~
+
+distclean: clean
+	rm -f .depend
+
+dep:    depend
+
+depend:
+	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
+
+#
+# include dependency files if they exist
+#
+ifneq ($(wildcard .depend),)
+include .depend
+endif

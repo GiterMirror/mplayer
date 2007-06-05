@@ -125,7 +125,6 @@
 #include "input/input.h"
 #include "input/mouse.h"
 #include "subopt-helper.h"
-#include "mp_fifo.h"
 
 static vo_info_t info = 
 {
@@ -892,7 +891,6 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 		||(strcmp(priv->driver, "directx") == 0)
 		||(strcmp(priv->driver, "Quartz") == 0)
 		||(strcmp(priv->driver, "cgx") == 0)
-		||(strcmp(priv->driver, "os4video") == 0)
 		||((strcmp(priv->driver, "aalib") == 0) && priv->X)){
 			if( mp_msg_test(MSGT_VO,MSGL_V) ) {
  				mp_msg(MSGT_VO,MSGL_V, "SDL: setting windowed mode\n"); }
@@ -1052,11 +1050,11 @@ static int draw_frame(uint8_t *src[])
 	    	mysrc+=priv->framePlaneYUY;
 		for(i = 0; i < priv->height; i++) {
 			mysrc-=priv->stridePlaneYUY;
-			fast_memcpy (dst, mysrc, priv->stridePlaneYUY);
+			memcpy (dst, mysrc, priv->stridePlaneYUY);
                 dst+=priv->overlay->pitches[0];
 		}
 	    }
-	    else fast_memcpy (dst, src[0], priv->framePlaneYUY);
+	    else memcpy (dst, src[0], priv->framePlaneYUY);
 	    SDL_OVR_UNLOCK
             break;
 	
@@ -1075,11 +1073,11 @@ static int draw_frame(uint8_t *src[])
 				mysrc+=priv->framePlaneRGB;
 				for(i = 0; i < priv->height; i++) {
 					mysrc-=priv->stridePlaneRGB;
-					fast_memcpy (dst, mysrc, priv->stridePlaneRGB);
+					memcpy (dst, mysrc, priv->stridePlaneRGB);
 					dst += priv->surface->pitch;
 				}
 			}
-			else fast_memcpy (dst, src[0], priv->framePlaneRGB);
+			else memcpy (dst, src[0], priv->framePlaneRGB);
 			SDL_SRF_UNLOCK(priv->surface)
 		} else {
 			SDL_SRF_LOCK(priv->rgbsurface, -1)
@@ -1088,11 +1086,11 @@ static int draw_frame(uint8_t *src[])
 				mysrc+=priv->framePlaneRGB;
 				for(i = 0; i < priv->height; i++) {
 					mysrc-=priv->stridePlaneRGB;
-					fast_memcpy (dst, mysrc, priv->stridePlaneRGB);
+					memcpy (dst, mysrc, priv->stridePlaneRGB);
 					dst += priv->rgbsurface->pitch;
 				}
 			}
-			else fast_memcpy (dst, src[0], priv->framePlaneRGB);
+			else memcpy (dst, src[0], priv->framePlaneRGB);
 			SDL_SRF_UNLOCK(priv->rgbsurface)
 		}
 		break;
@@ -1161,6 +1159,7 @@ static int draw_slice(uint8_t *image[], int stride[], int w,int h,int x,int y)
  **/
 
 #include "osdep/keycodes.h"
+extern void mplayer_put_key(int code);
 
 #define shift_key (event.key.keysym.mod==(KMOD_LSHIFT||KMOD_RSHIFT)) 
 static void check_events (void)
@@ -1190,6 +1189,9 @@ static void check_events (void)
 			case SDL_MOUSEBUTTONDOWN:
 				if(vo_nomouse_input)
 				    break;
+				if(event.button.button == 4 || event.button.button == 5)
+					mplayer_put_key(MOUSE_BTN0+event.button.button-1);
+				else
 					mplayer_put_key((MOUSE_BTN0+event.button.button-1) | MP_KEY_DOWN);
 				break;			    
 		

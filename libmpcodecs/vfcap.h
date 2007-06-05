@@ -28,5 +28,4 @@
 #define VFCAP_CONSTANT 0x1000
 // filter can draw EOSD
 #define VFCAP_EOSD 0x2000
-// filter will draw EOSD at screen resolution (without scaling)
-#define VFCAP_EOSD_UNSCALED 0x4000
+

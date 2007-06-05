@@ -37,7 +37,6 @@
 #include "subopt-helper.h"
 #include "help_mp.h"
 #include "mp_msg.h"
-#include "mp_fifo.h"
 
 
 #define MESSAGE_DURATION 3
@@ -79,10 +78,14 @@ char posbar[MESSAGE_SIZE];
 static int osdx, osdy;
 static int osd_text_length = 0;
 int aaconfigmode=1;
+#ifdef USE_OSD
 font_desc_t* vo_font_save = NULL;
+#endif
 static struct SwsContext *sws=NULL;
 
 /* our version of the playmodes :) */
+
+extern void mplayer_put_key(int code);
 
 /* to disable stdout outputs when curses/linux mode */
 extern int quiet;
@@ -245,6 +248,7 @@ config(uint32_t width, uint32_t height, uint32_t d_width,
     /* nothing will change its size, be we need some values initialized */
     resize();
 
+#ifdef USE_OSD
     /* now init out own 'font' (to use vo_draw_text_sub without edit them) */
     if(!vo_font_save) vo_font_save = vo_font;
     if(vo_font == vo_font_save) {
@@ -276,7 +280,7 @@ config(uint32_t width, uint32_t height, uint32_t d_width,
 	vo_font->pic_b[0]->bmp[i]=i;
       }
     }
-
+#endif
     /* say hello */
     osdmessage(5, 1, "Welcome to ASCII ART MPlayer");  
 
@@ -330,7 +334,11 @@ query_format(uint32_t format) {
 	case IMGFMT_RGB24:
 	case IMGFMT_Y8:
 	case IMGFMT_Y800:
-	    return VFCAP_CSP_SUPPORTED | VFCAP_SWSCALE | VFCAP_OSD;
+	    return VFCAP_CSP_SUPPORTED|VFCAP_SWSCALE
+#ifdef USE_OSD
+	    | VFCAP_OSD
+#endif
+	    ;
     }
     return 0;
 }
@@ -411,7 +419,9 @@ flip_page(void) {
 	}
       }
     /* OSD time & playmode , subtitles */
+#ifdef USE_OSD
     printosdtext();
+#endif
 
 
     /* print out */
@@ -506,6 +516,7 @@ uninit(void) {
     if (strstr(c->driver->name,"Curses") || strstr(c->driver->name,"Linux")){
 	freopen("/dev/tty", "w", stderr);
     }
+#ifdef USE_OSD
     if(vo_font_save) {
       free(vo_font->pic_a[0]->bmp);
       free(vo_font->pic_a[0]);
@@ -515,9 +526,11 @@ uninit(void) {
       vo_font = vo_font_save;
       vo_font_save = NULL;
     }
+#endif
     aa_close(c);
 }
 
+#ifdef USE_OSD
 static void draw_alpha(int x,int y, int w,int h, unsigned char* src, unsigned char *srca, int stride){
     int i,j;
     for (i = 0; i < h; i++) {
@@ -540,8 +553,11 @@ static void clear_alpha(int x0,int y0, int w,int h) {
 }
 
 
+#endif
+
 static void
 draw_osd(void){
+#ifdef USE_OSD
     char * vo_osd_text_save;
     int vo_osd_progbar_type_save;
 
@@ -555,6 +571,7 @@ draw_osd(void){
     vo_draw_text(aa_scrwidth(c), aa_scrheight(c), draw_alpha);
     vo_osd_text=vo_osd_text_save;
     vo_osd_progbar_type=vo_osd_progbar_type_save;
+#endif
 }
 
 static int

@@ -8,13 +8,14 @@
 #include "config.h"
 #include "version.h"
 
-//#include "stream/stream.h"
+//#include "stream.h"
 //#include "demuxer.h"
 //#include "stheader.h"
 #include "aviheader.h"
 #include "ms_hdr.h"
 
-#include "stream/stream.h"
+#include "bswap.h"
+
 #include "muxer.h"
 
 static muxer_stream_t* rawvideofile_new_stream(muxer_t *muxer,int type){
@@ -40,11 +41,11 @@ static muxer_stream_t* rawvideofile_new_stream(muxer_t *muxer,int type){
     return s;
 }
 
-static void write_rawvideo_chunk(stream_t *stream,int len,void* data){
+static void write_rawvideo_chunk(FILE *f,int len,void* data){
     if(len>0){
 	if(data){
 	    // DATA
-            stream_write_buffer(stream,data,len);
+	    fwrite(data,len,1,f);
 	}
     }
 }
@@ -54,7 +55,7 @@ static void rawvideofile_write_chunk(muxer_stream_t *s,size_t len,unsigned int f
 
     // write out the chunk:
     if (s->type == MUXER_TYPE_VIDEO)
-    write_rawvideo_chunk(muxer->stream,len,s->buffer); /* unsigned char */
+    write_rawvideo_chunk(muxer->file,len,s->buffer); /* unsigned char */
 
     // if((unsigned int)len>s->h.dwSuggestedBufferSize) s->h.dwSuggestedBufferSize=len;
 

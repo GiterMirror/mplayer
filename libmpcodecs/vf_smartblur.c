@@ -29,14 +29,11 @@
 #include <malloc.h>
 #endif
 
-#ifdef USE_LIBAVUTIL_SO
-#include <ffmpeg/avutil.h>
-#else
 #include "avutil.h"
-#endif
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
+#include "libvo/fastmemcpy.h"
 #include "libswscale/swscale.h"
 #include "vf_scale.h"
 

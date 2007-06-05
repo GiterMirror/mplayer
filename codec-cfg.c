@@ -3,8 +3,7 @@
  * by Szabolcs Berecz <szabi@inf.elte.hu>
  * (C) 2001
  *
- * to compile test application:
- *  cc -I. -DTESTING -o codec-cfg-test codec-cfg.c mp_msg.o osdep/getch2.o -ltermcap
+ * to compile tester app: gcc -Iloader/ -DTESTING -o codec-cfg codec-cfg.c
  * to compile CODECS2HTML:
  *   gcc -DCODECS2HTML -o codecs2html codec-cfg.c mp_msg.o
  *

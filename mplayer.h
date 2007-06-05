@@ -2,6 +2,10 @@
 #ifndef __MPLAYER_MAIN
 #define __MPLAYER_MAIN
 
+#include "libvo/sub.h"
+#include "subreader.h"
+
+extern int use_gui;
 extern char* current_module;
 
 extern char * dvd_device;
@@ -19,7 +23,6 @@ extern int osd_level;
 extern unsigned int osd_visible;
 
 extern char * font_name;
-extern char * sub_font_name;
 extern float  font_factor;
 extern float movie_aspect;
 extern float force_fps;
@@ -31,6 +34,8 @@ extern int    sub_auto;
 extern int    sub_pos;
 extern int    sub_unicode;
 extern char * sub_cp;
+extern sub_data* subdata; //currently used subtitles  
+extern subtitle* vo_sub;
 extern int    suboverlap_enabled;
 
 extern char * filename;

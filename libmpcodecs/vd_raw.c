@@ -18,10 +18,9 @@ LIBVD_EXTERN(raw)
 
 // to set/get/query special features/parameters
 static int control(sh_video_t *sh,int cmd,void* arg,...){
-    int format = sh->bih ? sh->bih->biCompression : sh->format;
     switch(cmd){
     case VDCTRL_QUERY_FORMAT:
-	if (*(int *)arg == format) return CONTROL_TRUE;
+	if( (*((int*)arg)) == (sh->bih ? sh->bih->biCompression : sh->format) ) return CONTROL_TRUE;
 	return CONTROL_FALSE;
     }
     return CONTROL_UNKNOWN;

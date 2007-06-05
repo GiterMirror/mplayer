@@ -3,7 +3,6 @@
 #include "geometry.h"
 //#ifndef ASPECT_TEST
 #include "mp_msg.h"
-#include "help_mp.h"
 //#endif
 
 //#define ASPECT_DEBUG
@@ -19,8 +18,8 @@ float vo_panscanrange = 1.0;
 
 #include "video_out.h"
 
-float monitor_aspect=0;
-float monitor_pixel_aspect=1;
+float monitor_aspect=4.0/3.0;
+float monitor_pixel_aspect=0;
 extern float movie_aspect;
 
 static struct {
@@ -55,7 +54,7 @@ void aspect_save_screenres(int scrw, int scrh){
 #endif
   aspdat.scrw = scrw;
   aspdat.scrh = scrh;
-  if (!monitor_aspect)
+  if (monitor_pixel_aspect)
     monitor_aspect = monitor_pixel_aspect * scrw / scrh;
 }
 
@@ -104,9 +103,9 @@ void aspect(int *srcw, int *srch, int zoom){
       *srcw = tmpw;
     }else{
 #ifndef ASPECT_TEST
-      mp_msg(MSGT_VO,MSGL_WARN,MSGTR_LIBVO_ASPECT_NoSuitableNewResFound);
+      mp_msg(MSGT_VO,MSGL_WARN,"aspect: Warning: no suitable new res found!\n");
 #else
-      mp_msg(MSGT_VO,MSGL_WARN,MSGTR_LIBVO_ASPECT_NoNewSizeFoundThatFitsIntoRes);
+      mp_msg(MSGT_VO,MSGL_WARN,"error: no new size found that fits into res!\n");
 #endif
     }
   }

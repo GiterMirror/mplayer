@@ -8,18 +8,20 @@
 
 #include "config.h"
 
+#ifdef USE_LANGINFO
+#include <locale.h>
+#include <langinfo.h>
+#endif
 #ifdef USE_ICONV
 #include <iconv.h>
-#include <errno.h>
-extern char* get_term_charset(void);
 #endif
 
-#if defined(FOR_MENCODER)
+#if	defined(FOR_MENCODER) || defined(CODECS2HTML)
 #undef HAVE_NEW_GUI
 #endif
 
 #ifdef HAVE_NEW_GUI
-#include "gui/interface.h"
+#include "Gui/interface.h"
 extern int use_gui;
 #endif
 #include "mp_msg.h"
@@ -36,37 +38,6 @@ static char *old_charset = NULL;
 static iconv_t msgiconv;
 #endif
 
-const char* filename_recode(const char* filename)
-{
-#if !defined(USE_ICONV) || !defined(MSG_CHARSET)
-    return filename;
-#else
-    static iconv_t inv_msgiconv = (iconv_t)(-1);
-    static char recoded_filename[MSGSIZE_MAX];
-    size_t filename_len, max_path;
-    char* precoded;
-    if (!mp_msg_charset ||
-        !strcasecmp(mp_msg_charset, MSG_CHARSET) ||
-        !strcasecmp(mp_msg_charset, "noconv"))
-        return filename;
-    if (inv_msgiconv == (iconv_t)(-1)) {
-        inv_msgiconv = iconv_open(MSG_CHARSET, mp_msg_charset);
-        if (inv_msgiconv == (iconv_t)(-1))
-            return filename;
-    }
-    filename_len = strlen(filename);
-    max_path = MSGSIZE_MAX - 4;
-    precoded = recoded_filename;
-    if (iconv(inv_msgiconv, &filename, &filename_len,
-              &precoded, &max_path) == (size_t)(-1) && errno == E2BIG) {
-        precoded[0] = precoded[1] = precoded[2] = '.';
-        precoded += 3;
-    }
-    *precoded = '\0';
-    return recoded_filename;
-#endif
-}
-
 void mp_msg_init(void){
     int i;
     char *env = getenv("MPLAYER_VERBOSE");
@@ -76,8 +47,13 @@ void mp_msg_init(void){
     mp_msg_levels[MSGT_IDENTIFY] = -1; // no -identify output by default
 #ifdef USE_ICONV
     mp_msg_charset = getenv("MPLAYER_CHARSET");
-    if (!mp_msg_charset)
-      mp_msg_charset = get_term_charset();
+#ifdef USE_LANGINFO
+    if (!mp_msg_charset) {
+      setlocale(LC_CTYPE, "");
+      mp_msg_charset = nl_langinfo(CODESET);
+      setlocale(LC_CTYPE, "C");
+    }
+#endif
 #endif
 }
 
@@ -144,8 +120,19 @@ void mp_msg(int mod, int lev, const char *format, ... ){
       flag=0;
     }
 #endif    
-    {   unsigned char v_colors[10]={9,1,3,15,7,2,2,8,8,8};
-        static const char *mod_text[MSGT_MAX]= {
+    {	unsigned char v_colors[10]={9,1,3,15,7,2,2,8,8,8};
+        static const char *lev_text[]= {
+                                "FATAL",
+                                "ERROR",
+                                "WARN",
+                                "HINT",
+                                "INFO",
+                                "STATUS",
+                                "V",
+                                "DGB2",
+                                "DGB3",
+                                "DGB4"};
+        static const char *mod_text[]= {
                                 "GLOBAL",
                                 "CPLAYER",
                                 "GPLAYER",
@@ -185,14 +172,7 @@ void mp_msg(int mod, int lev, const char *format, ... ){
                                 "SUBREADER",
                                 "AFILTER",
                                 "NETST",
-                                "MUXER",
-                                "OSDMENU",
-                                "IDENTIFY",
-                                "RADIO",
-                                "ASS",
-                                "LOADER",
-                                "STATUSLINE",
-        };
+                                "MUXER"};
 
         int c=v_colors[lev];
         int c2=(mod+1)%15+1;
@@ -207,8 +187,8 @@ void mp_msg(int mod, int lev, const char *format, ... ){
     }
 #endif
     if (lev <= MSGL_WARN){
-        fprintf(stderr, "%s", tmp);fflush(stderr);
+	fprintf(stderr, "%s", tmp);fflush(stderr);
     } else {
-        printf("%s", tmp);fflush(stdout);
+	printf("%s", tmp);fflush(stdout);
     }
 }

@@ -24,15 +24,14 @@
 #include "mpg123.h"
 #include "huffman.h"
 #include "mp3.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "cpudetect.h"
 //#include "liba52/mm_accel.h"
 #include "mp_msg.h"
 
 #include "libvo/fastmemcpy.h"
 
-#ifdef ARCH_X86_32
+#ifdef ARCH_X86
 #define CAN_COMPILE_X86_ASM
 #endif
 
@@ -108,11 +107,11 @@ static int tabsel_123[2][3][16] = {
      {0,8,16,24,32,40,48,56,64,80,96,112,128,144,160,} }
 };
 
-static int freqs[9] = { 44100, 48000, 32000, 22050, 24000, 16000 , 11025 , 12000 , 8000 };
+static long freqs[9] = { 44100, 48000, 32000, 22050, 24000, 16000 , 11025 , 12000 , 8000 };
 
 LOCAL unsigned int getbits(short number_of_bits)
 {
-  unsigned rval;
+  unsigned long rval;
 //  if(MP3_frames>=7741) printf("getbits: bits=%d  bitsleft=%d  wordptr=%x\n",number_of_bits,bitsleft,wordpointer);
   if((bitsleft-=number_of_bits)<0) return 0;
   if(!number_of_bits) return 0;
@@ -133,12 +132,12 @@ LOCAL unsigned int getbits(short number_of_bits)
 
 LOCAL unsigned int getbits_fast(short number_of_bits)
 {
-  unsigned rval;
+  unsigned long rval;
 //  if(MP3_frames>=7741) printf("getbits_fast: bits=%d  bitsleft=%d  wordptr=%x\n",number_of_bits,bitsleft,wordpointer);
   if((bitsleft-=number_of_bits)<0) return 0;
   if(!number_of_bits) return 0;
 #if defined(CAN_COMPILE_X86_ASM)
-  rval = bswap_16(*((uint16_t *)wordpointer));
+  rval = bswap_16(*((unsigned short *)wordpointer));
 #else
   /*
    * we may not be able to address unaligned 16-bit data on non-x86 cpus.
@@ -167,21 +166,21 @@ LOCAL unsigned int get1bit(void)
   return ((rval>>7)&1);
 }
 
-LOCAL void set_pointer(int backstep)
+LOCAL void set_pointer(long backstep)
 {
 //  if(backstep!=512 && backstep>fsizeold)
 //    printf("\rWarning! backstep (%d>%d)                                         \n",backstep,fsizeold);
   wordpointer = bsbuf + ssize - backstep;
-  if (backstep) fast_memcpy(wordpointer,bsbufold+fsizeold-backstep,backstep);
+  if (backstep) memcpy(wordpointer,bsbufold+fsizeold-backstep,backstep);
   bitindex = 0;
   bitsleft+=8*backstep;
 //  printf("Backstep %d  (bitsleft=%d)\n",backstep,bitsleft);
 }
 
-LOCAL int stream_head_read(unsigned char *hbuf,uint32_t *newhead){
+LOCAL int stream_head_read(unsigned char *hbuf,unsigned long *newhead){
   if(mp3_read(hbuf,4) != 4) return FALSE;
 #if defined(CAN_COMPILE_X86_ASM)
-  *newhead = bswap_32(*((uint32_t*)hbuf));
+  *newhead = bswap_32(*((unsigned long *)hbuf));
 #else
   /*
    * we may not be able to address unaligned 32-bit data on non-x86 cpus.
@@ -196,8 +195,8 @@ LOCAL int stream_head_read(unsigned char *hbuf,uint32_t *newhead){
   return TRUE;
 }
 
-LOCAL int stream_head_shift(unsigned char *hbuf,uint32_t *head){
-  *((uint32_t*)hbuf) >>= 8;
+LOCAL int stream_head_shift(unsigned char *hbuf,unsigned long *head){
+  *((unsigned long *)hbuf) >>= 8;
   if(mp3_read(hbuf+3,1) != 1) return 0;
   *head <<= 8;
   *head |= hbuf[3];
@@ -208,7 +207,7 @@ LOCAL int stream_head_shift(unsigned char *hbuf,uint32_t *head){
  * decode a header and write the information
  * into the frame structure
  */
-LOCAL int decode_header(struct frame *fr,uint32_t newhead){
+LOCAL int decode_header(struct frame *fr,unsigned long newhead){
 
     // head_check:
     if( (newhead & 0xffe00000) != 0xffe00000 ||  
@@ -217,8 +216,8 @@ LOCAL int decode_header(struct frame *fr,uint32_t newhead){
     fr->lay = 4-((newhead>>17)&3);
 //    if(fr->lay!=3) return FALSE;
 
-    if( newhead & (1<<20) ) {
-      fr->lsf = (newhead & (1<<19)) ? 0x0 : 0x1;
+    if( newhead & ((long)1<<20) ) {
+      fr->lsf = (newhead & ((long)1<<19)) ? 0x0 : 0x1;
       fr->mpeg25 = 0;
     } else {
       fr->lsf = 1;
@@ -253,7 +252,7 @@ switch(fr->lay){
   case 2:
     MP3_bitrate=tabsel_123[fr->lsf][1][fr->bitrate_index];
     MP3_samplerate=freqs[fr->sampling_frequency];
-    fr->framesize = MP3_bitrate * 144000;
+    fr->framesize = (long) MP3_bitrate * 144000;
     fr->framesize /= MP3_samplerate;
     MP3_framesize=fr->framesize;
     fr->framesize += fr->padding - 4;
@@ -267,7 +266,7 @@ switch(fr->lay){
 
     MP3_bitrate=tabsel_123[fr->lsf][2][fr->bitrate_index];
     MP3_samplerate=freqs[fr->sampling_frequency];
-    fr->framesize  = MP3_bitrate * 144000;
+    fr->framesize  = (long) MP3_bitrate * 144000;
     fr->framesize /= MP3_samplerate<<(fr->lsf);
     MP3_framesize=fr->framesize;
     fr->framesize += fr->padding - 4;
@@ -276,7 +275,7 @@ switch(fr->lay){
 //    fr->jsbound = (fr->mode == MPG_MD_JOINT_STEREO) ? (fr->mode_ext<<2)+4 : 32;
     MP3_bitrate=tabsel_123[fr->lsf][0][fr->bitrate_index];
     MP3_samplerate=freqs[fr->sampling_frequency];
-    fr->framesize  = MP3_bitrate * 12000;
+    fr->framesize  = (long) MP3_bitrate * 12000;
     fr->framesize /= MP3_samplerate;
     MP3_framesize  = ((fr->framesize+fr->padding)<<2);
     fr->framesize  = MP3_framesize-4;
@@ -314,11 +313,8 @@ LOCAL int stream_read_frame_body(int size){
  * read next frame     return number of frames read.
  */
 LOCAL int read_frame(struct frame *fr){
-  uint32_t newhead;
-  union {
-    unsigned char buf[8];
-    unsigned long dummy; // for alignment
-  } hbuf;
+  unsigned long newhead;
+  unsigned char hbuf[8];
   int skipped,resyncpos;
   int frames=0;
 
@@ -328,7 +324,7 @@ resync:
 
   set_pointer(512);
   fsizeold=fr->framesize;       /* for Layer3 */
-  if(!stream_head_read(hbuf.buf,&newhead)) return 0;
+  if(!stream_head_read(hbuf,&newhead)) return 0;
   if(!decode_header(fr,newhead)){
     // invalid header! try to resync stream!
 #ifdef DEBUG_RESYNC
@@ -336,7 +332,7 @@ resync:
 #endif
 retry1:
     while(!decode_header(fr,newhead)){
-      if(!stream_head_shift(hbuf.buf,&newhead)) return 0;
+      if(!stream_head_shift(hbuf,&newhead)) return 0;
     }
     resyncpos=MP3_fpos-4;
     // found valid header
@@ -346,14 +342,14 @@ retry1:
     if(!stream_read_frame_body(fr->framesize)) return 0; // read body
     set_pointer(512);
     fsizeold=fr->framesize;       /* for Layer3 */
-    if(!stream_head_read(hbuf.buf,&newhead)) return 0;
+    if(!stream_head_read(hbuf,&newhead)) return 0;
     if(!decode_header(fr,newhead)){
       // invalid hdr! go back...
 #ifdef DEBUG_RESYNC
       printf("INVALID\n");
 #endif
 //      mp3_seek(resyncpos+1);
-      if(!stream_head_read(hbuf.buf,&newhead)) return 0;
+      if(!stream_head_read(hbuf,&newhead)) return 0;
       goto retry1;
     }
 #ifdef DEBUG_RESYNC
@@ -393,11 +389,11 @@ static int _has_mmx = 0;  // used by layer2.c, layer3.c to pre-scale coeffs
 /******************************************************************************/
 
 /* It's hidden from gcc in assembler */
-extern void dct64_MMX(short *, short *, real *);
-extern void dct64_MMX_3dnow(short *, short *, real *);
-extern void dct64_MMX_3dnowex(short *, short *, real *);
-extern void dct64_sse(short *, short *, real *);
-void (*dct64_MMX_func)(short *, short *, real *);
+extern void dct64_MMX(real *, real *, real *);
+extern void dct64_MMX_3dnow(real *, real *, real *);
+extern void dct64_MMX_3dnowex(real *, real *, real *);
+extern void dct64_sse(real *, real *, real *);
+void (*dct64_MMX_func)(real *, real *, real *);
 
 #include "cpudetect.h"
 
@@ -421,6 +417,8 @@ void MP3_Init(){
     if (gCpuCaps.hasMMX)
     {
 	_has_mmx = 1;
+	make_decode_tables_MMX(outscale);
+	mp_msg(MSGT_DECAUDIO,MSGL_V,"mp3lib: made decode tables with MMX optimization\n");
 	synth_func = synth_1to1_MMX;
     }
 #endif
@@ -553,7 +551,7 @@ void MP3_PrintHeader(void){
         static char *modes[4] = { "Stereo", "Joint-Stereo", "Dual-Channel", "Single-Channel" };
         static char *layers[4] = { "???" , "I", "II", "III" };
 
-        mp_msg(MSGT_DECAUDIO,MSGL_V,"\rMPEG %s, Layer %s, %d Hz %d kbit %s, BPF: %d\n",
+        mp_msg(MSGT_DECAUDIO,MSGL_V,"\rMPEG %s, Layer %s, %ld Hz %d kbit %s, BPF: %ld\n",
                 fr.mpeg25 ? "2.5" : (fr.lsf ? "2.0" : "1.0"),
                 layers[fr.lay],freqs[fr.sampling_frequency],
     tabsel_123[fr.lsf][fr.lay-1][fr.bitrate_index],

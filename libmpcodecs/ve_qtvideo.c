@@ -10,23 +10,21 @@
 
 #include "config.h"
 #include "mp_msg.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 
 #ifdef WIN32_LOADER 
-#include "loader/ldt_keeper.h"
+#include "ldt_keeper.h" 
 #endif 
 
 #include "loader/qtx/qtxsdk/components.h"
-#include "loader/wine/windef.h"
+#include "wine/windef.h"
 
 #include "codec-cfg.h"
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "muxer.h"
 
 #include "img_format.h"
 #include "mp_image.h"

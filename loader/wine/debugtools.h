@@ -2,6 +2,8 @@
 #ifndef __WINE_DEBUGTOOLS_H
 #define __WINE_DEBUGTOOLS_H
 
+#ifdef __WINE__  /* Debugging interface is internal to Wine */
+
 #include <stdarg.h>
 #include "config.h"
 #include "windef.h"
@@ -85,5 +87,7 @@ extern int dbg_printf(const char *format, ...);
 
 #define DPRINTF dbg_printf
 #define MESSAGE dbg_printf
+
+#endif  /* __WINE__ */
 
 #endif  /* __WINE_DEBUGTOOLS_H */

@@ -17,7 +17,7 @@ typedef struct m_struct_st {
   /// size of the whole struct
   unsigned int size;
   /// Pointer to a struct filled with the default settings
-  const void* defaults;
+  void* defaults;
   /// Field list.
   /** The p field of the \ref m_option struct must contain the offset
    *  of the member in the struct (use M_ST_OFF macro for this).

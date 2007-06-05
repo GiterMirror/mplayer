@@ -46,10 +46,7 @@ extern m_option_t xvidencopts_conf[];
 extern void x264enc_set_param(m_option_t* opt, char* arg);
 #endif
 
-#ifdef USE_LIBLZO
 extern m_option_t nuvopts_conf[];
-#endif
-
 extern m_option_t mpegopts_conf[];
 #if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
 extern m_option_t lavfopts_conf[];
@@ -71,9 +68,7 @@ m_option_t ovc_conf[]={
 	"   copy     - frame copy, without re-encoding. Doesn't work with filters.\n"
 	"   frameno  - special audio-only file for 3-pass encoding, see DOCS.\n"
 	"   raw      - uncompressed video. Use fourcc option to set format explicitly.\n"
-#ifdef USE_LIBLZO
 	"   nuv      - nuppel video\n"
-#endif
 #ifdef USE_LIBAVCODEC
 	"   lavc     - libavcodec codecs - best quality!\n"
 #endif
@@ -209,8 +204,8 @@ m_option_t mencoder_opts[]={
 	{"audio-preload", &audio_preload, CONF_TYPE_FLOAT, CONF_RANGE|CONF_GLOBAL, 0, 2, NULL},
 	{"audio-delay",   &audio_delay_fix, CONF_TYPE_FLOAT, CONF_GLOBAL, 0, 0, NULL},
 
-	{"x", "-x has been removed, use -vf scale=w:h for scaling.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
-	{"xsize", "-xsize has been removed, use -vf crop=w:h:x:y for cropping.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+	{"x", "-x is obsolete, use -vf scale=w:h for scaling.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+	{"xsize", "-xsize is obsolete, use -vf crop=w:h:x:y for cropping.\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 
 	// output audio/video codec selection
 	{"oac", oac_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
@@ -227,7 +222,7 @@ m_option_t mencoder_opts[]={
 	// override avi aspect autodetection
 	{"force-avi-aspect", &avi_aspect_override, CONF_TYPE_FLOAT, CONF_RANGE|CONF_GLOBAL, 0.2, 3.0, NULL},
 
-	{"pass", "-pass has been removed, use -lavcopts vpass=n, -xvidencopts pass=n\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
+	{"pass", "-pass is obsolete, use -lavcopts vpass=n, -xvidencopts pass=n\n", CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 	{"passlogfile", &passtmpfile, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
 	
 	{"vobsubout", &vobsub_out, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
@@ -279,9 +274,7 @@ m_option_t mencoder_opts[]={
 	{"x264encopts", &x264enc_set_param, CONF_TYPE_FUNC_PARAM, CONF_GLOBAL, 0, 0, NULL},
 #endif
 
-#ifdef USE_LIBLZO
 	{"nuvopts",  nuvopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
-#endif
 	{"mpegopts",  mpegopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},
 #if defined(USE_LIBAVFORMAT) ||  defined(USE_LIBAVFORMAT_SO)
 	{"lavfopts",  lavfopts_conf, CONF_TYPE_SUBCONFIG, CONF_GLOBAL, 0, 0, NULL},

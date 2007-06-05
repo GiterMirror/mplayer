@@ -6,11 +6,10 @@
 #include <sys/types.h>
 #include "m_option.h"
 #include "mp_msg.h"
-#include "libmpdemux/aviheader.h"
+#include "aviheader.h"
 #include "libaf/af_format.h"
-#include "libmpdemux/ms_hdr.h"
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "ms_hdr.h"
+#include "muxer.h"
 #include "ae_pcm.h"
 
 
@@ -37,7 +36,7 @@ static int bind_pcm(audio_encoder_t *encoder, muxer_stream_t *mux_a)
 
 static int encode_pcm(audio_encoder_t *encoder, uint8_t *dest, void *src, int nsamples, int max_size)
 {
-	max_size = FFMIN(nsamples, max_size);
+	max_size = min(nsamples, max_size);
 	memcpy(dest, src, max_size);
 	return max_size;
 }

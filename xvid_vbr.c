@@ -96,7 +96,7 @@ static vbr_finish_function vbr_finish_2pass2;
  * Inline utility functions
  *****************************************************************************/
 
-static inline int util_frametype(vbr_control_t *state)
+static __inline int util_frametype(vbr_control_t *state)
 {
 
 	if(state->credits_start) {
@@ -120,7 +120,7 @@ static inline int util_frametype(vbr_control_t *state)
 
 }
 
-static inline int util_creditsframes(vbr_control_t *state)
+static __inline int util_creditsframes(vbr_control_t *state)
 {
 
 	int frames = 0;
@@ -1327,7 +1327,7 @@ static int vbr_getquant_2pass2(void *sstate)
 
 	state->desired_bytes2 = bytes2;
 
-	/* Ugly dependence between getquant and getintra */
+	/* Ugly dependance between getquant and getintra */
 	intra = state->getintra(state);
 
 	if(intra) {

@@ -109,7 +109,7 @@ LIBVO_EXTERN(svga)
 
 
 //return number of 1'st free page or -1 if no free one
-static inline int page_find_free(void){
+static inline int page_find_free(){
 int i;
   for(i=0;i<max_pages;i++)
     if(PageStore[i].locks == PAGE_EMPTY) return i;
@@ -206,7 +206,7 @@ int i;
     rgbplane=PageStore[0].vbase + (y*mode_stride) + (x*modeinfo->bytesperpixel);
     for(i=0;i<h;i++){
 //i'm afraid that memcpy is better optimized than memset;)
-      fast_memcpy(rgbplane,zerobuf,w*modeinfo->bytesperpixel);
+      memcpy(rgbplane,zerobuf,w*modeinfo->bytesperpixel);
 //    memset(rgbplane,0,w*modeinfo->bytesperpixel);
       rgbplane+=mode_stride;
     }

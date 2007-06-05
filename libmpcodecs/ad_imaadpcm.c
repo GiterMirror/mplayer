@@ -21,8 +21,7 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "libavutil/common.h"
-#include "mpbswap.h"
+#include "bswap.h"
 #include "ad_internal.h"
 
 #define MS_IMA_ADPCM_PREAMBLE_SIZE 4

@@ -30,6 +30,7 @@ Documentation:
     * MPlayer: Diego Biurrun
     * MEncoder: Guillaume Poirier
     * man page: Diego Biurrun
+    * console messages: Reynaldo H. Verdejo Pinochet
     * translation coordination: Sebastian Krämer
     * input layer, LIRC, slave mode docs: Alban Bedel
     * tech/* docs: None
@@ -45,7 +46,6 @@ Man page translations:
     * Spanish: Reynaldo H. Verdejo Pinochet (outdated)
     * Chinese: unmaintained, outdated
     * Swedish: unmaintained, outdated, incomplete
-    * Russian: Vladimir Voroshilov (incomplete)
 
 Documentation translations:
     * Czech: Jiri Heryan
@@ -56,7 +56,7 @@ Documentation translations:
     * Spanish: Reynaldo H. Verdejo Pinochet (outdated)
     * Chinese (simplified): unmaintained, outdated, still HTML
     * Italian: unmaintained, outdated, still HTML
-    * Russian: Vladimir Voroshilov
+    * Russian: Vladimir Voroshilov (outdated,incomplete)
 
 Platforms/ports:
     * Debian packaging: None
@@ -72,11 +72,10 @@ Platforms/ports:
 
 MPlayer code:
     * build system: Diego Biurrun
-    * A-V sync code, MPlayer core: Uoti Urpala
-    * MEncoder core: None (unmaintained)
+    * A-V sync code, MPlayer/MEncoder core: None
     * libmpdemux: Roberto Togni, Nico Sabbi
     * libmpcodecs: Roberto Togni
-    * TV input/capture: Vladimir Voroshilov
+    * TV input/capture: Jindrich Makovicka
     * network streaming: Roberto Togni, Nico Sabbi, Benjamin Zores
     * DVD/VOB subtitles: None
     * config files & commandline parser: Alban Bedel
@@ -89,13 +88,12 @@ MPlayer code:
 
 Imported libs/projects:
     * libavcodec, libavformat: Michael Niedermayer
-    * VIDIX core: Benjamin Zores
+    * VIDIX core, libdha: Sascha Sommer
     * mp3lib: None
-    * loader: None
+    * loader: Alex Beregszaszi
     * liba52: None
     * libmpeg2: None
-    * libdvdcss: Diego Biurrun
-    * libdvdread: Diego Biurrun
+    * libmpdvdkit2: None
     * libfaad2: None
     * realrtsp: Roberto Togni
     * librtsp: Benjamin Zores
@@ -113,21 +111,15 @@ demuxers:
     * demux_rtp* - Ross Finlayson
     * demux_mpg and demux_ts - Nico Sabbi
     * demux_mpc.c - Reimar Döffinger
-    * demux_nuv.c - Reimar Döffinger
 
 muxers:
     * muxer_lavf.c - Michael Niedermayer
-    * muxer_mpeg.c - Nico Sabbi
 
 streams:
     * stream_pvr.c - Benjamin Zores
     * stream_udp.c - Benjamin Zores
     * stream_rtp.c - Benjamin Zores
     * stream_rtsp.c - Benjamin Zores
-    * stream_radio.c - Vladimir Voroshilov
-    * stream_dvb.c - Nico Sabbi
-    * stream_dvd.c - Nico Sabbi
-    * stream_dvdnav.c - Nico Sabbi
 
 codec support:
     * FFmpeg: Michael Niedermayer
@@ -140,16 +132,12 @@ video filters:
     * vf_filmdint.c - Zoltan Hidvegi
     * vf_blackframe.c - Ivo van Poorten
     * vf_zrmjpeg.c - Rik Snel
-    * all filters written by Michael Niedermayer - Michael Niedermayer
 
 audio filters:
     * general: Alex Beregszaszi
     * af_ladspa.c - Ivo van Poorten
     * af_equalizer.c - Reynaldo H. Verdejo Pinochet
     * af_karaoke.c - Reynaldo H. Verdejo Pinochet
-
-audio encoders:
-    * ae_toolame.c, ae_twolame.c and ae_faac.c - Nico Sabbi
 
 libvo drivers:
     * vo_3dfx.c - OBSOLETED, use xv or tdfxfb
@@ -197,6 +185,14 @@ libvo drivers:
 
     * x11_common.c - Alexander Strasser
     * w32_common.c - Reimar Döffinger
+
+VIDIX drivers:
+    * mach64_vid - None
+    * mga_vid - None
+    * nvidia_vid - Sascha Sommer
+    * radeon_vid - Sascha Sommer
+    * rage128_vid - None
+    * sis_vid - Jake Page
 
 libao2 drivers:
     * ao_alsa5.c - None

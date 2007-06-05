@@ -31,16 +31,14 @@ static struct vf_priv_s {
     double aspect;
     int round;
     unsigned char* fb_ptr;
-    int passthrough;
     int first_slice;
-} const vf_priv_dflt = {
+} vf_priv_dflt = {
   -1,-1,
   -1,-1,
   0,
   0.,
   1,
   NULL,
-  0,
   0
 };
 
@@ -172,10 +170,6 @@ static void draw_osd(struct vf_instance_s* vf_,int w,int h){
 static int config(struct vf_instance_s* vf,
         int width, int height, int d_width, int d_height,
 	unsigned int flags, unsigned int outfmt){
-    if(outfmt == IMGFMT_MPEGPES) {
-      vf->priv->passthrough = 1;
-      return vf_next_config(vf,width,height,d_width,d_height,flags,outfmt);
-    }
     if (outfmt == IMGFMT_IF09) return 0;
     // calculate the missing parameters:
 #if 0
@@ -190,12 +184,11 @@ static int config(struct vf_instance_s* vf,
         else if( vf->priv->exp_h<height ) vf->priv->exp_h=height;
 #endif
     if (vf->priv->aspect) {
-        float adjusted_aspect = vf->priv->aspect;
-        adjusted_aspect *= ((double)width/height) / ((double)d_width/d_height);
-        if (vf->priv->exp_h < vf->priv->exp_w / adjusted_aspect) {
-            vf->priv->exp_h = vf->priv->exp_w / adjusted_aspect + 0.5;
+        vf->priv->aspect *= ((double)width/height) / ((double)d_width/d_height);
+        if (vf->priv->exp_h < vf->priv->exp_w / vf->priv->aspect) {
+            vf->priv->exp_h = vf->priv->exp_w / vf->priv->aspect + 0.5;
         } else {
-            vf->priv->exp_w = vf->priv->exp_h * adjusted_aspect + 0.5;
+            vf->priv->exp_w = vf->priv->exp_h * vf->priv->aspect + 0.5;
         }
     }
     if (vf->priv->round > 1) { // round up.
@@ -338,13 +331,6 @@ static void draw_slice(struct vf_instance_s* vf,
 }
 
 static int put_image(struct vf_instance_s* vf, mp_image_t *mpi, double pts){
-    if (vf->priv->passthrough) {
-      mp_image_t *dmpi = vf_get_image(vf->next, IMGFMT_MPEGPES,
-                                      MP_IMGTYPE_EXPORT, 0, mpi->w, mpi->h);
-      dmpi->planes[0]=mpi->planes[0];
-      return vf_next_put_image(vf,dmpi, pts);
-    }
-
     if(mpi->flags&MP_IMGFLAG_DIRECT || mpi->flags&MP_IMGFLAG_DRAW_CALLBACK){
 	vf->dmpi=mpi->priv;
 	if(!vf->dmpi) { mp_msg(MSGT_VFILTER, MSGL_WARN, MSGTR_MPCODECS_FunWhydowegetNULL); return 0; }
@@ -402,14 +388,9 @@ static int control(struct vf_instance_s* vf, int request, void* data){
     return vf_next_control(vf,request,data);
 }
 
-static int query_format(struct vf_instance_s* vf, unsigned int fmt){
-  return (vf_next_query_format(vf,fmt));
-}
-
 static int open(vf_instance_t *vf, char* args){
     vf->config=config;
     vf->control=control;
-    vf->query_format=query_format;
     vf->start_slice=start_slice;
     vf->draw_slice=draw_slice;
     vf->get_image=get_image;

@@ -15,6 +15,7 @@
 #include <math.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 #include "config.h"
 #include "video_out.h"
@@ -33,7 +34,7 @@
 #include "mp_msg.h"
 
 #ifdef HAVE_NEW_GUI
-#include "gui/interface.h"
+#include "Gui/interface.h"
 #endif
 
 

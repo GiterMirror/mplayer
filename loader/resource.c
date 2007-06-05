@@ -10,7 +10,6 @@
  *
  */
 #include "config.h"
-#include "debug.h"
 
 #include <assert.h>
 #include <stdio.h>

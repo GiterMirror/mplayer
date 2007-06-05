@@ -8,19 +8,18 @@
 #include "m_option.h"
 
 #include "codec-cfg.h"
-#include "stream/stream.h"
-#include "libmpdemux/demuxer.h"
-#include "libmpdemux/stheader.h"
+#include "stream.h"
+#include "demuxer.h"
+#include "stheader.h"
 
-#include "stream/stream.h"
-#include "libmpdemux/muxer.h"
+#include "muxer.h"
 
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
 
 #include "libmpdemux/nuppelvideo.h"
-#include <lzo/lzo1x.h>
+#include "native/minilzo.h"
 #include "native/RTjpegN.h"
 
 #define LZO_AL(size) (((size) + (sizeof(long) - 1)) / sizeof(long))

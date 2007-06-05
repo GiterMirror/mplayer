@@ -17,9 +17,9 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along
- *  with libao; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *  You should have received a copy of the GNU General Public License
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 /*
@@ -171,36 +171,13 @@ int req=(inNumFrames)*ao->packetSize;
 }
 
 static int control(int cmd,void *arg){
-ao_control_vol_t *control_vol;
-OSStatus err;
-Float32 vol;
 	switch (cmd) {
+	case AOCONTROL_SET_DEVICE:
+	case AOCONTROL_GET_DEVICE:
 	case AOCONTROL_GET_VOLUME:
-		control_vol = (ao_control_vol_t*)arg;
-		err = AudioUnitGetParameter(ao->theOutputUnit, kHALOutputParam_Volume, kAudioUnitScope_Global, 0, &vol);
-
-		if(err==0) {
-			// printf("GET VOL=%f\n", vol);
-			control_vol->left=control_vol->right=vol*100.0/4.0;
-			return CONTROL_TRUE;
-		}
-		else {
-			return CONTROL_FALSE;
-		}
-
 	case AOCONTROL_SET_VOLUME:
-		control_vol = (ao_control_vol_t*)arg;
-		
-		vol=(control_vol->left+control_vol->right)*4.0/200.0;
-		err = AudioUnitSetParameter(ao->theOutputUnit, kHALOutputParam_Volume, kAudioUnitScope_Global, 0, vol, 0);
-		if(err==0) {
-			// printf("SET VOL=%f\n", vol);
-			return CONTROL_TRUE;
-		}
-		else {
-			return CONTROL_FALSE;
-		}
 	  /* Everything is currently unimplemented */
+	  return CONTROL_FALSE;
 	default:
 	  return CONTROL_FALSE;
 	}
@@ -237,7 +214,7 @@ static void print_format(const char* str,AudioStreamBasicDescription *f){
 
 static int init(int rate,int channels,int format,int flags)
 {
-AudioStreamBasicDescription inDesc;
+AudioStreamBasicDescription inDesc, outDesc;
 ComponentDescription desc; 
 Component comp; 
 AURenderCallbackStruct renderCallback;
@@ -402,6 +379,8 @@ static float get_delay(void)
 /* unload plugin and deregister from coreaudio */
 static void uninit(int immed)
 {
+  int i;
+  OSErr status;
 
   if (!immed) {
     long long timeleft=(1000000LL*buf_used())/ao_data.bps;

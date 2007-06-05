@@ -283,7 +283,7 @@ static void flip_page (void) {
 
 	if (prevpts >= 0) for (i = 0; i < no_bl_files; i++)
 		bl->write_frame(&bl_files[i], tmp, (vo_pts - prevpts)/90);
-	fast_memcpy(tmp, image, bl->width*bl->height*bl->channels);
+	memcpy(tmp, image, bl->width*bl->height*bl->channels);
 	prevpts = vo_pts;
 
 	for (i = 0; i < no_bl_hosts; i++) bl->send_frame(&bl_hosts[i]);
@@ -331,7 +331,7 @@ static int draw_slice(uint8_t *srcimg[], int stride[],
 	dst=image; /* + zr->off_y + zr->image_width*(y/zr->vdec)+x;*/
 	// copy Y:
 	for (i = 0; i < h; i++) {
-		fast_memcpy(dst,src,w);
+		memcpy(dst,src,w);
 		dst+=bl->width;
 		src+=stride[0];
 
@@ -424,7 +424,7 @@ static int preinit(const char *arg) {
 					bl_hosts[no_bl_hosts].port);
 			no_bl_hosts++;
 		} else {
-			mp_msg(MSGT_VO, MSGL_ERR, "bl: syntax error in entry %d in subdevice %s, should be a comma separated\nlist of host=name:port and file=foo.bml\n", no_bl_hosts, no_bl_files, arg);
+			mp_msg(MSGT_VO, MSGL_ERR, "bl: syntax error in entry %d in subdevice %s, should be a comma seperated\nlist of host=name:port and file=foo.bml\n", no_bl_hosts, no_bl_files, arg);
 			return 1;
 		}
 		p = ++q;
