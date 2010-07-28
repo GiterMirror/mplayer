@@ -1264,7 +1264,7 @@ static demuxer_t* demux_open_real(demuxer_t* demuxer)
 		    mp_msg(MSGT_DEMUX,MSGL_V,"Audio: can't find .ra in codec data\n");
 		} else {
 		    /* audio header */
-		    sh_audio_t *sh = new_sh_audio(demuxer, stream_id, NULL);
+		    sh_audio_t *sh = new_sh_audio(demuxer, stream_id);
 		    char buf[128]; /* for codec name */
 		    int frame_size;
 		    int sub_packet_size;
@@ -1476,7 +1476,7 @@ static demuxer_t* demux_open_real(demuxer_t* demuxer)
 #endif
 		}
 	  } else if (strstr(mimet,"X-MP3-draft-00")) {
-		    sh_audio_t *sh = new_sh_audio(demuxer, stream_id, NULL);
+		    sh_audio_t *sh = new_sh_audio(demuxer, stream_id);
     		    mp_msg(MSGT_DEMUX, MSGL_INFO, MSGTR_AudioID, "real", stream_id);
 
 		    /* Emulate WAVEFORMATEX struct: */

@@ -29,7 +29,7 @@
 #else
 #include <ass/ass.h>
 #endif
-// FIXME: rename types used by MPlayer
+#if defined(LIBASS_VERSION) && LIBASS_VERSION >= 0x00907010
 #define ass_library_t ASS_Library
 #define ass_track_t ASS_Track
 #define ass_track_s ASS_Track
@@ -38,6 +38,9 @@
 #define ass_style_t ASS_Style
 #define ass_event_t ASS_Event
 #define process_force_style(t) ass_process_force_style(t)
+#else
+void process_force_style(ass_track_t* track);
+#endif
 
 extern ass_library_t* ass_library;
 extern int ass_enabled;

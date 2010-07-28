@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- synced with r31815 -->
+<!-- synced with r23520 -->
 <chapter id="radio">
 <title>Rádió</title>
+
+<sect1 id="radio-input" xreflabel="Radio input">
+<title>Radió bemenet</title>
 
 <para>
 Ez a fejezet arról szól, hogyan engedélyezheted a V4L-kompatibilis
@@ -11,7 +14,7 @@ rádiós opciók és a billentyűzeten keresztüli vezérlés leírásához.
 
 <!-- ********** -->
 
-<sect1 id="radio-compilation">
+<sect2 id="radio-compilation">
 <title>Fordítás</title>
 
 <procedure>
@@ -25,11 +28,11 @@ rádiós opciók és a billentyűzeten keresztüli vezérlés leírásához.
   programmal, mint pl. a <application>XawTV</application>.
 </para></step>
 </procedure>
-</sect1>
+</sect2>
 
 <!-- ********** -->
 
-<sect1 id="radio-tips">
+<sect2 id="radio-tips">
 <title>Használati tippek</title>
 
 <para>
@@ -62,11 +65,11 @@ Következzék pár tipp:
 </para></listitem>
 </itemizedlist>
 </para>
-</sect1>
+</sect2>
 
 <!-- ********** -->
 
-<sect1 id="radio-examples">
+<sect2 id="radio-examples">
 <title>Példák</title>
 
 <informalexample><para>
@@ -102,6 +105,7 @@ jelekkel kell helyettesíteni, a periódusokat vesszők választják el.
 </para></note>
 </para>
 </informalexample>
+</sect2>
 </sect1>
 
 </chapter>

@@ -36,10 +36,13 @@ static MainAVIHeader avih;
 
 static int odml_get_vstream_id(int id, unsigned char res[])
 {
-    if ((char)(id >> 16) == 'd') {
+    unsigned char *p = (unsigned char *)&id;
+    id = le2me_32(id);
+
+    if (p[2] == 'd') {
 	if (res) {
-	    res[0] = id;
-	    res[1] = id >> 8;
+	    res[0] = p[0];
+	    res[1] = p[1];
 	}
 	return 1;
     }
@@ -203,7 +206,7 @@ while(1){
         sh_video->stream_delay = (float)sh_video->video.dwStart * sh_video->video.dwScale/sh_video->video.dwRate;
       } else
       if(h.fccType==streamtypeAUDIO){
-        sh_audio=new_sh_audio(demuxer,stream_id, NULL);
+        sh_audio=new_sh_audio(demuxer,stream_id);
         mp_msg(MSGT_DEMUX, MSGL_INFO, MSGTR_AudioID, "aviheader", stream_id);
         memcpy(&sh_audio->audio,&h,sizeof(h));
         sh_audio->stream_delay = (float)sh_audio->audio.dwStart * sh_audio->audio.dwScale/sh_audio->audio.dwRate;

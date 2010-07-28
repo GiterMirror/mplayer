@@ -130,6 +130,7 @@ static int lastMouseHide = 0;
 
 enum
 {
+    kQuitCmd         = 1,
     kHalfScreenCmd   = 2,
     kNormalScreenCmd = 3,
     kDoubleScreenCmd = 4,

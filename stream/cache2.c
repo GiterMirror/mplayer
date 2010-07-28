@@ -366,8 +366,7 @@ static void dummy_sighandler(int x) {
 static void cache_mainloop(cache_vars_t *s) {
     int sleep_count = 0;
 #if FORKED_CACHE
-    struct sigaction sa = { .sa_handler = SIG_IGN };
-    sigaction(SIGUSR1, &sa, NULL);
+    signal(SIGUSR1, SIG_IGN);
 #endif
     do {
         if (!cache_fill(s)) {
@@ -375,8 +374,7 @@ static void cache_mainloop(cache_vars_t *s) {
             // Let signal wake us up, we cannot leave this
             // enabled since we do not handle EINTR in most places.
             // This might need extra code to work on BSD.
-            sa.sa_handler = dummy_sighandler;
-            sigaction(SIGUSR1, &sa, NULL);
+            signal(SIGUSR1, dummy_sighandler);
 #endif
             if (sleep_count < INITIAL_FILL_USLEEP_COUNT) {
                 sleep_count++;
@@ -384,8 +382,7 @@ static void cache_mainloop(cache_vars_t *s) {
             } else
                 usec_sleep(FILL_USLEEP_TIME); // idle
 #if FORKED_CACHE
-            sa.sa_handler = SIG_IGN;
-            sigaction(SIGUSR1, &sa, NULL);
+            signal(SIGUSR1, SIG_IGN);
 #endif
         } else
             sleep_count = 0;

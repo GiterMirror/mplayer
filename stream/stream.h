@@ -159,13 +159,13 @@ typedef struct stream {
   void* cache_data;
   void* priv; // used for DVD, TV, RTSP etc
   char* url;  // strdup() of filename/url
-#ifdef CONFIG_NETWORKING
+#ifdef CONFIG_NETWORK
   streaming_ctrl_t *streaming_ctrl;
 #endif
   unsigned char buffer[STREAM_BUFFER_SIZE>VCD_SECTOR_SIZE?STREAM_BUFFER_SIZE:VCD_SECTOR_SIZE];
 } stream_t;
 
-#ifdef CONFIG_NETWORKING
+#ifdef CONFIG_NETWORK
 #include "network.h"
 #endif
 

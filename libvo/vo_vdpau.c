@@ -124,7 +124,6 @@ static VdpPresentationQueueDestroy       *vdp_presentation_queue_destroy;
 static VdpPresentationQueueDisplay       *vdp_presentation_queue_display;
 static VdpPresentationQueueBlockUntilSurfaceIdle *vdp_presentation_queue_block_until_surface_idle;
 static VdpPresentationQueueTargetCreateX11       *vdp_presentation_queue_target_create_x11;
-static VdpPresentationQueueSetBackgroundColor    *vdp_presentation_queue_set_background_color;
 
 static VdpOutputSurfaceRenderOutputSurface       *vdp_output_surface_render_output_surface;
 static VdpOutputSurfacePutBitsIndexed            *vdp_output_surface_put_bits_indexed;
@@ -371,8 +370,6 @@ static int win_x11_init_vdpau_procs(void)
                         &vdp_presentation_queue_block_until_surface_idle},
         {VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11,
                         &vdp_presentation_queue_target_create_x11},
-        {VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR,
-                        &vdp_presentation_queue_set_background_color},
         {VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE,
                         &vdp_output_surface_render_output_surface},
         {VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED,
@@ -419,8 +416,6 @@ static int win_x11_init_vdpau_procs(void)
 static int win_x11_init_vdpau_flip_queue(void)
 {
     VdpStatus vdp_st;
-    // {0, 0, 0, 0} makes the video shine through any black window on top
-    VdpColor vdp_bg = {0.01, 0.02, 0.03, 0};
 
     vdp_st = vdp_presentation_queue_target_create_x11(vdp_device, vo_window,
                                                       &vdp_flip_target);
@@ -430,8 +425,6 @@ static int win_x11_init_vdpau_flip_queue(void)
                                            &vdp_flip_queue);
     CHECK_ST_ERROR("Error when calling vdp_presentation_queue_create")
 
-    vdp_st = vdp_presentation_queue_set_background_color(vdp_flip_queue, &vdp_bg);
-    CHECK_ST_ERROR("Error when calling vdp_presentation_queue_set_background_color")
     return 0;
 }
 

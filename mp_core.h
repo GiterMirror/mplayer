@@ -35,6 +35,7 @@
 #define INITIALIZED_AO      2
 #define INITIALIZED_GUI     4
 #define INITIALIZED_GETCH2  8
+#define INITIALIZED_SPUDEC  32
 #define INITIALIZED_STREAM  64
 #define INITIALIZED_INPUT   128
 #define INITIALIZED_VOBSUB  256
@@ -110,7 +111,7 @@ typedef struct MPContext {
     int global_sub_pos; // this encompasses all subtitle sources
     int set_of_sub_pos;
     int set_of_sub_size;
-    int sub_counts[SUB_SOURCES];
+    int global_sub_indices[SUB_SOURCES];
 #ifdef CONFIG_ASS
     // set_of_ass_tracks[i] contains subtitles from set_of_subtitles[i]
     // parsed by libass or NULL if format unsupported
